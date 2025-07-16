@@ -56,7 +56,7 @@
 
 
 ## github
-
+1. new
 2. repository name 설정
 3. public / private
 4. 깃허브에서 먼저 저장소를 만들었다면 Add a README file 체크(우리는 study->.git->commit 3개 이미 했음. 즉, local repository 존재하므로 체크X)
