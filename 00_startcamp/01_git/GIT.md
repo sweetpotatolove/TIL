@@ -79,3 +79,6 @@ git push -u origin master
   - 깃허브 연결 후 다시 입력
 
 - `git add .` 파일 한번에 SA에 등록
+
+- git 복사 붙이기 -> shift + insert
+- git clone 주소..
