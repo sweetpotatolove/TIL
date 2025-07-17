@@ -71,7 +71,7 @@
 13. `code ~/.gitconfig` 오타났을 시 수정
 14. `git commit -m "마크다운 연습"` 다시 등록
 15. `git log` 언제 누가 어떤 이름으로 commit 만들었는지 확인
-16. `git push -u origin master` 
+16. `git push -u origin master` push하기
 
 8-1. SA에 실수로 add한 파일이 있다면 `git restore --staged filename`로 삭제
 
@@ -87,6 +87,7 @@
 3. public / private
 4. 깃허브에서 먼저 저장소를 만들었다면 Add a README file 체크(우리는 study->.git->commit 3개 이미 했음. 즉, local repository 존재하므로 체크X)
 
+### git과 github
 ```bash
 echo "# TIL" >> README.md
 git init
@@ -104,10 +105,14 @@ git push -u origin master
   - 이건 깃'허브'에 접근할 수 있는 권한
   - 해당 원격 저장소에 push할 수 있는 권한이 있는지 확인하기 위함!
   - 깃허브 연결 후 다시 입력
-  
+
+- `git pull origin master` 원격 저장소의 변경사항만을 받아옴 - 업데이트
+
+- `git clone 주소` github에 있는 파일 불러오기(원격 저장소 전체를 복제 - 다운로드)
+  - `shift + insert` git에서 복사 붙이기
+  - clone으로 받은 프로젝트는 이미 git init 되어 있음
+  - 해당 프로젝트 처음 받을 때 clone -> 이후엔 변경사항만 다운로드 push
 
 - `git add .` 파일 한번에 SA에 등록
 
-- `git clone 주소` github에 있는 파일 불러오기
-  - `shift + insert` git에서 복사 붙이기
-
+※ 원격 저장소에는 commit이 올라가는 것 -> commit 이력이 없다면 push할 수 없음
