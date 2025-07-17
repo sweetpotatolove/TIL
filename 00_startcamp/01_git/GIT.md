@@ -125,7 +125,7 @@ git push -u origin master
 
 ### 참고
 - gitlab에서 clone으로 내려받은 파일을 로컬에서 작업하던 폴더에 복사 붙이기 후 해당 파일에 대한 .git 생성하면 문제가 생김
-  - 로컬에서 작업하던 폴더의 .git이 존재하는데, 내부에 해당 파일만 관리하는 .git을 만드는 것을 서브모듈이라 함
+  - 로컬에서 작업하던 폴더의 .git이 존재하는데, 내부에 해당 파일만 관리하는 .git을 만드는 것을 submodule 이라 함
   - 제대로 사용 못하면 문제 생김
   - 만약 .git이 관리하는 폴더 내부에 파일만 관리하는 .git이 들어간 채 push됐다면?
   - 로컬 폴더에서 보이지 않게한 후 git add . 하여 원격 저장소에 push -> 파일 관리하던 .git 없애고 폴더에 파일만 넣어서 add commit push
@@ -135,3 +135,6 @@ git push -u origin master
 - 파일 만들고 add 하지 않은 채 commit 했다면? 메모장 메시지 화면(vim)가 뜸
   - `:q` 눌러서 나가기
 
+- 원격 저장소의 commit 내역과 로컬 저장소의 commit 내용이 다르다면? **push** 불가능
+  - git pull 하면 원격 저장소 내용을 로컬로 가져옴(commit 하나 추가하는 것임. 이때의 commit은 원격의 commit과 로컬의 수정 사항이 반영된 commit이 생성됨)
+  - 그럼 vim 창이 뜨는데, `:q`로 나가기 하면 됨
