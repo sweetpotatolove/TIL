@@ -80,5 +80,6 @@ git push -u origin master
 
 - `git add .` 파일 한번에 SA에 등록
 
-- git 복사 붙이기 -> shift + insert
-- git clone 주소..
+- `git clone 주소` github에 있는 파일 불러오기
+  - `shift + insert` git에서 복사 붙이기
+
