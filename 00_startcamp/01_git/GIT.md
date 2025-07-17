@@ -138,3 +138,65 @@ git push -u origin master
 - 원격 저장소의 commit 내역과 로컬 저장소의 commit 내용이 다르다면? **push** 불가능
   - git pull 하면 원격 저장소 내용을 로컬로 가져옴(commit 하나 추가하는 것임. 이때의 commit은 원격의 commit과 로컬의 수정 사항이 반영된 commit이 생성됨)
   - 그럼 vim 창이 뜨는데, `:q`로 나가기 하면 됨
+
+
+## branch
+여러 명이 **작업 공간을 나누어** 독립적으로 작업할 수 있도록 도와주는 Git 도구
+
+- 장점
+  1. 완전히 독립된 개발 환경 형성 -> 원본(master)에 대해 안전
+  2. 하나의 작업은 하나의 브랜치로 나누어 진행하므로 체계적인 협업 및 개발 가능
+  3. 손쉽게 브랜치 생성, 브랜치 사이를 이동할 수 있음
+
+### 순서
+- `git init` .git 생성
+- `touch settings.py` 파일 생성
+- `git add settings.py`
+- `git commit -m "초기설정"`
+- `git branch -c sweetpotato/login` 브랜치 생성
+- `git branch` 
+  - ```
+    * master
+    sweetpotato/login
+    ```
+    -> 기존에 있던 master와 고구마가 로그인 만들거라는 브랜치 생김
+- `git switch sweetpotato/login` (master) -> (sweetpotato/login)으로 바뀌며 고구마 계정에 setting.py 복사됨
+- 고구마 계정에 `touch login.py` 파일 생성 후 `git add .`  `git commit -m "수정"`
+- `git switch master` (sweetpotato/login) -> (master)로 다시 변경하면 폴더에 login 안보이고 setting만 있음
+- `git merge sweetpotato/login` 하면 master 계정에서도 login.py가 보인다!
+- 다른 브랜치 만들어서 파일 만들었을 때 여러 브랜치를 merge하는 경우 vim이 뜸
+  - 1번 branch에서 만든 파일1
+  - 2번 branch에서 만든 파일2
+  - 1번 브랜치에선 파일2가 안보이고, 2번 브랜치에선 파일1이 안보임
+  - master에서 merge할 때 파일1을 받을 땐 문제 없음
+  - 파일1을 받고 파일2를 받으려니 2번 branch에는 파일1의 정보가 없는 상태
+  - 그래서 파일1에 대한 설명을 vim으로 슥슥 해주는거
+  - `:q`로 나가면 됨
+
+- merge 2종류
+  - Fast-forward
+  - threeway?
+
+- `git branch -d sweetpotato/login` 브랜치 삭제
+
+### gitlab에 레포 생성하는 방법
+- 팀장의 경우
+  1. gitlab -> new project -> create blank project -> 프로젝트 이름 설정 -> Project URL에 내이름 눌러야함 -> Initialize repository with a README 체크 (readme.md 파일이 만들어 졌다는 것은 파일이 들어있는 레포가 만들어져서 .git이 관리는 것까지 설정되었다는 뜻)
+  2. Manage -> Members -> invite members -> 초대할 멤버 이름 입력 + 게스트 말고 Maintainer로 초대해야 함
+
+- 팀원인 경우
+  1. 팀장이 만든 레포 -> clone으로 받아오기
+  2. 그 폴더의 git에서 `git branch -c sarang`으로 생성
+  3. `git switch sarang`하여 해당 브랜치로 작업
+
+### gitlab에 레포 삭제하는 방법
+settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력 
+
+### 서로 다른 branch의 작업물 가져오는 방법
+1. `git push origin sarang` 내가 commit한 것을 다른 사람이 받아가려면 원격 저장소(origin(원격저장소 별명))를 통해 push해놔야 함
+2. 원격 저장소에 개별 branch에서 작업한 것 저장됨
+3. merge requests -> new merge request 합병 요청 보내기
+4. source branch : **sarang** (내가 작업한 것을) Target branch : master (마스터에게 보낸다)
+5. 팀장이 각각 merge 누름 -> 원격 저장소에 합병됨
+6. git pull해서 로컬에서도 병합된거 받게 함
+7. (작업 끝났으면) 개인 브랜치 삭제
