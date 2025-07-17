@@ -118,6 +118,7 @@ git push -u origin master
 ※ 원격 저장소에는 commit이 올라가는 것 -> commit 이력이 없다면 push할 수 없음
 
 ※ clone -> add -> commit -> (add commit 반복) -> push
+
 ※ (이미 파일 존재) -> pull -> add -> commit -> (add commit 반복) -> push
 
 ※ commit 메시지에 뭘 수정했는지 기입할 것
