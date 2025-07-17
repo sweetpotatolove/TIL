@@ -174,8 +174,8 @@ git push -u origin master
   - `:q`로 나가면 됨
 
 - merge 2종류
-  - Fast-forward
-  - threeway?
+  - Fast-forward: ex. 위에서 파일1 받아오는 상황(바로 받아짐)
+  - threeway? : ex. 위에서 파일2 받아오는 상황(2번 브랜치에 파일1이 없는데 파일1,파일2를 합치려니까 vim 등장)
 
 - `git branch -d sweetpotato/login` 브랜치 삭제
 
@@ -196,7 +196,66 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
 1. `git push origin sarang` 내가 commit한 것을 다른 사람이 받아가려면 원격 저장소(origin(원격저장소 별명))를 통해 push해놔야 함
 2. 원격 저장소에 개별 branch에서 작업한 것 저장됨
 3. merge requests -> new merge request 합병 요청 보내기
-4. source branch : **sarang** (내가 작업한 것을) Target branch : master (마스터에게 보낸다)
+4. source branch : **sarang** (**내**가 작업한 것을) Target branch : master (마스터에게 보낸다)
 5. 팀장이 각각 merge 누름 -> 원격 저장소에 합병됨
 6. git pull해서 로컬에서도 병합된거 받게 함
 7. (작업 끝났으면) 개인 브랜치 삭제
+
+### 서로 다른 branch에서 같은 파일의 같은 줄을 수정했을 때
+1. A, B가 같은 파일을 각자 수정함
+2. A가 팀장에게 merge 요청 -> 팀장이 merge
+3. B도 팀장에게 merge 요청 -> 팀장이 merge 시도(충돌)
+4. Accept Current Change, Accept Incoming Change, Accept Both Changes, Compare Changes 중 선택
+```
+정리 필요)))
+5. 수정이 됐으니 `git add .`, `git commit -m "A작업과 B작업 merge하였음"` 
+-> A, B 
+
+
+두개 합치면 commit 다시 해야하는데 
+컴퓨터가 알아서 버전 만든거
+
+컴퓨터가 알아서 병합할 수 없는 상황이라 수정하라고 선택지 나온거
+
+`git merge master` 마스터에서 병합된 B작업물과 
+(master MERGING) : 마스터가 merge과정에서 문제가 생겼다는 표시
+
+
+gitlab에서 A꺼 먼저..  merge하면 A것이 master에 합쳐짐
+다음 B꺼 merge하면 merge버튼 사라지고 conflicts(충돌) 메시지 뜸 -> 1. 로컬에서 작업할래? Resolve locally 2. 여기서 작업할래? Resolve confilicts
+컴플릭트 났다는걸 B에게 알림. 로컬에서 수정하고 다시 merge request하라고 알리자
+
+원격저장소에 있는 readme가 최신, 로컬에 있는게 구 버전. 
+
+로컬엔 마스터와 B가 있음
+원격엔 origin master 있음
+B가 원격의 마스터에 push해서 merge하려고 하는데 conflict 발생하는 것
+로컬의 마스터는 구버전, 원격의 마스터는 최신버전
+원격의 마스터에는 A꺼 merge한 것도 들어가있는 것임
+A수정사항과 B수정사항을 모두 합친 merge 되었다는 commit을 만들어야 하는데, 그게 gitlab 페이지에서는 힘들다는 것
+그럼 로컬의 마스터를 일단 최신화 하자 `git pull` -> A가 작업한게 로컬에 들어왔을 것
+master에서 지금까지 `git merge A` 이런식으로 했는데,
+우리는 마스터가 아니므로
+마스터가 가진 내용 가져와서 내꺼에 merge하면 됨
+그럼 내 환경에서 4개 선택하는거 나옴
+
+또는 `git pull origin master` 이렇게 원격 마스터의 내용을 B가 바로 가져가서 merge
+이후 git add .  git commit -m ""  git push
+로컬 마스터도 원격 마스터꺼 받아와야하니까 git pull하면 진짜 끝
+
+1. master 브랜치는 아무도 수정하지 않는다.
+2. master 브랜치는 최초 설정 (모든 팀원이 함께 쓸 내용 생성시에만 사용)
+  - git add, git commit, push까지 모두 진행
+3. develop (혹은 dev) 브랜치를 생성한다
+
+
+1. 팀장이 새 래포 생성
+2. 팀원 초대
+3. 팀장은 clone 받은 뒤, develop 브랜치 생성, setting.py 만들어서 push한다(단, merge request 하지 않는다) `git push origin develop`
+4. 팀원은 master를 클론 받은 뒤, 로컬에서 develop 브랜치 생성하고, develop 브랜치에서 git pull origin develop 진행한다
+5. 그 후 개인 브랜치 생성한다. 개인 브랜치에서 settimgs.py 수정 또는 새 파일 생성하고, push origin 개인브랜치, merge request 수행
+6. 팀장은 팀원이 MR 남겼다고 하면, merge를 develop에 시도한다
+6-1. 시도해서 성공하면? merge 완료했다고 알리고 하던일 마저한다.
+6-2. 시도해서 실패하면? MR 보낸 사람에게 conflict 해결하고 다시 MR 보내라고 한다 `git switch develop` `git pull` `git switch 내 브랜치` `git merge develop` (기왕이면 어디서 문제 발생했는지 알려주기)
+7. 팀원 1 혹은 2는 MR발생 후, 팀장이 merge 했다고 알리면, 본인은 브랜치에서 `git pull origin develop`해서, 추가 작업 진행하거나 develop 브랜치에서 pull 받은 뒤, 본인 브랜치에서 merge develop을 한다
+```
