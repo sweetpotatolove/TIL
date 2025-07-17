@@ -1,5 +1,5 @@
 # git
-분산 버전 관리 시스템
+**분산 버전 관리 시스템**
 
 - 버전 관리: 변화를 기록하고 추적하는 것
   - 각 버전은 이전 버전으로부터의 **변경사항**을 기록하고 있음
@@ -17,12 +17,23 @@
 - 분산식
   - 버전을 여러 개의 복제된 저장소에 저장 및 관리
   - 변경사항이 기록되어있는 .git 안의 파일을 내려받으면 관리되고 있는 파일을 똑같이 받을 수 있음
-  - 두 사람이 같은 파일을 둘 다 작업했을 때 수정사항을 업로드 하면, 다음 버전으로 넘어갈 때 충돌이 일어나는 것 같지만 이는 원본을 해치는 것이 아니기 때문에 괜찮음(버전이 충돌?되는 상황)
+  - 두 사람이 같은 파일을 둘 다 작업했을 때 수정사항을 업로드 하면, 다음 버전으로 넘어갈 때 충돌이 일어나는 것 같지만 이는 원본을 해치는 것이 아니기 때문에 괜찮음(버전만 충돌?되는 상황)
+  - 장점
+    1. 중앙 서버에 의존하지 않고 동시에 다양한 작업 수행 가능(작업 충돌↓, 개발 생산성↑)
+    2. 중앙 서버의 장애/손실에 대비해 백업과 복구 용이
+    3. 변경 이력과 코드를 로컬 저장소에 기록하고, 나중에 중앙 서버 동기화하면 되므로 인터넷 연결 안돼있어도 작업 가능
+
+### git의 역할
+1. 코드 버전(history) 관리
+2. 개발되어 온 과정 파악
+3. 이전 버전과의 변경 사항 비교
+
+코드의 **변경 이력**을 기록하고 **협업**을 원활하게 하는 도구
 
 ### git의 영역
 1. Working Directory: 현재 작업중인 영역
 2. Staging Area: 기록 대상 모아놓는 영역. Working Directory에서 변경된 파일 중, 다음 버전에 포함시킬 파일들을 선택적으로 추가하거나 제외할 수 있는 중간 준비 영역
-3. Repository: 버전 이력과 파일들이 영구적으로 저장되는 영역
+3. Repository: 버전 이력과 파일들이 영구적으로 저장되는 영역(모든 버전commit과 변경 이력이 기록됨)
 
 ※ .git 폴더 생성: git으로 관리하기 위한 영역
 
@@ -30,10 +41,24 @@
 
 ※ Commit: 변경된 파일들을 저장하는 행위
 
+### git의 동작
+- `git init` 로컬 저장소 설정(초기화) -> git의 버전 관리를 시작할 디렉토리에서 진행
+  - git 로컬 저장소 내에 또다른 git 로컬 저장소 만들지 말 것!!!
+  - git 저장소 안에 git 저장소가 있을 경우 가장 바깥 쪽의 git 저장소가 안쪽의 git저장소의 변경사항을 추적할 수 없기 때문
+- `git add` 변경사항이 있는 파일을 staging area에 추가
+- `git commit` SA에 있는 파일들을 저장소에 기록 -> 해당 시점 버전 생성하고 변경 이력 남기는 것
+
+### git 기타 명령어
+- `git status` 현재 로컬 저장소의 파일 상태 보기
+- `git log commit history` 보기
+- `git log --oneline` commit목록 한 줄로 보기
+- `git config --global -l` git global 설정 정보 보기
+
+
 ## 실습
 1. `cd ../..` ~/Desktop/study/00_startcamp/01_git
-2. `git init` .git 파일 생성 -> (master) 붙음
-3. `ls -a` 
+2. `git init` .git 파일 생성 -> git의 관리를 받기 시작한 디렉토리 내에서는 **(master)** 붙음
+3. `ls -a` 현재 작업중인 디렉토리 내부 파일 목록 출력(숨김파일 포함)
 4. `git add 00_startcamp/01_git/markdown.md ` markdown.md 파일만 SA에 등록
 5. `git status` 상태 출력 -> Changes to be committed:
 6. markdown.md 파일 수정
@@ -46,6 +71,7 @@
 13. `code ~/.gitconfig` 오타났을 시 수정
 14. `git commit -m "마크다운 연습"` 다시 등록
 15. `git log` 언제 누가 어떤 이름으로 commit 만들었는지 확인
+16. `git push -u origin master` 
 
 8-1. SA에 실수로 add한 파일이 있다면 `git restore --staged filename`로 삭제
 
@@ -61,7 +87,7 @@
 3. public / private
 4. 깃허브에서 먼저 저장소를 만들었다면 Add a README file 체크(우리는 study->.git->commit 3개 이미 했음. 즉, local repository 존재하므로 체크X)
 
-```
+```bash
 echo "# TIL" >> README.md
 git init
 git add README.md
@@ -73,10 +99,12 @@ git push -u origin master
 - `git remote add origin https://github.com/sweetpotatolove/TIL.git` : git아. 원격 저장소(remote) 추가할건데(add) origin이라 부를 것이며, 주소는 ~ 여기야
   - 주소를 매번 입력하기 힘드니 origin으로 이름 설정
 
-- `git push -u origin master` 입력하면 push안되고 깃허브 로그인 뜸
+- `git push -u origin master` 입력하면 push안되고 깃허브 로그인 뜸(최초 push시)
   - 아까 설정한 이메일, 이름은 '커밋 작성사 정보(깃)'
   - 이건 깃'허브'에 접근할 수 있는 권한
+  - 해당 원격 저장소에 push할 수 있는 권한이 있는지 확인하기 위함!
   - 깃허브 연결 후 다시 입력
+  
 
 - `git add .` 파일 한번에 SA에 등록
 
