@@ -129,3 +129,5 @@ git push -u origin master
   - 제대로 사용 못하면 문제 생김
   - 만약 .git이 관리하는 폴더 내부에 파일만 관리하는 .git이 들어간 채 push됐다면?
   - 로컬 폴더에서 보이지 않게한 후 git add . 하여 원격 저장소에 push -> 파일 관리하던 .git 없애고 폴더에 파일만 넣어서 add commit push
+
+- clone으로 내려받은 파일은 로컬 폴더에 **복사 붙이기** (드래그해서 옮기는거XXX)
