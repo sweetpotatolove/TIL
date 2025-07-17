@@ -122,3 +122,10 @@ git push -u origin master
 ※ (이미 파일 존재) -> pull -> add -> commit -> (add commit 반복) -> push
 
 ※ commit 메시지에 뭘 수정했는지 기입할 것
+
+### 참고
+- gitlab에서 clone으로 내려받은 파일을 로컬에서 작업하던 폴더에 복사 붙이기 후 해당 파일에 대한 .git 생성하면 문제가 생김
+  - 로컬에서 작업하던 폴더의 .git이 존재하는데, 내부에 해당 파일만 관리하는 .git을 만드는 것을 서브모듈이라 함
+  - 제대로 사용 못하면 문제 생김
+  - 만약 .git이 관리하는 폴더 내부에 파일만 관리하는 .git이 들어간 채 push됐다면?
+  - 로컬 폴더에서 보이지 않게한 후 git add . 하여 원격 저장소에 push -> 파일 관리하던 .git 없애고 폴더에 파일만 넣어서 add commit push
