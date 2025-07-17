@@ -131,3 +131,7 @@ git push -u origin master
   - 로컬 폴더에서 보이지 않게한 후 git add . 하여 원격 저장소에 push -> 파일 관리하던 .git 없애고 폴더에 파일만 넣어서 add commit push
 
 - clone으로 내려받은 파일은 로컬 폴더에 **복사 붙이기** (드래그해서 옮기는거XXX)
+
+- 파일 만들고 add 하지 않은 채 commit 했다면? 메모장 메시지 화면(vim)가 뜸
+  - `:q` 눌러서 나가기
+
