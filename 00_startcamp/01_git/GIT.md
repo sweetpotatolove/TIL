@@ -17,7 +17,7 @@
 - 분산식
   - 버전을 여러 개의 복제된 저장소에 저장 및 관리
   - 변경사항이 기록되어있는 .git 안의 파일을 내려받으면 관리되고 있는 파일을 똑같이 받을 수 있음
-  - 두 사람이 같은 파일을 둘 다 작업했을 때 수정사항을 업로드 하면, 다음 버전으로 넘어갈 때 충돌이 일어나는 것 같지만 이는 원본을 해치는 것이 아니기 때문에 괜찮음(버전만 충돌?되는 상황)
+  - 두 사람이 같은 파일을 둘 다 작업했을 때 수정사항을 업로드 하면, 다음 버전으로 넘어갈 때 충돌이 일어나는 것 같지만 이는 원본을 해치는 것이 아니기 때문에 괜찮음(버전만 충돌되는 상황)
   - 장점
     1. 중앙 서버에 의존하지 않고 동시에 다양한 작업 수행 가능(작업 충돌↓, 개발 생산성↑)
     2. 중앙 서버의 장애/손실에 대비해 백업과 복구 용이
@@ -35,7 +35,7 @@
 2. Staging Area: 기록 대상 모아놓는 영역. Working Directory에서 변경된 파일 중, 다음 버전에 포함시킬 파일들을 선택적으로 추가하거나 제외할 수 있는 중간 준비 영역
 3. Repository: 버전 이력과 파일들이 영구적으로 저장되는 영역(모든 버전commit과 변경 이력이 기록됨)
 
-※ .git 폴더 생성: git으로 관리하기 위한 영역
+※ .git 폴더 생성 == git으로 관리하기 위한 영역 생김
 
 ※ .git으로 관리하는 것은 워킹 디렉토리 안에 폴더가 있는 것 -> SA 폴더 안의 임시 파일들 등록해놓음 -> 변경한 부분들을 버전1 파일에 넣는다(repository) -> v1에 등록하면 SA 폴더 임시 파일들은 사라짐
 
@@ -50,8 +50,8 @@
 
 ### git 기타 명령어
 - `git status` 현재 로컬 저장소의 파일 상태 보기
-- `git log commit history` 보기
-- `git log --oneline` commit목록 한 줄로 보기
+- `git log` commit history 보기
+- `git log --oneline` commit 목록 한 줄로 보기
 - `git config --global -l` git global 설정 정보 보기
 
 
@@ -66,23 +66,25 @@
 8. `git add 00_startcamp/01_git/markdown.md`  다시 SA에 등록
 9. `git commit -m "마크다운 연습"` version1 등록
 10. 등록 하려니 에러 메시지 나옴 -> Author identity unknown 니 누구?
-11. 이메일, 이름 등록하자(전역에! 이 컴퓨터에!) ` git config --global user.email "sarangx1227@gmail.com"` , `git config --global user.name "박사랑"`
+11. 이메일, 이름 등록하자(전역에! 이 컴퓨터에!) `git config --global user.email "sarangx1227@gmail.com"` , `git config --global user.name "박사랑"`
 12. `git config --global --list` 등록 확인
-13. `code ~/.gitconfig` 오타났을 시 수정
+13. `code ~/.gitconfig` 이메일, 이름에 오타났을 시 수정
 14. `git commit -m "마크다운 연습"` 다시 등록
 15. `git log` 언제 누가 어떤 이름으로 commit 만들었는지 확인
 16. `git push -u origin master` push하기
 
 8-1. SA에 실수로 add한 파일이 있다면 `git restore --staged filename`로 삭제
 
----
+16-1. **-u** 의 의미: 지정된 원격 브랜치(현재 origin master)에 로컬 브랜치(현재 master)로 git push, git pull만 해도 원격 브랜치로 push되게 하겠다는 의미
+
+
 ### 참고
 1. local: 현재 사용자가 직접 접속하고 있는 기기 또는 시스템
 2. 원격 저장소: 코드와 버전 관리 이력을 온라인 상의 특정 위치에 저장해 여러 개발자가 협업, 코드 공유할 수 있는 저장 공간 -> GitLab, GitHub
 
 
 ## github
-1. new
+1. new repository
 2. repository name 설정
 3. public / private
 4. 깃허브에서 먼저 저장소를 만들었다면 Add a README file 체크(우리는 study->.git->commit 3개 이미 했음. 즉, local repository 존재하므로 체크X)
@@ -101,7 +103,7 @@ git push -u origin master
   - 주소를 매번 입력하기 힘드니 origin으로 이름 설정
 
 - `git push -u origin master` 입력하면 push안되고 깃허브 로그인 뜸(최초 push시)
-  - 아까 설정한 이메일, 이름은 '커밋 작성사 정보(깃)'
+  - 아까 설정한 이메일, 이름은 '커밋 작성자 정보(깃)'
   - 이건 깃'허브'에 접근할 수 있는 권한
   - 해당 원격 저장소에 push할 수 있는 권한이 있는지 확인하기 위함!
   - 깃허브 연결 후 다시 입력
@@ -111,9 +113,9 @@ git push -u origin master
 - `git clone 주소` github에 있는 파일 불러오기(원격 저장소 전체를 복제 - 다운로드)
   - `shift + insert` git에서 복사 붙이기
   - clone으로 받은 프로젝트는 이미 git init 되어 있음
-  - 해당 프로젝트 처음 받을 때 clone -> 이후엔 변경사항만 다운로드 push
+  - 해당 프로젝트 처음 받을 때 clone -> 이후엔 변경사항만 다운로드 pull
 
-- `git add .` 파일 한번에 SA에 등록
+- `git add .` 파일 한꺼번에 SA에 등록
 
 ※ 원격 저장소에는 commit이 올라가는 것 -> commit 이력이 없다면 push할 수 없음
 
@@ -151,17 +153,18 @@ git push -u origin master
 ### 순서
 - `git init` .git 생성
 - `touch settings.py` 파일 생성
-- `git add settings.py`
-- `git commit -m "초기설정"`
-- `git branch -c sweetpotato/login` 브랜치 생성
+- `git add settings.py` 파이썬 파일 생성
+- `git commit -m "초기설정"` 변경사항 커밋
+- `git branch -c sweetpotato/login` sweetpotato/login 이름의 브랜치 생성
+  - 브랜치 이름은 '담당자/담당업무'로 설정하는 것이 일반적
 - `git branch` 
   - ```
     * master
     sweetpotato/login
     ```
-    -> 기존에 있던 master와 고구마가 로그인 만들거라는 브랜치 생김
-- `git switch sweetpotato/login` (master) -> (sweetpotato/login)으로 바뀌며 고구마 계정에 setting.py 복사됨
-- 고구마 계정에 `touch login.py` 파일 생성 후 `git add .`  `git commit -m "수정"`
+    -> 기존에 있던 master와 고구마가 로그인 만들거라는 브랜치 생김(*로 현재 브랜치 확인)
+- `git switch sweetpotato/login` (master) -> (sweetpotato/login)으로 바뀌며 고구마 브랜치에 setting.py 복사됨
+- 고구마 브랜치에 `touch login.py` 파일 생성 후 `git add .`  `git commit -m "수정"`
 - `git switch master` (sweetpotato/login) -> (master)로 다시 변경하면 폴더에 login 안보이고 setting만 있음
 - `git merge sweetpotato/login` 하면 master 계정에서도 login.py가 보인다!
 - 다른 브랜치 만들어서 파일 만들었을 때 여러 브랜치를 merge하는 경우 vim이 뜸
@@ -175,13 +178,13 @@ git push -u origin master
 
 - merge 2종류
   - Fast-forward: ex. 위에서 파일1 받아오는 상황(바로 받아짐)
-  - threeway? : ex. 위에서 파일2 받아오는 상황(2번 브랜치에 파일1이 없는데 파일1,파일2를 합치려니까 vim 등장)
+  - 3-way: ex. 위에서 파일2 받아오는 상황(2번 브랜치에 파일1이 없는데 파일1,파일2를 합치려니까 vim 등장)
 
 - `git branch -d sweetpotato/login` 브랜치 삭제
 
 ### gitlab에 레포 생성하는 방법
 - 팀장의 경우
-  1. gitlab -> new project -> create blank project -> 프로젝트 이름 설정 -> Project URL에 내이름 눌러야함 -> Initialize repository with a README 체크 (readme.md 파일이 만들어 졌다는 것은 파일이 들어있는 레포가 만들어져서 .git이 관리는 것까지 설정되었다는 뜻)
+  1. gitlab -> new project -> create blank project -> 프로젝트 이름 설정 -> Project URL에 내 이름 눌러야함 -> Initialize repository with a README 체크 (readme.md 파일이 만들어 졌다는 것은 파일이 들어있는 레포가 만들어져서 .git이 관리는 것까지 설정되었다는 뜻)
   2. Manage -> Members -> invite members -> 초대할 멤버 이름 입력 + 게스트 말고 Maintainer로 초대해야 함
 
 - 팀원인 경우
@@ -196,7 +199,7 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
 1. `git push origin sarang` 내가 commit한 것을 다른 사람이 받아가려면 원격 저장소(origin(원격저장소 별명))를 통해 push해놔야 함
 2. 원격 저장소에 개별 branch에서 작업한 것 저장됨
 3. merge requests -> new merge request 합병 요청 보내기
-4. source branch : **sarang** (**내**가 작업한 것을) Target branch : master (마스터에게 보낸다)
+4. source branch : **sarang** (**내**가 작업한 것을) Target branch : **master** (마스터에게 보낸다(마스터 말고 다른 브랜치에 보내려면 수정해야함))
 5. 팀장이 각각 merge 누름 -> 원격 저장소에 합병됨
 6. git pull해서 로컬에서도 병합된거 받게 함
 7. (작업 끝났으면) 개인 브랜치 삭제
@@ -206,18 +209,20 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
 2. A가 팀장에게 merge 요청 -> 팀장이 merge
 3. B도 팀장에게 merge 요청 -> 팀장이 merge 시도(충돌)
 4. Accept Current Change, Accept Incoming Change, Accept Both Changes, Compare Changes 중 선택
+5. 수정이 됐으니 add & commit `git add .` `git commit -m "A작업과 B작업 merge하였음"`
+
+    -> A, B가 수정한 파일을 합칠 때 commit 해야함(A, B가 합쳐진 버전의 파일이 없으니까), 수정한 파일이 안겹치면 컴퓨터가 알아서 두 파일이 합쳐진 새 파일 만듦(알아서 버전 생성)
+
+    -> 그런데 A, B가 수정한 파일이 같은 파일이라면 컴퓨터가 알아서 병합할 수 없는 상황이 벌어짐
+
+    -> 그래서 수정하라고 선택지 4개 나옴
+
+- `git merge master` 마스터에서 병합된 B작업물과 
+
 ```
-정리 필요)))
-5. 수정이 됐으니 `git add .`, `git commit -m "A작업과 B작업 merge하였음"` 
--> A, B 
 
 
-두개 합치면 commit 다시 해야하는데 
-컴퓨터가 알아서 버전 만든거
 
-컴퓨터가 알아서 병합할 수 없는 상황이라 수정하라고 선택지 나온거
-
-`git merge master` 마스터에서 병합된 B작업물과 
 (master MERGING) : 마스터가 merge과정에서 문제가 생겼다는 표시
 
 
