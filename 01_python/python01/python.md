@@ -651,7 +651,7 @@ print_info(name='Eve', age=30)  # {'name': 'Eve', 'age': 30}
         print(pair)  # <zip object at 0x000001C76DE58700>
         print(list(pair))  # [('jane', 'peter'), ('ashley', 'jay')]
 
-        # 활용1: 여러 리트스 동시 조회
+        # 활용1: 여러 리스트 동시 조회
         kr_scores = [10, 20, 30, 50]
         math_scores = [20, 40, 50, 70]
         en_scores = [40, 20, 30, 50]
