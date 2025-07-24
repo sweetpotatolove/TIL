@@ -248,17 +248,20 @@ HTML 요소를 선택하여 스타일을 적용할 수 있도록 하는 선택�
 
 - 개발자 도구에서 해당 태그에 설정된 스타일 확인 가능
     - 전체 결합자로 작성한 컬러 설정에 취소선이 보인다
-    ![취소선](스타일확인.png)
+
+        ![취소선](스타일확인.png)
     - green 클래스의 자식 li의 폰트 사이즈가 30이라는 내용이 04-css-sele..ors.html의 37번째 줄에 적혀있다는 의미
     - 모든 요소에 색을 빨강으로 설정했는데 취소선이 설정되어 있다
     - 또 다른 li를 확인해보자
-    ![취소선2](ul.png)
+
+        ![취소선2](ul.png)
     - ul 요소에 '클래스 green인 요소로부터 상속받은 속성 green'이 적용되어 있지 않다(취소선)
 
 - 따라서 우선순위가 정해져있는 것 같아 보인다
 
 - ol태그 안의 li태그를 보면 ul 태그(엄밀히 말하면 green클래스)의 자식 li 태그에 스타일 지정하게 했었는데, 왜 직접적으로 폰트 사이즈가 바뀐것이 아니라 상속받은 li인걸까? Inherited from li 
-![li](li.png)
+
+    ![li](li.png)
     - 자식 결합자의 범위를 생각해보자
     - 현재 사진의 태그는 ul.green > li > ol > li로 이루어진 구성에서 가장 하위의 li를 눌렀을 때 나옴
     - green클래스의 직계자식 li는 폰트 변경을 직접적으로 당해서 Inherited from li 없이 '.green > li {..}'가 수행되어서 폰트가 바뀜
@@ -382,10 +385,12 @@ CSS는 상속을 통해 부모 요소의 속성을 자식에게 상속해 재사
         - inline 타입 태그 : `a` , `img` , `strong` , `em`
 
     ※ Normal flow: 일반적인 흐름 또는 레이아웃을 변경하지 않은 경우 웹 페이지 요소가 배치되는 방식
-        ![Normal flow](normal.png)
+    
+    ![Normal flow](normal.png)
 
     - 사용예시
-        ![Normal flow 예시](normalflow.png)
+    
+    ![Normal flow 예시](normalflow.png)
 
 2. inner display type
     - 박스 내부의 요소들이 어떻게 배치될지 결정
