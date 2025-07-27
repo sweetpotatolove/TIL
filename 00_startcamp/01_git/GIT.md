@@ -212,7 +212,7 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
 
       -> 같은 파일의 같은 줄을 수정해서 충돌 발생
 
-      -> 이때 Git은 병합 중단하고, 병합을 시도한 사람의 로컬 master 브랜치를 (master|MERGING) 상태로 만듦
+      -> 이때 Git은 병합 중단하고, 병합을 시도한 사람(팀장)의 로컬 master 브랜치를 (master|MERGING) 상태로 만듦
 
       -> (master MERGING) : 마스터가 merge과정에서 문제가 생겼다는 표시
 
@@ -272,6 +272,8 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
       - git add, git commit, push까지 모두 진행
       - master 브랜치의 초기 상태를 원격 저장소에 올리는 전 과정 진행
   3. develop (혹은 dev) 브랜치를 생성한다
+
+※ 팀장의 역할: 팀원들의 작업물을 비교해 보는 사람으로써 merge 충돌 시 어떻게 합칠지 결정하고, 누구한테 어떻게 수정하라고 명령하는 역할을 수행함
 
 
 ## branch 실습
