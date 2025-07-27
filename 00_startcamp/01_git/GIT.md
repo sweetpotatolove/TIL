@@ -196,7 +196,7 @@ git push -u origin master
 settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력 
 
 ### 서로 다른 branch의 작업물 가져오는 방법
-1. `git push origin sarang` 내가 commit한 것을 다른 사람이 받아가려면 원격 저장소(origin(원격저장소 별명))를 통해 push해놔야 함
+1. `git push origin sarang` : 내가 commit한 것을 다른 사람이 받아가려면 원격 저장소(origin(원격저장소 별명))를 통해 push해놔야 함
 2. 원격 저장소에 개별 branch에서 작업한 것 저장됨
 3. merge requests -> new merge request 합병 요청 보내기
 4. source branch : **sarang** (**내**가 작업한 것을) Target branch : **master** (마스터에게 보낸다(마스터 말고 다른 브랜치에 보내려면 수정해야함))
@@ -205,55 +205,76 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
 7. (작업 끝났으면) 개인 브랜치 삭제
 
 ### 서로 다른 branch에서 같은 파일의 같은 줄을 수정했을 때
-1. A, B가 같은 파일을 각자 수정함
-2. A가 팀장에게 merge 요청 -> 팀장이 merge
-3. B도 팀장에게 merge 요청 -> 팀장이 merge 시도(충돌)
-4. Accept Current Change, Accept Incoming Change, Accept Both Changes, Compare Changes 중 선택
-5. 수정이 됐으니 add & commit `git add .` `git commit -m "A작업과 B작업 merge하였음"`
+- VS Code 등 로컬 환경에서 Git 명령어로 병합하는 과정
+  1. A, B가 같은 파일을 각자 수정함
+  2. A가 팀장에게 merge 요청 -> 팀장이 merge
+  3. B도 팀장에게 merge 요청 -> 팀장이 merge 시도
 
-    -> A, B가 수정한 파일을 합칠 때 commit 해야함(A, B가 합쳐진 버전의 파일이 없으니까), 수정한 파일이 안겹치면 컴퓨터가 알아서 두 파일이 합쳐진 새 파일 만듦(알아서 버전 생성)
+      -> 같은 파일의 같은 줄을 수정해서 충돌 발생
 
-    -> 그런데 A, B가 수정한 파일이 같은 파일이라면 컴퓨터가 알아서 병합할 수 없는 상황이 벌어짐
+      -> 이때 Git은 병합 중단하고, 병합을 시도한 사람의 로컬 master 브랜치를 (master|MERGING) 상태로 만듦
 
-    -> 그래서 수정하라고 선택지 4개 나옴
+      -> (master MERGING) : 마스터가 merge과정에서 문제가 생겼다는 표시
 
-- `git merge master` 마스터에서 병합된 B작업물과 
+      ※ (master MERGING)은 git이 병합 중이라는 표시로, 충돌 해결될 때까지 커밋 못하게 보호하는 상태
 
-```
+  4. Accept Current Change, Accept Incoming Change, Accept Both Changes, Compare Changes 중 선택
+  5. 수정이 됐으니 add & commit `git add .` `git commit -m "A작업과 B작업 merge하였음"`
+
+      -> A, B가 수정한 파일을 합칠 때 commit 해야함(A, B가 합쳐진 버전의 파일이 없으니까), 수정한 파일이 안겹치면 컴퓨터가 알아서 두 파일이 합쳐진 새 파일 만듦(알아서 버전 생성)
+
+      -> 그런데 A, B가 수정한 파일이 같은 파일이라면 컴퓨터가 알아서 병합할 수 없는 상황이 벌어짐
+
+      -> 그래서 수정하라고 선택지 4개 나오는 것임
+
+  6. A, B는 `git merge master`를 통해 master에 합쳐진 A,B 작업을 자신의 브랜치로 가져올 수 있음
+
+- GitLab에서 Merge Request 병합을 시도하는 과정  
+  1. gitlab에서 A꺼 먼저 merge하면 A의 작업물이 master에 합쳐짐
+  2. 다음 B꺼 merge하면 merge버튼 사라지고 conflicts(충돌) 메시지 생김
+      - ① Resolve locally 로컬에서 작업할래? ② Resolve confilicts 여기서 작업할래?
+  3. 충돌이 일어났음을 B에게 알리고, B의 로컬에서 수정 -> 다시 merge request 하라고 하자
+
+※ 왜 gitlab에서 하지 않고 로컬에서 수정하는 걸까?
+
+    -> git branch 구성을 보면, A의 로컬에는 master(origin master를 기준으로 clone 받은 기본 브랜치)와 a(A가 작업 중인 브랜치)가 존재
+    
+    -> B또한 로컬에는 master, B 두 개의 브랜치가 있고 원격에는 origin master가 있음
+
+    -> B가 b 브랜치로 원격의 마스터에 push해서 merge하려고 하는데 conflict 발생하는 것
+
+    -> 왜? origin master는 A 작업물까지 merge된 최신 버전인데, b 브랜치는 origin master의 최신 내용을 모름(B의 로컬 master는 구버전)
+
+    -> A 작업물과 B 작업물을 모두 merge한 commit을 만들어야 하는데, 그게 gitlab 페이지에서는 힘듦
+
+    -> 때문에 `git pull origin master`을 통해 B의 로컬 master를 일단 최신화 하자(그럼 A 작업물이 로컬에 들어왔을 것임)
+
+    -> master에서 지금까지 `git merge A` 이런식으로 했는데, 우리는 B는 마스터가 아니므로 **마스터가 가진 내용 가져와서 본인(B)꺼에 merge**하면 됨
+
+    -> 즉, `git merge master`로 현재 브랜치 b에 master와 merge 시도
+
+    -> 그럼 B 환경에서 충돌 발생했을 때 나오는 선택지 4개 나옴
+
+    -> VS code에서 충돌 해결 후 `git add .` , `git commit -m ""` , `git push origin b`
+
+    -> 또는!!
+
+    -> `git pull origin master`로 원격 마스터의 내용을 b 브랜치가 바로 가져가서 merge(B 로컬에서)
+
+    -> 충돌 발생하면 vs code에서 해결 후 git add. git commit -m "" git push
+
+    -> 로컬 마스터도 원격 마스터꺼 받아와야 하니까 로컬 마스터가 git pull하면 진짜 끝
+
+- 실제 팀플할 땐 로컬 master 브랜치에 직접 합치지 않고, 별도의 합병용 브랜치(develop 등) 생성해서 사용함
+- 즉, master 브랜치는 배포용으로만 유지. 실제 개발은 중간 브랜치로 관리
+  1. master 브랜치는 아무도 수정하지 않는다.
+  2. master 브랜치는 최초 설정 (모든 팀원이 함께 쓸 내용 생성시에만 사용)
+      - git add, git commit, push까지 모두 진행
+      - master 브랜치의 초기 상태를 원격 저장소에 올리는 전 과정 진행
+  3. develop (혹은 dev) 브랜치를 생성한다
 
 
-
-(master MERGING) : 마스터가 merge과정에서 문제가 생겼다는 표시
-
-
-gitlab에서 A꺼 먼저..  merge하면 A것이 master에 합쳐짐
-다음 B꺼 merge하면 merge버튼 사라지고 conflicts(충돌) 메시지 뜸 -> 1. 로컬에서 작업할래? Resolve locally 2. 여기서 작업할래? Resolve confilicts
-컴플릭트 났다는걸 B에게 알림. 로컬에서 수정하고 다시 merge request하라고 알리자
-
-원격저장소에 있는 readme가 최신, 로컬에 있는게 구 버전. 
-
-로컬엔 마스터와 B가 있음
-원격엔 origin master 있음
-B가 원격의 마스터에 push해서 merge하려고 하는데 conflict 발생하는 것
-로컬의 마스터는 구버전, 원격의 마스터는 최신버전
-원격의 마스터에는 A꺼 merge한 것도 들어가있는 것임
-A수정사항과 B수정사항을 모두 합친 merge 되었다는 commit을 만들어야 하는데, 그게 gitlab 페이지에서는 힘들다는 것
-그럼 로컬의 마스터를 일단 최신화 하자 `git pull` -> A가 작업한게 로컬에 들어왔을 것
-master에서 지금까지 `git merge A` 이런식으로 했는데,
-우리는 마스터가 아니므로
-마스터가 가진 내용 가져와서 내꺼에 merge하면 됨
-그럼 내 환경에서 4개 선택하는거 나옴
-
-또는 `git pull origin master` 이렇게 원격 마스터의 내용을 B가 바로 가져가서 merge
-이후 git add .  git commit -m ""  git push
-로컬 마스터도 원격 마스터꺼 받아와야하니까 git pull하면 진짜 끝
-
-1. master 브랜치는 아무도 수정하지 않는다.
-2. master 브랜치는 최초 설정 (모든 팀원이 함께 쓸 내용 생성시에만 사용)
-  - git add, git commit, push까지 모두 진행
-3. develop (혹은 dev) 브랜치를 생성한다
-
-
+## branch 실습
 1. 팀장이 새 래포 생성
 2. 팀원 초대
 3. 팀장은 clone 받은 뒤, develop 브랜치 생성, setting.py 만들어서 push한다(단, merge request 하지 않는다) `git push origin develop`
@@ -263,4 +284,3 @@ master에서 지금까지 `git merge A` 이런식으로 했는데,
 6-1. 시도해서 성공하면? merge 완료했다고 알리고 하던일 마저한다.
 6-2. 시도해서 실패하면? MR 보낸 사람에게 conflict 해결하고 다시 MR 보내라고 한다 `git switch develop` `git pull` `git switch 내 브랜치` `git merge develop` (기왕이면 어디서 문제 발생했는지 알려주기)
 7. 팀원 1 혹은 2는 MR발생 후, 팀장이 merge 했다고 알리면, 본인은 브랜치에서 `git pull origin develop`해서, 추가 작업 진행하거나 develop 브랜치에서 pull 받은 뒤, 본인 브랜치에서 merge develop을 한다
-```
