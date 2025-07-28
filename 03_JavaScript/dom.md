@@ -115,6 +115,7 @@ JavaScript는 ECMAScript 표준을 구현한 구체적인 프로그래밍 언어
 - null
     - 변수의 값이 없음을 표기할 때 사용
     - python의 None처럼 사용하면 됨
+
 - undefined
     - 변수 선언 이후 직접 값을 할당하지 않으면 자동으로 할당됨(할당조차 안됐음을 의미)
 
@@ -359,7 +360,7 @@ for (const str of myStr) {
 - 문서 구조, 스타일, 내용 등을 변경할 수 있도록 함
 
 - DOM API
-    - 다른 프로그래밍 언어가 웹 페이지에 접근 및 조작 가능하도록 페이지 요소들을 객체 형테로 제공
+    - 다른 프로그래밍 언어가 웹 페이지에 접근 및 조작 가능하도록 페이지 요소들을 객체 형태로 제공
     - 이에 따른 메서드 또한 제공
 
 - DOM 특징
@@ -612,7 +613,7 @@ function name ([param[, param, [..., param]]]){
 
     - 함수 이름이 없는 '익명 함수'를 사용할 수 있음(함수 이름을 변수 명으로 대체하는 느낌)
     - 선언식과 달리 표현식으로 정의한 함수는 호이스팅 되지 않으므로 함수 정의 전에 먼저 사용할 수 없음
-    - 선언식 보다 표현식 사용 권장
+    - 선언식 보다 **표현식 사용 권장**
 
 ### 매개변수
 1. 기본 함수 매개변수(Default function parameter)
@@ -660,22 +661,46 @@ function name ([param[, param, [..., param]]]){
     console.log(twoArgs(1, 2, 3)) // [1, 2]
 ```
 
----
----
----
-
 ### Spread syntax
 `...` 전개구문
 
+- 배열이나 문자열과 같이 반복 가능한 항목을 펼치는 것(확장, 전개)
+- 전개 대상에 따라 역할이 다름
+    - 배열이나 객체의 요소를 개별적인 값으로 분리하거나
+    - 다른 배열이나 객체의 요소를 현재 배열이나 객체에 추가하는 등
+- python의 패킹, 언패킹과 동일
+
+- 전개 구문 활용처
+    1. 함수와의 사용
+        - 함수 호출 시 인자 확장
+            ```javascript
+            function myFunc(x, y, z) {
+            return x + y + z
+            }
+            let numbers = [1, 2, 3]
+            console.log(myFunc(...numbers)) // 6
+            ```
+        - 나머지 매개변수(압축)
+            ```javascript
+            function myFunc2(x, y, ...restArgs) {
+            return [x, y, restArgs]
+            }
+            console.log(myFunc2(1, 2, 3, 4, 5)) // [1, 2, [3, 4, 5]]
+            console.log(myFunc2(1, 2)) // [1, 2, []]
+            ```
+    2. 객체와의 사용(객체 파트에서 진행)
+    3. 배열과의 사용(배열 파트에서 진행)
 
 
 ### 화살표 함수
 함수 표현식의 간결한 표현법
 
-![화살표 함수 작성 결과]()
+![화살표 함수 작성 결과](화살표함수결과.jpg)
 
 
-1. function 키워드 제거 후 매개변수와 중괄호 사이에 화살표 작성
+1. **function 키워드 제거 후 매개변수와 중괄호 사이에 화살표 작성**
+2. 함수의 매개변수가 하나 뿐이라면 매개변수의 소괄호 제거 가능(단, 생략하지 않는 것을 권장)
+3. 함수 본문의 표현식이 한 줄이라면 중괄호와 return 제거 가능
     ```javascript
     const arrow1 = function (name){
         return `hello, ${name}`
@@ -683,16 +708,31 @@ function name ([param[, param, [..., param]]]){
 
     // 1. function 키워드 삭제 후 화살표 작성
     const arrow2 = (name) => {return `hello, ${name}`}
-    ```
 
-객체를 다룰 때 신경X...압도적인 장점이래
+    // 2. 인자의 소괄호 삭제 (인자가 1개일 경우에만 가능)
+    const arrow3 = name => { return `hello, ${name}` }
+
+    // 3. 중괄호와 return 삭제 (함수 본문이 return을 포함한 표현식 1개일 경우에만 가능)
+    const arrow4 = name => `hello, ${name}`
+    ```
+    - 1번만 사용 예정! 2번 이후부터는 알고만 있을 것
+
+4. 인자가 없다면 소괄호 또는 _ 로 표시 가능
+5. object를 return 한다면 return을 명시적으로 작성해야 함
+6. return을 작성하지 않으려면 객체를 소괄호로 감싸야 함
+
+    ![화살표 함수 심화](화살표함수심화.jpg)
+
+※ 화살표 함수 사용 이유
+
+-> 화살표 함수의 장점은 단순히 키워드 지우는 것이 아니라, 객체(Object)를 다룰 때 신경써야 하는 부분을 없앨 수 있다는 압도적인 장점이 존재함
 
 
 ### 참고
 - 세미콜론(semicolon)
     - 자바스크립트는 문장 마지막 세미콜론(;)을 선택적으로 사용 가능
     - 세미콜론이 없으면 ASI에 의해 자동으로 세미콜론 삽입됨
-        - ASI: 자동 세미콜론 삽입 규칙
+        - ASI(Automatic Semicolon Insertion, 자동 세미콜론 삽입 규칙)
     - JavaScript를 만든 Brendan Eich가 세미콜론 작성 반대했대. 안써~
 
 
@@ -710,8 +750,18 @@ function name ([param[, param, [..., param]]]){
 - 모든 DOM 요소는 이러한 event를 만들어 냄
 - 이벤트 종류
     - mouse, input, keyboard, touch ..
+    - 외우지 말고 mdn 문서 활용하기
 - DOM 요소는 event를 받고, 받은 event를 '처리'할 수 있음
     - 뭘로 처리하냐? event handler(이벤트 처리기)
+
+※ 버튼을 만든다고 하자. 우리는 html로 코드 작성하고 CSS로 스타일 정의하고 JS로 동적인 코드 작성했을 때 브라우저에 의해 화면에 나타난 버튼을 볼 수 있다.
+
+-> 버튼은 객체이고, 객체가 행동하려면 함수가 정의되어 있어야 함
+
+-> 그 함수를 언제 호출할 것인가? "버튼이 클릭되는 시점"
+
+-> 버튼에게 귀를 달아서 클릭되는 것을 듣고 핸들링할 수 있도록 할 것이다
+
 
 ### event handler
 이벤트가 발생했을 때 실행되는 함수
@@ -719,21 +769,45 @@ function name ([param[, param, [..., param]]]){
 
 - `.addEventListener()`
     - 특정 이벤트를 DOM 요소가 수신할 때마다 콜백 함수를 호출
+    - event handler(이벤트 발생 시 실행되는 함수)를 실행시키기 위한 귀의 역할을 함
     
-    ![addEventListener]()
-    - 대상(DOM요소)에 특정 Event(수신할 이벤트)가 발생하면, 지정한 이벤트를 받아 할 일(콜백 함수)을 등록한다!
-    - addEventListener는 함수가 아닌, DOM 요소의 메서드이므로 돔요소 필수필수필수
+    ![addEventListener](이벤트리스너.jpg)
+    - **대상(DOM요소)**에 **특정 Event(수신할 이벤트)**가 발생하면, **지정한 이벤트를 받아 할 일(콜백 함수)**을 등록한다!
+    - addEventListener는 함수가 아닌, DOM 요소의 메서드이므로 '이벤트를 누구에게 부착할 것인지' 꼭 입력해야 함(DOM 요소 필수!)
 
 - addEventListener의 인자
-    - type
-
-    - handler
-
+1. type
+    - 수신할 이벤트 이름
+    - 문자열로 작성(ex. 'click')
+2. handler
+    - 발생한 이벤트 객체를 수신하는 콜백 함수
+    - 콜백 함수는 발생한 event object를 유일한 매개변수로 받음
 
 - addEventListener 활용
+    - 버튼 클릭하면 버튼 요소 출력하기
+    ```html
+    <button id="btn">버튼</button>
+    ```
+    ```javascript
+    // 1. 버튼 선택
+    const btn = document.querySelector('#btn')
 
+    // 2. 콜백 함수
+    const detectClick = function (event) {
+      console.log(event) // PointerEvent
+      console.log(event.currentTarget) // <button id="btn">버튼</button>
+      console.log(this) // <button id="btn">버튼</button>
+    }
 
+    // 3. 버튼에 이벤트 핸들러를 부착
+    btn.addEventListener('click', detectClick)
+    ```
+    - 버튼에 이벤트 처리기를 부착하여 클릭 이벤트가 발생하면 이벤트가 발생한 버튼 정보를 출력
+    - 요소에 addEventListener를 부착하게 되면 내부의 this 값은 대상 요소를 가리키게 됨(event 객체의 currentTarget 속성 값과 동일)
 
+- addEventListener의 콜백 함수 특징
+    - 발생한 이벤트를 나타내는 event 객체를 유일한 매개변수로 받음
+    - 반환 값 없음
 
 
 ### 버블링(Bubbling)
@@ -744,15 +818,44 @@ function name ([param[, param, [..., param]]]){
 
 - 예시
     ```javascript
+    const formElement = document.querySelector('#form')
+    const divElement = document.querySelector('#div')
+    const pElement = document.querySelector('#p')
 
+    const clickHandler1 = function (event) {
+      console.log('form이 클릭되었습니다.')
+    }
+    const clickHandler2 = function (event) {
+      console.log('div가 클릭되었습니다.')
+    }
+    const clickHandler3 = function (event) {
+      console.log('p가 클릭되었습니다.')
+    }
 
+    formElement.addEventListener('click', clickHandler1)
+    divElement.addEventListener('click', clickHandler2)
+    pElement.addEventListener('click', clickHandler3)
     ```
     - from > div > p 형태의 중첩된 구조에 각각 이벤트 핸들러가 있을 때 p 요소를 선택한다면
-    - p -> div -> form 순서로 3개의 이벤트 핸들러가 모두 동작
+    - p만 클릭 했음에도 p -> div -> form 순서로 3개의 이벤트 핸들러가 모두 동작
 
-    ![버블링 예시]()
+    ![버블링 예시](버블링.jpg)
+    
+    - 그렇다면 div 리스너와 p 리스너는 필요 없을 것임. 왜? p를 클릭해도, div를 클릭해도 부모를 타고 결국 form이 클릭됨을 알려주기 때문
+    ```javascript
+    const formElement = document.querySelector('#form')
 
-- 활용...설명
+    const clickHandler = function (event) {
+    if (event.target.id === 'p') {
+        console.log('p가 클릭되었습니다.')
+    } else if (event.target.id === 'div') {
+        console.log('div가 클릭되었습니다.')
+    } else if (event.target.id === 'form') {
+        console.log('form이 클릭되었습니다.')
+    }
+    }
+    formElement.addEventListener('click', clickHandler)
+    ```
 
 
 ### 이벤트가 정확히 어디서 발생했는지 접근할 수 있는 방법
@@ -768,26 +871,70 @@ function name ([param[, param, [..., param]]]){
     - 실제 이벤트가 시작된 요소
     - 버블링이 진행되어도 변하지 않음
 
-캡처링.. 그런게 잇다...
-버블링 필요 이유.. 그런게 잇다...
+    ![target vs currentTarget](Target.jpg)
+    - 리스너가 outerouter에만 존재할 때
+    - inner를 클릭하면 inner가 실제 이벤트 시작 요소(target)이고
+    - inner의 부모 요소 중 리스너가 연결된 outerouter가 핸들러 연결된 요소(currentTarget)
+        - 클릭 이벤트가 어디서 발생했든 outerouter까지 이벤트가 버블링되어 핸들러를 실행시키기 때문에
+        - 핸들러는 outerouter에만 할당되어 있지만 하위 요소 inner, outer를 클릭해도 해당 핸들러가 동작함
+
+
+### 캡처링(capturing)
+이벤트가 하위 요소로 전파되는 단계(버블링과 반대)
+
+![캡처링](캡처링.jpg)
+
+- table 안에 td를 클릭하면 이벤트는 최상위 요소부터 아래로 전파
+- 실제 이벤트 발생 지점(event.target)에서 실행된 후 다시 위로 전파
+    - 이 과정에서 상위 요소에 할당된 이벤트 핸들러가 호출되는 것
+- 캡처링까지 제어할 일은 거의 없음. 버블링에 집중하자
+
+※ 버블링이 필요한 이유
+1. 각자 다른 동작을 수행하는 버튼이 여러개 있다고 가정
+2. 각 버튼마다 서로 다른 이벤트 핸들러를 할당하는 것이 아니라, 각 버튼의 공통 조상인 요소에 이벤트 핸들러 단 하나만 할당
+3. 공통 조상에서 할당한 핸들러에서 `event.target` 이용하면 실제 어떤 버튼에서 이벤트가 발생했는지 알 수 있기 때문
+
+※ `currentTarget` 주의사항
+1. console.log()로 event 객체 출력 시 currentTarget 키의 값은 null
+2. currentTarget은 이벤트가 처리되는 동안에만 사용할 수 있기 때문
+3. 대신 `console.log(event.currentTarget)`을 사용하여 콘솔에서 확인 가능
+4. currentTarget 이후의 속성 값들은 `target`을 참고해서 사용하기
+
 
 ### 이벤트의 기본 동작 취소하기
 HTML의 각 요소가 기본적으로 가지고 있는 이벤트가 때로는 방해되는 경우가 있어 이벤트의 기본 동작을 취소할 필요가 있음
 
-ex. from 요소의 제출 이벤트를 취소하여 페이지 새로고침 막을 수 있음
-
-ex. a 요소 클릭 시 페이지 이동을 막고 추가 로직을 수행할 수 있음
+1. ex. from 요소의 제출 이벤트를 취소하여 페이지 새로고침 막을 수 있음
+2. ex. a 요소 클릭 시 페이지 이동을 막고 추가 로직을 수행할 수 있음
 
 - `.preventDefault()`
     - 해당 이벤트에 대한 기본 동작을 실행하지 않도록 지정
 
+- 예시
+    ```html
+    <!-- copy 이벤트 동작 취소 -->
+    <h1>중요한 내용</h1>
+    <script>
+        const h1Tag = document.querySeletor('h1')
 
+        h1Tag.addEventListener('copy', function (event) {
+            console.log(event)
+            event.prevenDefault()
+            alert('복사할 수 없음')
+        })
+    </script>
+    
+    <!-- form 제출 시 페이지 새로고침 동작 취소 -->
+    <form id = "my-form">
+        <input type="text" name="username">
+        <button type="submit">Submit</button>
+    </form>
+    <script>
+        const formTag = document.querySeletor('#my-form')
 
-
-
-
-
-
-
-
-
+        const handleSubmit = function (event) {
+            event.preventDefault()
+        }
+        formTag.addEventListener('submit', handleSubmit)
+    </script>
+    ```
