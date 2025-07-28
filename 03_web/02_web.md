@@ -1,6 +1,7 @@
 # CSS Layout
 ## CSS Box Model
 웹 페이지의 모든 HTML 요소를 감싸는 사각형 상자 모델
+
 ※ 01_web.md 파일의 Box Model 참고
 
 - 내용(contect), 안쪽 여백(padding), 테두리(border), 외부 간격(margin)으로 구성되어 요소의 크기와 배치를 결정
@@ -25,19 +26,18 @@
     ![box 방향별 속성 값](box속성값.png)
 
 - box 구성 요소 예시
-    ```html
-    <style>
-        .box1 {
-            border-width: 3px;
-            border-style: solid;
-            border-color: black;
-            /* width를 작성 안하면 너비가 전체 너비를 가짐 */
-            width: 300px;
-            padding-left: 25px;
-            padding-bottom: 25px;
-            margin-top: 25px;
-            margin-left: 25px;
-        }
+    ```css
+    .box1 {
+        border-width: 3px;
+        border-style: solid;
+        border-color: black;
+        /* width를 작성 안하면 너비가 전체 너비를 가짐 */
+        width: 300px;
+        padding-left: 25px;
+        padding-bottom: 25px;
+        margin-top: 25px;
+        margin-left: 25px;
+    }
     ```
 
     ![box1 출력결과](box1.png)
@@ -49,14 +49,13 @@
     - 02-part-of-box.html 파일 코드로 실행 결과 확인 가능
 
 - box 구성 요소 예시2
-    ```html
-    <style>
-        .box2 {
-            width: 300px;
-            border: 1px dashed black;
-            margin: 25px auto;
-            padding: 25px 50px
-        }
+    ```css
+    .box2 {
+        width: 300px;
+        border: 1px dashed black;
+        margin: 25px auto;
+        padding: 25px 50px
+    }
     ```
     - `border: 1px dashed black;`와 같이 box1처럼 한줄씩 설정하는게 아니라 한줄에 3개 다 설정 가능 == Shorthand 속성
     - `margin: 25px auto;` -> 상하 25px, 좌우 auto로 설정되어 있어 창 크기 늘리면 자동으로 중앙 정렬되도록 맞춰서 좌우 margin크기가 조절됨 
@@ -65,35 +64,33 @@
 ### Shorthand 속성
 - shorthand 속성 - 'border'
     - `border-width`, `border-style`, `border-color`를 한번에 설정하기 위한 속성
-        ```html
-        <style>
-            <!-- 작성 순서는 영향X-->
-            .box {
-                border: 2px solid black;
-            }
+        ```css
+        /* 작성 순서는 영향X */
+        .box {
+            border: 2px solid black;
+        }
         ```
 
 - shorthand 속성 - 'margin' & 'padding'
     - 4방향 속성을 각각 지정하지 않고 한번에 지정할 수 있는 속성
-        ```html
-        <style>
-            .box {
-                <!-- 4개: 상우하좌 -->
-                margin: 10px 20px 30px 40px;
-                padding: 10px 20px 30px 40px;
+        ```css
+        .box {
+            /* 4개: 상우하좌 */
+            margin: 10px 20px 30px 40px;
+            padding: 10px 20px 30px 40px;
 
-                <!-- 3개: 상/좌우/하 -->
-                margin: 10px 20px 30px;
-                padding: 10px 20px 30px;
+            /* 3개: 상/좌우/하 */
+            margin: 10px 20px 30px;
+            padding: 10px 20px 30px;
 
-                <!-- 2개: 상하/좌우 -->
-                margin: 10px 20px;
-                padding: 10px 20px;  
-                
-                <!-- 1개: 공통 -->  '
-                margin: 10px;
-                padding: 10px; 
-            }
+            /* 2개: 상하/좌우 */
+            margin: 10px 20px;
+            padding: 10px 20px;  
+            
+            /* 1개: 공통 */
+            margin: 10px;
+            padding: 10px; 
+        }
         ```
     - shorthand 방법이랑 한 설정에 한 줄씩 쓰는 방법이랑 둘 다 알아야 함
     - 4개: 시계방향
@@ -116,8 +113,7 @@
     - 고로 대체 상자 모델로 속성 설정하자
 
 - The alternative CSS box model
-    ```html
-    <style>
+    ```css
     * {
         box-sizing: border-box
     } 
@@ -137,7 +133,7 @@
     - padding, margin, border로 인해 다른 요소가 상자에서 밀려남
     - 새로운 행으로 넘어가지 않음
     - 요소가 줄바꿈 되는 것을 원하지 않으면서 너비와 높이를 적용하고 싶은 경우에 사용
-    - 예시: 04-inline-block.html
+    - 예시: 04-inline-block.html 파일 참고
 
         ![inline-block](inline-block.png)
 
@@ -157,7 +153,9 @@
 
 
 ### CSS Position
-요소를 normal flow에서 제거하여 다른 위치로 배치하는 것 ex. 다른 요소 위에 올리기, 화면의 특정 위치에 고정시키기 등
+요소를 normal flow에서 제거하여 다른 위치로 배치하는 것 
+
+ex. 다른 요소 위에 올리기, 화면의 특정 위치에 고정시키기 등
 
 - 일단 기본적인 normal flow를 제거
     - 기본 normal flow는 왼쪽 위에서부터 오른쪽 아래로 내려올 수밖에 없음
@@ -240,19 +238,14 @@
     - stick는 div 하나에 여러 div 자식들로 이루어진 형태(즉, 여러 stick를 하나의 div가 부모로써 묶고있음)
         - 부모 영역은 벗어날 수 없기 때문에 top 0에서 고정되어 있다가 부모영역 끝나면 사라짐
 
----
----
----
-
-
 - z-index
     - 요소의 쌓임 순서(stack order)를 정의하는 속성
     - 정수 값을 사용해 Z축 순서를 지정
     - 값이 클수록 요소가 위에 쌓이게 됨
-    - static이 아닌 요소에만 적용됨
+    - **static이 아닌 요소에만 적용됨**
     - 기본 값은 auto
     - 부모 요소의 z-index 값에 영향을 받음
-    - 같은 부모 내에서만 z-index 값을 비교
+    - **같은 부모 내에서만 z-index 값을 비교**
     - 부모의 z-index가 낮으면 자식의 z-index가 아무리 높아도 부모보다 위로 올라갈 수 없음
     - z-index 값이 같으면 HTML 문서 순서대로 쌓임
 
@@ -267,6 +260,9 @@
         display: flex;
     }
     ```
+    - 여러 요소를 묶은 box가 있다고 할 때, 이 box의 inner(안쪽) 요소들의 layout을 지정하고 싶을 때(어떻게 보이길 바라는지 지정할 때) box에 display 속성을 flex로 줌으로써 자식 요소들을 어떻게 정렬시킬 지가 결정됨
+        - box는 부모, box 내부의 여러 요소들은 자식
+        - 자식 요소를 어떻게 정렬할지는 부모가 정하는 것
     - 박스 내부 요소들이 어떻게 배치될지를 결정
     - 속성: flex
 
@@ -274,23 +270,60 @@
 요소를 행과 열 형태로 배치하는 **1차원** 레이아웃 방식
 - '공간 배열' & '정렬'
 
-사지ㅜㄴ
+    ![1차원 레이아웃](1차원레이아웃.jpg)
+    - 왼쪽이 main axis(메인축)
+    - 오른쪽이 cross axis(수직축)
+
+※ 메인 축이 가로인 이유: normal flow가 가로라서(왼쪽 위 -> 오른쪽 아래)
 
 - Flexbox 구성요소
-1. main axis(주 축)
 
+    ![Flexbox 구성요소](flexbox구성요소.jpg)
+    - 부모 요소(그림에서 Container)에 Flex를 넣었을 때 '자식'요소들이 flex로 관리됨(자손XX)
+    - 만약 Container의 자식인 Item에게 자식 요소들이 존재할 때, Container 입장에서는 이 요소들이 자손이므로 Flex Container의 메인 축은 Item의 자식 요소들에게 관여하지XX
+    - 만약 Item의 자식들도 flex로 관리하고 싶다면? Item의 display도 flex로 설정하면 됨
+
+1. main axis(주 축)
+    
+    ![메인 축](메인축.jpg)
+    - main start에서 main end 방향으로 배치
+    - 즉, 좌우 배치를 어떻게 할 것인지 관리
 
 2. cross axis(교차 축)
 
+    ![교차 축](교차축.jpg)
+    - cross start에서 cross end 방향으로 배치
+    - 즉, 상하 배치를 어떻게 할 것인지 관리
 
 3. flex Container
-
+    
+    ![Flex Container](flex컨테이너.jpg)
+    - `display: flex;` 또는 `display: inline-flex;`가 설정된 부모 요소
+    - 이 컨테이너의 1차 자식 요소들이 Flex Item
+    - flexbox 속성 값들을 사용하여 자식 요소인 Flex Item을 배치하는 주체
 
 4. flex item
 
+    ![Flex Item](flex아이템.jpg)
+    - Flex Container 내부에 레이아웃 되는 항목
+
+---
+---
+---
 
 - Flexbox 속성 목록
-
+    - Flex Container 관련 속성
+        - `display` : Flex Container 지정
+        - `flex-direction`
+        - `flex-wrap`
+        - `justify-content`
+        - `align-items`
+        - `align-content`
+    - Flex Item 관련 속성
+        - `align-self`
+        - `flex-grow`
+        - `flex-basis`
+        - `order`
 
 
 

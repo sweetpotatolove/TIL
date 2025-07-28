@@ -43,9 +43,31 @@ print(next(gen))  # 12번째 피보나치 수
 def read_large_file_with_generator(file_path):
     with open(file_path, 'r') as file:
         for line in file:
-            yield line.strip()
+            yield line.strip() # 함수가 호출될 때마다 한줄씩 들고옴
 # 예제 파일 경로
 file_path = 'large_data_file.txt'
 # 제너레이터 사용하여 파일 읽기 및 처리
 for line in read_large_file_with_generator(file_path):
     print(line)
+
+
+# 제너레이터 주의사항
+def generator_func():
+    print('1번 항목 처리')
+    yield 1 # 1 반환 후 대기
+    print('2번 항목 처리')
+    yield 2 # 2 반환 후 대기
+
+gen2 = generator_func()
+print(next(gen2)) # 1번 항목 처리 1
+print(next(gen2)) # 2번 항목 처리 2
+print(next(gen2)) # StopIteration
+
+# 재사용 불가능한 제너레이터
+for i in gen:
+    print(i) # 요소를 모두 참조해서 더 꺼낼 요소가 없음. 아무것도 출력x
+
+# 재할당하여 다시 제너레이터 사용
+gen2 = generator_func()
+for i in gen2:
+    print(i)

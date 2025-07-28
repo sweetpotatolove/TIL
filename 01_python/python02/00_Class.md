@@ -289,16 +289,11 @@ class MyClass:
     - 찾아보고 없으면 자기가 속해있는 class로 가서 찾아보고 가져옴
     - `Person('iu').blood_color = blue` 라고 작성하면 클래스의 blood_color='red'에 영향을 미치는 것이 아닌, 내 공간(iu 인스턴스 공간)에 변수 만들어져서 blue가 들어감
 
----
----
----
-# 정리))
 
 ## 상속
+※ 클래스 이름을 정의하는 이유: 동일한 속성, 메서드를 가진 객체끼리 묶어주기 위해 클래스 정의함
 
-동일한 속성, 메서드를 가진 뭐를 뭐하려고 클래스를 만든다
-
-Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 넣기엔 '직업'이 다르면 행동이 다를 수 있음
+-> Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 넣기엔 '직업'이 다르면 행동이 다를 수 있음
 
 - 상속 없이 구현하는 경우
     - ex. 학생/교수 정보를 별도로 표현하기 어려움
@@ -310,7 +305,7 @@ Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 �
         def __init__(self, name, age):
             self.name = name
             self.age = age
-        def talk(self):  # 메서드 재사용
+        def talk(self):  # 메서드 재사용 -> 자식 클래스(Professor, Student 클래스에 상속됨)
             print(f'반갑습니다. {self.name}입니다.')
     class Professor(Person):
         def __init__(self, name, age, department):
@@ -325,11 +320,11 @@ Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 �
 
     p1 = Professor('박교수', 49, '컴퓨터공학과')
     s1 = Student('김학생', 20, 3.5)
-    # 부모 Person 클래스의 talk 메서드를 활용
+    # 부모 Person 클래스의 talk 메서드를 상속 받았으므로 호출 가능
     p1.talk()  # 반갑습니다. 박교수입니다.
-    # 부모 Person 클래스의 talk 메서드를 활용
     s1.talk()  # 반갑습니다. 김학생입니다.
     ```
+    
     ![상속 구조](상속구조.png)
 
 - 만약 부모-자식간 동일한 메서드가 존재한다면?
@@ -338,7 +333,7 @@ Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 �
         def __init__(self, name, age):
             self.name = name
             self.age = age
-        def talk(self):  # 메서드 재사용
+        def talk(self):
             print(f'반갑습니다. {self.name}입니다.')
     class Professor(Person):
         def __init__(self, name, age, department):
@@ -357,14 +352,14 @@ Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 �
     s1 = Student('김학생', 20, 3.5)
     ```
     - p1이 호출되면 본인 클래스(Professor)의 talk 메서드가 호출됨
-    - 즉, 본인에 맞게????????????????커스텀 가능/??
-    - s1이 호출되면 부모의 talk
+    - 즉, 본인이 원하는대로 커스텀 가능
+    - s1이 호출되면 본인의 talk 클래스가 없으므로 상속받은 Person클래스의 talk가 호출됨
 
 
 ### 다중 상속
 둘 이상의 상위 클래스로부터 여러 행동이나 특징을 상속받을 수 있는 것
 - 상속받은 모든 클래스의 요소를 활용할 수 있음
-- **중복 속성이나 메서드가 있는 경우 '상속 순서에 의해 결정'됨**
+- **상위 클래스끼리 중복 속성이나 메서드가 있는 경우 '상속 순서에 의해 결정'됨**
 
 
 - 다중 상속은 덮어쓰기 방식XX
@@ -375,40 +370,107 @@ Person이라는 클래스 만들었을 때, 인간을 person 클래스에 다 �
     ```
     - 이런 방식이 아니다
 
-- 다이아몬드 문제
-![다이아몬드 문제](다이아몬드문제.png)
+- 다이아몬드 문제(상속 순서에 관한 문제)
 
+    ![다이아몬드 문제](다이아몬드문제.png)
+
+    - D의 입장에서 어떤 부모의 메서드를 가져올지에 대한 모호함 발생
     - 파이썬에서의 해결책
-    - 웅앵
+        - MRO(Method Resolution Order) 알고리즘을 사용하여 클래스 목록 생성
+        - 부모 클래스로부터 상속된 속성들의 검색을 C3 선형화 규칙에 맞춰 진행
+        - 계층 구조에서 겹치는 같은 클래스를 두 번 검색하지XX
+        - 속성이 D에서 발견되지 않으면 B에서 찾고, 거기도 없으면 C에서 찾는 순으로 진행됨
+            ```python
+            class D(B, C):
+                pass
+            ```
 
+- 상속 예시
 
-    ```python
-    O = object
+    ![상속예시](상속예시.jpg)
+    - O, D, E, F, B, C에 모두 동일한 속성이 존재한다면, A는 어떤 부모의 속성을 물려받을까?
+        ```python
+        O = object
+        class D(O): pass
+        class E(O): pass
+        class F(O): pass
+        class B(D, E): pass
+        class C(F, D): pass
+        class A(B, C): pass
 
-    class D(O): pass
-    class E(O): pass
-    class F(O): pass
-    class B(D, E): pass
-    class C(F, D): pass
-    class A(B, C): pass
+        # A클래스의 상속 탐색 순서 출력
+        print(A.__mro__)
 
-    # A클래스 상속 담색 순서 출력
-    print(A.__mro__)
+        # <class '__main__.A'>
+        # <class '__main__.B'>
+        # <class '__main__.C'>
+        # <class '__main__.F'>
+        # <class '__main__.D'>
+        # <class '__main__.E'>
+        # <class 'object'>
+        ```
 
-    # <class '__main__.A'>
-    # <class '__main__.B'>
-    # <class '__main__.C'>
-    # <class '__main__.D'>
-    # <class '__main__.E'>
-    # <class '__main__.F'>
-    # <class 'object'>
-    ```
+    - C3 선형화 규칙
+        - 각각의 클래스 순서를 적어보자
+        - O는 O
+        - D는 D O (자기 자신 -> 부모 순서)
+        - E는 E O
+        - F는 F O
+        - B는 B D E O (D,E 중 먼저 상속받는 D를 우선적으로 찾아가고, 그 다음 D의 부모 O가 아닌!! D와 같이 상속 받고있는 E를 찾아감)
+        - C는 C F D O
+        - A는 A B C F D E O
+            ```markdown
+            1. B와 C 중에서 먼저 상속 받는 B를 찾아간다
+            (머리)
+            ↓
+            B D E O  
+            C F D O
+            -> B는 B D E O 중 가장 앞(머리)에 위치함
+            -> 또, B는 다른 상속 대상(C F D O)에 포함되어 있지XX
+            -> 그럼 A 다음 상속 받는건 B 확정!
 
-O는 O
-D, E, F는 O를 상속받고 있음
-B는 D -> E -> O 상속받음
-C는 F -> D -> O 상속받음
-A는 B -> C -..
+            2. 상속받은 B를 지우면 그 다음 탐색 대상은 D
+              ↓
+              D E O
+            C F D O
+            -> D가 현재 탐색 대상의 머리에 위치함
+            -> 다른 탐색 대상(C F D O)의 MRO 순으로 보면 D가 '머리가 아닌' 위치에 있음
+            -> 때문에 D가 무시됨
+            -> D를 무시하고 E를 탐색하려니까 E는 머리가 아님! 즉, E 탐색 불가
+            -> 다음 머리인 C를 탐색하자
+
+            3. 다음 탐색 대상 C 확인
+            ↓    
+              D E O
+            C F D O
+            -> C는 어떠한 MRO(C F D O)의 머리에 위치하고 있으면서, 다른 탐색 대상(D E O)에 포함되지XX
+            -> 그럼 B 다음 상속 받는건 C 확정!
+
+            4. 상속받은 C를 지우고 머리부분 확인
+              ↓
+              D E O
+              F D O    
+            -> D는 다른 탐색 대상(F D O)의 머리가 아닌 위치에 존재하므로 무시
+            -> E는 머리가 아니므로 다른 머리인 F를 탐색
+            -> F는 다른 탐색 대상(D E O)에 포함되지XX
+            -> 그럼 C 다음 상속 받는건 F 확정!
+
+            5. 상속받은 F 지우고 머리부분 확인
+              ↓
+              D E O
+                D O
+            -> D가 머리에 위치함. 다른 탐색 대상의 머리도 D
+            -> 따라서 F 다음 상속 받는건 D 확정!
+
+            6. 상속받은 D 지우고 머리 확인
+                ↓
+                E O
+                  O
+            -> D 다음 E 확정, E 다음 O 확정!
+            ```
+    - `print(A.__mro__)`로 확인 가능
+    - 그치만 처음 계산할 때 C3 선형화 규칙 생각해서 MRO 잘 계산하고 코드 작성하는게 좋다
+    - 나중에 바꾸려고 하면 큰일쓰
 
 - `super()`
     - 부모 클래스(상위 클래스)의 메서드 호출을 위해 사용하는 내장 함수
@@ -443,23 +505,50 @@ A는 B -> C -..
         def __init__(self, name, age, number, email, student_id):
             # Person의 init 메서드 호출
             super().__init__(name, age, number, email)
-            self.student_id = student_id
+            self.student_id = student_id # Student만의 속성 추가로 정의
     ```
 
 #### MRO가 필요한 이유
-- 부모
-
+- 부모 클래스들이 여러번 액세스 되지 않도록 각 클레스에서 지정된 '왼쪽->오른쪽'으로 가는 순서를 보존함
+- 각 부모를 오직 한 번만 호출하고, 부모들의 우선순위에 영향을 주지 않으면서 서브 클래스를 만드는 단조적인 구조 형성함
+- 위 예시와 같이 super()로 부모 클래스 호출할 때 누가 호출되는지 알아야 함
+- 즉, 클래스 간 메서드 호출 순서가 예측 가능하게 유지되며, 코드의 재사용성&유지보수성이 향상됨
 
 #### super의 사용 사례 2가지
+1. 단일 상속 구조
+    - 명시적으로 이름 지정하지 않고 부모 클래스 참조 가능 -> 코드 유지 관리 쉬움
+    - 클래스 이름 변경되거나 부모 클래스가 교체되어도 super() 사용하면 코드 수정이 더 적게 필요
+2. 다중 상속 구조
+    - MRO에 따른 메서드 호출
+    - 복잡한 다중 상속 구조에서 발생할 수 있는 문제 방지
 
 
 ## 클래스 참고
 ### 메서드 주의사항
-
+- 클래스가 사용해야 할 것: 클래스 메서드, static 메서드
+    - 클래스는 모든 메서드 호출 가능하지만, 위 2개만 사용하기로 약속☆
+    - 할수 있다 != 써도 된다
+- 인스턴스가 사용해야 할 것: 인스턴스 메서드
 
 
 ### 매직 메서드
+특정 상황에 자동으로 호출되는 메서드
 
+※ 매직 메서드는 인스턴스 메서드! 단, 직접 정의하지 않고 제공받는 메서드
+- Double underscore(__)가 있는 메서드는 특수한 동작을 위해 만들어진 메서드로, 스페셜 메서드 또는 매직 메서드로 부름
+- 예시
+    - `__str__(self)`, `__len__(self)`, `__lt__(self, other)`, `__eq__(self, other)` 등등
+    - `__str__(self)` : 내장함수 print에 의해 호출되어 객체 출력을 문자열 표현으로 변경
+        ```python
+        class Circle:
+            def __init__(self, r):
+                self.r = r
+            def __str__(self):
+                return f'원 반지름: {self.r}'
+        
+        c1 = Circle(10)
+        print(c1)   # 원 반지름: 10
+        ```
 
 
 ### 데코레이터(Decorator)
@@ -468,19 +557,19 @@ A는 B -> C -..
 - 데코레이터 정의
     ```python
     def my_decorator(func):
-    def wrapper():
-        # 함수 실행 전에 수행할 작업
-        print('함수 실행 전')
-        # 원본 함수 호출
-        result = func()
-        # 함수 실행 후에 수행할 작업
-        print('함수 실행 후')
-        return result
-    return wrapper
+        def wrapper():
+            # 함수 실행 전에 수행할 작업
+            print('함수 실행 전')
+            # 원본 함수 호출
+            result = func()
+            # 함수 실행 후에 수행할 작업
+            print('함수 실행 후')
+            return result
+        return wrapper
     ```
     - 함수 내에 함수 정의
-    - 함수를 인자로 받는 함수 정의
-    - 움
+    - 즉, 함수를 인자로 받는 함수 정의
+    - 내부에 실제로 동작하고자 하는 함수를 정의하고, 넘겨받은 함수를 내부에서 호출하여 어떤 동작을 시킬 것임
 
 - 데코레이터 사용
     ```python
@@ -494,6 +583,42 @@ A는 B -> C -..
     함수 실행 후
     """
     ```
+    - my_function() == **my_function = my_decorator(my_function)**
+    - 즉, my_funcion()을 호출하면 my_decorator가 리턴한 wrapper() 함수가 실행됨
+    - 그럼 my_function = wrapper
+    - wrapper() 내부에서 print("함수 실행 전") 실행
+    - func() -> 원래의 my_function() 실행
+    - 이후 print("함수 실행 후") 실행
+
+- 추가 설명(클래스 메서드의 첫번째 인자가 self가 아닌, cls인 이유)
+    1. 인스턴스 메서드
+        ```python
+        class MyClass:
+            def hello(self):
+                ...
+        ```
+        - 인스턴스를 통해 호출되므로 첫 번째 인자는 self
+    2. 클래스 메서드
+        ```python
+        class MyClass:
+            @classmethod
+            def hello(cls):
+                ...
+        ```
+        - 클래스를 통해 호출되므로 첫 번째 인자는 cls
+        - 왜 cls가 들어오는가? -> @classmethod는 내부적으로 classmethod라는 클래스를 사용하여 함수를 감싼다
+        - 데코레이터 사용 안하고 수동으로 처리하면 아래와 같음
+        ```python
+        class MyClass:
+            def hello(cls):
+                ...
+            hello = classmethod(hello) # hello 메서드를 클래스 메서드로 변환
+        ```
+        - classmethod()는 파이썬 내부에서 클래스가 자동으로 첫 번째 인자로 전달되도록 처리된 함수 객체를 만들어줌
+        - 클래스 메서드 내부에 머 이런저런 이유로 첫 번째 인자가 class가 되는데
+        - 어려우니까 classmethod(hello)를 사용하면 hello함수가 클래스 메서드로 변환되고, 클래스 메서드는 첫 인자로 cls를 자동으로 받는 특징이 있어서 hello함수도 클래스를 인자로 받게 된다고 이해하자
+        - classmethod()로 감싸는걸 @classmethod로 간단하게 쓰는게 데코레이터
+
 
 ## 참고
 ### 제너레이터
@@ -501,69 +626,218 @@ A는 B -> C -..
     - 반복 가능한 객체의 요소를 하나씩 반환하는 객체
 
 - python 내부적으로 반복이 동작하는 원리
-
-
-
+    1. for문 동작 시 내부적으로 반복 가능한 객체에 대해 iter() 호출
+    2. iter() 함수는 메서드 __next()를 정의하는 이터레이터 객체를 돌려줌
+    3. __next() 메서드는 반복 가능한 객체들의 요소를 한 번에 하나씩 접근
+    4. 남은 요소가 없으면 StopIteration 예외를 일으켜서 for 반복 종료
+    ```python
+    my_str = 'abc'
+    my_iter = iter(my_str)
+    print(next(my_iter)) # a
+    print(next(my_iter)) # b
+    print(next(my_iter)) # c
+    print(next(my_iter)) # StopIteration
 
 #### Generator(제너레이터)
 이터레이터를 간단하게 만드는 함수
 
 - 제너레이터 사용 이유
     1. 메모리 효율성
-        - 한번에 
+        - 한번에 한 개의 값만 생성하여 반환하므로, 전체 시퀀스를 한 번에 메모리에 로드하지 않아도 됨
+        - 대용량 데이터셋을 처리할 때 메모리 사용 최소화 가능
+            - ex. 파일의 각 줄을 한 번에 하나씩 읽어 처리 가능
 
     2. 무한 시퀀스 처리
+        - 무한 루프를 통해 무한 시퀀스 생성 가능(종료 지점을 만들지X)
+        - 끝이 없는 데이터 스트림 처리할 때 유용함
 
-함수는 return이 있었는 데 얜 함수처럼 ㅎ작성하지만 yield문 사용해서 값을 반환
-다음 요소 찾으면 불러옴
+- 제너레이터 구조
+    - 일반 함수처럼 작성
+    - yield문을 사용하여 값 반환
+        ```python
+        def generate_numbers():
+            for i in range(3):
+                yield i
+
+        for number in generate_numbers():
+            print(number)  # 0 1 2
+        ```
+        - 함수는 return문을 작성함으로써 함수의 역할이 끝남을 알림
+        - 제너레이터는 yield문 사용해서 값을 하나 불러오고, 끝난게 아니라 순회해야 할 다음 요소가 더 있다면 한번 더 불러와서 다음 요소를 불러옴
+
+- `return`과 `yield`의 차이
+    - return
+        - 값을 반환하고 함수 실행 종료
+        - 함수 호출 시마다 전체 함수 실행
+        - 함수 상태는 호출 후 유지되지 않음
+        ```python
+        def return_ex():
+            return 'a'
+            return 'b'
+        print(return_ex())  # a
+    
+    - yield
+        - 값을 반환하지만 함수 실행을 종료하지 않음
+        - 함수의 현재 상태를 유지하여, 이후 호출 시 중단된 시점부터 실행됨
+        - 제너레이터 객체를 반환하며, 반복문을 통해 순차적으로 값 반환 가능
+        ```python
+        def yield_ex():
+            yield 'a'
+            yield 'b'
+        gen = yield_ex()
+        print(next(gen))    # a
+        print(next(gen))    # b
+        ```
 
 - 제너레이터 활용
-    1. 대용량 데이터 처리
+    1. 무한 시퀀스 생성
+        - 필요할 때마다 값을 생성하여 무한 반복 가능
+        - 05-generator.py 참고    
+    2. 대용량 데이터 처리
         - 파일에서 한 줄씩 읽어와 처리
         - 메모리에 전체 파일 로드하지 않고, 한 줄씩 처리하여 메모리 사용 절약
-    
-    2. 
+        - 제너레이터 사용하지 않으면 메모리에 전체 파일 내용을 저장하므로, 대용량 파일의 경우 메모리 과부화 발생
+
+### 에러와 예외
+1. 문법 에러(Syntax Error): 프로그램 구문이 올바르지 않은 경우 발생(문법 오류)
+2. 예외(Exception): 프로그램 실행 중 감지되는 에러
+
+- 에러는 공식 문서를 확인할 것! (최신버전 반영된거~)
 
 
 ### 예외처리
-- `try` 
-- `except`
-- `else`
-- `finally`
-```python
+예외가 발생했을 때 프로그램이 비정상적으로 종료되지 않고, 적절하게 처리할 수 있도록 하는 방법
 
+- try-except 구조
+    ```python
+    try:
+        num = int(input('100으로 나눌 값을 입력하시오 : '))
+        result = 100 / num
+    except ZeroDivisionError:
+        print('0으로 나눌 수 없습니다.')
+    except ValueError:
+        print('유효한 숫자가 아닙니다.')
+    except: # ValueError, ZeroDivisionError 둘 다 아닌데 에러 발생하면 실행
+        print('에러가 발생하였습니다.')
+    else:
+        print(f'결과: {result}')
+    finally:
+        print('프로그램이 종료되었습니다.')
+    ```
+    - `try` : 예외가 발생할 수 있는 코드 작성
+    - `except` : 예외가 발생했을 때 실행할 코드 작성
+    - `else` : 예외가 발생하지 않았을 때 실행할 코드 작성
+    - `finally` : 예외 발생 여부와 상관없이 항상 실행할 코드 작성
 
-```
+**※ `raise` : 예외 상황을 발생시킴**
 
-- `raise`
+-> ex. 조건문을 만족하면 예외 상황(ValueError 등)을 발생시킨다
+
+- 예외처리 시 주의사항
+    - 내장 예외 클래스는 상속 계층구조를 가지기 때문에 except절로 나눌 시 **반드시 하위 클래스를 먼저 확인할 수 있도록 작성**
+
+    ![예외처리 주의사항](예외처리_주의사항.jpg)
+    - 만약 상위 클래스를 먼저 확인하면 하위 클래스 except절에 도달하지 못함
+
 
 ### 모듈(Module)
 한 파일로 묶인 변수와 함수의 모음
 - 특정 기능을 하는 코드가 작성된 파이썬 파일(.py)
 - 모듈 가져오는 방법
     - import 문 사용
-
+        ```python
+        import math
+        print(math.sqrt(4))
+        ```
 
     - from절 사용
+        ```python
+        from math import sqrt
+        print(sqrt(4))
+        ```
 
 - 모듈 사용하기
     - `. (dot)` 연산자
     - 점의 왼쪽 객체에서 점의 오른족 이름을 찾으라는 의미
+        ```python
+        # 모듈명.변수명
+        print(math.pi)
 
+        # 모듈명.함수명
+        print(math.sqrt(4))
+        ```
 
+- 모듈 주의사항
+    - 서로 다른 모듈이 같은 이름의 함수를 제공할 경우 문제 발생
+    - 마지막에 import된 이름으로 대체됨
+        ```python
+        from math import pi, sqrt
+        from my_math import sqrt
+        # 그래서 모듈 내 모든 요소를 한번에 import하는 * 표기는 권장XX
+        from math import *
+        ```
+    - as 키워드로 별칭(alias) 부여하여 이름 충돌을 해결하자
+        ```python
+        from math import sqrt
+        from my_math import sqrt as my_sqrt
+        ```
 
-### 정규 표현식
+※ 사용자 정의 모듈: 내가 모듈 직접 정의 가능(당연함)
+
+※ 파이썬 표준 라이브러리: 파이썬에서 제공하는 다양한 모듈과 패키지 모음
+
+### 패키지(Package)
+연관된 모듈들을 하나의 디렉토리에 모아놓은 것
+
+1. PSL 내부 패키지
+    - 설치 없이 import
+
+        ![패키지 예시](패키지예제.jpg)
+        - 패키지 3개: my_package, math, statistics
+        - 모듈 2개: my_math, tools
+        ```python
+        from my_package.math import my_math
+        from my_package.statistics import tools
+        print(my_math.add(1, 2)) # 3
+        print(tools.mod(1, 2)) # 1
+        ```
+
+2. 외부 패키지
+    - pip를 사용하여 설치 후 import
+    - `pip` : 외부 패키지들을 설치하도록 도와주는 파이썬 패키지 관리 시스템
+
+- 패키지 사용 목적
+    - 모듈의 이름 공간을 구분하여 충돌 방지
+    - 모듈을 효율적으로 관리, 재사용할 수 있도록 돕는 역할
+    
+
+### 정규 표현식(★★★)
 문자열에서 특정 패턴을 찾기 위해 사용되는 기법
 
 - 복잡한 문자열 속 특정한 규칙으로 된 문자열을 검색, 치환, 추출 등을 간결하게 수행할 수 있음
+- 절대 외우지 말고, 표 보고 작성하거나 생성형 AI로 작성 후 디버깅 하면서 표로 공부하세용
+
+- 예시
+    ```python
+    import re
+    pattern = r'\d+' # 숫자가 하나 이상인 패턴
+    text = 'There are 24 apples and 42 oranges.'
+    matches = re.findall(pattern, text)
+    print(matches) # ['24', '42']
+    ```
+    - re 모듈: 정규식 일치 연산을 제공하는 파이썬 내장 모듈
 
 - 정규 표현식 문자열 앞에 'r'을 붙여야 함
     - 문자열을 "raw string"으로 취급하여 역슬래시(`\`)를 이스케이프 문자로 처리하지 않도록 하기 위함
 
 - 특수 문자
-사진
+
+    ![정규표현식 특수문자](정규표현식_특수문자.jpg)
 
 - 특수 시퀀스
-사진
+
+    ![정규표현식 특수시퀀스](정규표현식_특수시퀀스.jpg)
 
 - 메서드
+
+    ![정규표현식 메서드](정규표현식_메서드.jpg)
