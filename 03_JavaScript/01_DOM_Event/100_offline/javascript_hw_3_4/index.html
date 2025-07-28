@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Document</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- 
+    적절한 상황에 적절하게 속성을 바꾸고 싶다면, 
+    클래스를 만들어서 부여하자. 
+  -->
+  <style>
+    .gray {
+      background-color: gray; /* 배경색 */
+      color: white;           /* 글씨색 */
+    }
+
+    .white {
+      background-color: white;
+      color: black;
+    }
+
+    .navy {
+      background-color: navy;
+      color: white;
+    }
+
+  </style>
+</head>
+<body>
+  <ul class="switcher">
+    <li id="grayButton"></li>
+    <li id="whiteButton"></li>
+    <li id="navyButton"></li>
+  </ul>
+  
+  <h1>Theme Switcher</h1>
+  
+  <p>테마 변경 기능 구현하기</p>
+
+  <script>
+    // body의 속성을 조작해야한다.
+    // 내 document객체에서, 적절한 요소를 선택해오기
+      // '요소 선택자' -> 문자열 형태로 지정
+    const bodyTag = document.querySelector('body')
+
+    // ul 태그를 선택 해오기
+    const ulTag = document.querySelector('.switcher')
+    // 이 ulTag에 전달된 click 이라는 이벤트에 대해서 반응
+    ulTag.addEventListener('click', function (event) {
+      /*
+      // ul Tag의 자식들, li Tag에게 click 이벤트가 벌어지면
+      // 그 이벤트는 부모 요소에게 bubbling 된다.
+      // 그래서, 자식에게 click이 발생해도, 부모는 그 사실을 알 수 있다.
+      // console.log('test')
+      // 자식요소인 li태그에 무슨 일이 벌어지면, 조건 분기
+      // 무슨 li 태그냐에 따라서 조건을 분기 해야함!
+      // 그때 사용하는것이 target과 currentTarget의 차이!
+      // target: 이벤트가 실제로 벌어진 요소
+      // currentTarget: current한 요소
+      // console.log(event)
+      // console.log(event.target)
+      // console.log(event.currentTarget)
+      */
+     
+      // 이벤트가 벌어진 요소가 누군지 알아냈다.
+      // li 태그 -> 객체 -> 속성 가지고 있음.
+      // console.log(event.target.id)
+      if (event.target.id === 'grayButton') {
+        bodyTag.className = 'gray'
+      } else if (event.target.id === 'whiteButton') {
+        bodyTag.className = 'white'
+      } else {
+        bodyTag.className = 'navy'
+      }
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
+        classList property에는 클래스에 해당할 문자열을 add, remove
+        bodyTag.classList.add('gray')
+        bodyTag.classList.add('navy')
+        bodyTag.classList.add('white')
+    */
+    // bodyTag.className = 'navy'
+    /*
+      <body style="background-color: red;"> 
+      -> inline style 방식은 명시도 해친다. 그래서 안쓴다.
+      bodyTag.style.backgroundColor = 'red'
+    */
+    
+    // 적절한 li 태그가 클릭이 되었을때, 적절한 속성을 부여 해야한다.
+    // const grayButton = document.querySelector('#grayButton')
+    // 해당 요소가 클릭이 되면
+    // Element.addEvemtListener(event, callBack Func)
+    // 함수 선언식
+      // addEventListener에 넘길 함수는 첫번째 인자로 event를 받는다.
+    // function changeClass(event, color) {
+    //   bodyTag.className = color
+    // }
+    // grayButton.addEventListener('click', changeClass('gray'))
+                              // 함수 표현식 aka lambda
+    // grayButton.addEventListener('click', function (event) {
+    //   bodyTag.className = 'gray'
+    // })
+       
+  
+  </script>
+</body>
+</html>
