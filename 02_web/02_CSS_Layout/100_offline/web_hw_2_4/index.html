@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    div p {
+      color: blue;
+    }
+    div > p {
+      color: crimson;
+    }
+
+    .green {
+      color: green;
+    }
+
+    .orange {
+      color: orange;
+    }
+  </style>
+</head>
+<body>
+  <!-- 
+    자식 결합자는 ">" 형태로 작성하며,
+    직계로 상속되는 (즉, 바로 한 depth 안쪽인)
+    (즉 나와 깊이 차이가 1개 밖에 나지 않는)
+    요소들을 자식으로 인식하고, 그 요소들에게 적용
+  -->
+  <div>
+    <p>자식</p>
+    <ul>
+      <!-- 
+        자손 결합자는 " " 공백으로 작성하며
+        내 여는 태그와 닫는 태그 안쪽 모든곳에 대해서
+        적용이다.
+      -->
+      <p>손자</p>
+    </ul>
+    <p>자식</p>
+  </div>
+  <p class="green orange">남</p>
+</body>
+</html>

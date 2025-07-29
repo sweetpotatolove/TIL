@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    /* 
+      첫번째 선택지 
+      부모 요소에 display: flex를 주고
+      메인축 기준 중앙 정렬 하기
+      -> 기껏 이것저것 다했는데
+        정작 이미지는 중앙 정렬이 안됐음
+        왜임?
+      flex는 자식요소들에 대해서 처리하는것.
+      -> 그럼 flex를 선택한건 잘못되었는가?
+      ㄴㄴㄴㄴ -> flex를 지정한 곳이 잘못되었다.
+    */
+
+    /* 
+      두번째 선택지 
+      text-align: center
+    */
+    .card {
+      /* 이미지는 왜 정렬됨? */
+      /* text-align: center; */
+      width: 300px;
+      padding: 10px;
+      border: 1px solid black
+    }
+
+    .card-header {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      /* 
+        메인축이 세로방향으로 만들어놔서 
+        가로방향 정렬은 align-items로 해야지..
+        -> 하고나니 p태그의 너비가 마음에안듬...
+        -> p태그에 너비를 지정해주기.
+      */
+    }
+
+    div {
+      /* border: 10px solid orangered; */
+    }
+    img {
+      /* background-image: ;
+      margin: 0 auto; */
+      /* border: 10px solid blue; */
+      width: 200px;
+    }
+
+    .card-name {
+      /* 
+        absolute는 부모요가 relative인 경우를 
+        찾아서 움직이도록 되어있다.
+      */
+      position: absolute;
+      background-color: rgba(255, 166, 0, 0.568);
+
+      /* 
+        %: 부모 요소의 너비나 높이에 대한 비율
+        px: 점의 개수
+        em, rem: 부모나, 최상위 요소 크기 기준
+        vh, vw: viewport height, width
+      */
+      font-size: 1.5rem;
+      font-weight: bold;
+
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    p {
+      /* border: 10px solid steelblue;
+      background-color: olive; */
+      
+      /* 마진 숏핸드로 2개만 적으면 상하/좌우 */
+      margin: 0;
+    }
+
+    .test {
+      /* display: inline; */
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body style="height: 100000px;">
+  <div class="card">
+    <div class="card-header">
+      <!-- 대체 문구가 보이는 이유는? 
+        파일 경로를 수정한다.
+      -->
+      <img src="image.png" alt="Profile Image">
+      <p class="card-name">Name</p>
+    </div>
+    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci unde officiis ad nostrum. Laboriosam mollitia similique provident fuga tenetur saepe sit, amet eaque neque eius quaerat expedita ea illum veniam.</p>
+  </div>
+
+  <!-- 
+    inner display type 
+    : display 속성들이 있는데, 그중에
+    inner에 관여하는 값이 무엇인지 분류한 것
+
+    자식 요소: 물리적으로 HTML구조상 자식 태그들
+  -->
+  <div style="display: flex;">
+    <div class="test">안녕하                   세요</div>
+    <!-- 줄바꿈을 했다. -->
+    <div class="test">반갑습니다.</div>
+  </div>
+</body>
+</html>

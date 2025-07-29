@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+  <script defer src='utils/loader.js'></script>
+  <title>Music Album Search App</title>
+</head>
+<body>
+  <header class="header">
+    <img class="header-logo" width="46" src="assets/logo.png" alt="logo">
+    <h1 class="header-title">Music Album Search App</h1>
+  </header>
+  <main class="search">
+    <div class="search-box">
+      <input class="search-box__input" type="text" placeholder="검색어를 입력해주세요." autofocus>
+      <button class="search-box__button">검색</button>
+    </div>
+    <div class="search-result">
+    </div>
+    <div class="search-result--loadingList"></div>
+  </main>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

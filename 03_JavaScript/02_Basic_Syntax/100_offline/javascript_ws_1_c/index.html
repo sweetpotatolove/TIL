@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const studentNames = ['John', 'Alice', 'Bob']
+    const studentAges = {
+      John: 50,
+      Alice: 100,
+      Bob: 25
+    }
+    // 아래에 코드 작성
+    for (const student of studentNames) {
+      if (studentAges[student] >= 50) {
+        console.log(`${student}은 ${studentAges[student]}세 입니다.`)
+      }
+    }
+
+    // for (let i = 0; i < studentNames.length; i++) {
+    //   if (studentAges[studentNames[i]] >= 50) {
+    //     console.log(`${studentNames[i]}은 ${studentAges[studentNames[i]]}세 입니다.`)
+    //   }
+    // }
+  </script>
+</body>
+
+</html>

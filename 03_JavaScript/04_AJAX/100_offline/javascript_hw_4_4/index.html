@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <form>
+    <input type="text" name="name">
+    <input type="submit" value="내 나이는?">
+  </form>
+
+  <section>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+  
+  <script>
+    const form = document.querySelector('form')
+    const nameInput = document.querySelector('[name="name"]')
+    const section = document.querySelector('section')
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault()
+      name = nameInput.value
+
+      const nameP = document.createElement('p')
+      nameP.textContent = `제 이름은 : ${name} 입니다.`
+      
+      nameInput.value = ''
+
+      section.appendChild(nameP)
+
+      axios({
+        method: 'get',
+        url: 'https://api.agify.io/',
+        params: {
+          name
+        }
+      })
+        .then(res => {
+          const ageP = document.createElement('p')
+          ageP.textContent = `제 나이는 : ${res.data.age} 입니다.`
+          section.appendChild(ageP)
+        })
+    })
+  </script>
+</body>
+</html>

@@ -47,6 +47,18 @@
 
   <script>
     // 아래에 코드 작성
+    const tableTag = document.querySelector('table')
+    // tableTag.addEventListener('click', function (event) {
+    //   event.target.classList.toggle('theme-color')
+    // })
+
+    tableTag.addEventListener('click', function (event) {
+      if (event.target.classList.contains('theme-color')) {
+        event.target.classList.remove('theme-color')
+      } else {
+        event.target.classList.add('theme-color')
+      }
+    })
   </script>
 </body>
 
