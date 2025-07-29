@@ -23,6 +23,7 @@
         - margin 관련 속성 사용하여 크기 조정
     
 - Box 구성의 방향 별 속성 값
+
     ![box 방향별 속성 값](box속성값.png)
 
 - box 구성 요소 예시
@@ -216,21 +217,21 @@ ex. 다른 요소 위에 올리기, 화면의 특정 위치에 고정시키기 �
     <div>
         <div class="sticky">첫 번째 Sticky</div>
         <div>
-        <p>내용1</p>
-        <p>내용2</p>
-        <p>내용3</p>
+            <p>내용1</p>
+            <p>내용2</p>
+            <p>내용3</p>
         </div>
         <div class="sticky">두 번째 Sticky</div>
         <div>
-        <p>내용4</p>
-        <p>내용5</p>
-        <p>내용6</p>
+            <p>내용4</p>
+            <p>내용5</p>
+            <p>내용6</p>
         </div>
         <div class="sticky">세 번째 Sticky</div>
         <div>
-        <p>내용7</p>
-        <p>내용8</p>
-        <p>내용9</p>
+            <p>내용7</p>
+            <p>내용8</p>
+            <p>내용9</p>
         </div>
     </div>
     </body>
@@ -307,32 +308,90 @@ ex. 다른 요소 위에 올리기, 화면의 특정 위치에 고정시키기 �
     ![Flex Item](flex아이템.jpg)
     - Flex Container 내부에 레이아웃 되는 항목
 
----
----
----
-
 - Flexbox 속성 목록
-    - Flex Container 관련 속성
-        - `display` : Flex Container 지정
-        - `flex-direction`
-        - `flex-wrap`
-        - `justify-content`
-        - `align-items`
-        - `align-content`
-    - Flex Item 관련 속성
-        - `align-self`
-        - `flex-grow`
-        - `flex-basis`
-        - `order`
+1. Flex Container 관련 속성
+    - `display` : Flex Container 지정
 
+        ![display](display속성.jpg)
+        - flex item은 기본적으로 row(주 축의 기본값인 가로 방향)으로 나열
+        - flex item은 주 축의 시작 선에서 시작(너비는 컨텐츠 길이만큼 늘어남)
+        - flex item은 교차 축의 크기를 채우기 위해 늘어남(부모 요소의 높이만큼)
+
+    - `flex-direction`
+
+        ![flex-direction](flex-direction.jpg)
+        - flex item이 나열되는 방향 지정
+        - 기본은 row
+        - column으로 지정할 경우 주 축이 변경됨
+        - `-reverse`로 지정하면 flex item 배치의 시작 선과 끝 선이 서로 바뀜
+
+    - `flex-wrap`
+
+        ![flex-wrap](flex-wrap.jpg)
+        - item 목록이 container의 한 행에 들어가지 않을 경우, 다른 행에 배치할지 여부 설정
+        - 컨테이너를 넘어가지 않게 개행시키는 느낌
+        - 부모 요소의 너비를 벗어나지 못하게!
+        - nowrap이 기본값
+
+    - `justify-content`
+
+        ![justify-content](justify-content.jpg)
+        - 메인 축을 기준으로 정렬(flex-start, center, flex-end)
+
+    - `align-content`
+
+        ![align-content](align-content.jpg)
+        - 교차 축을 따라 flex item과 주위에 공간을 분배
+        - `flex-wrap: wrap;` 또는 `flex-wrap: wrap-reverse;`로 설정된 여러 행에만 적용됨
+        - 한 줄 짜리 행에는 효과 없음(flex-wrap: nowrap인 경우)
+
+    - `align-items`
+
+        ![align-items](align-items.jpg)
+        - 교차 축을 따라 flex item 행을 정렬
+        
+2. Flex Item 관련 속성
+    - `align-self`
+
+        ![align-self](align-self.jpg)
+        - 교차 축을 따라 개별 flex item을 정렬
+
+    - `flex-grow`
+    
+        ![flex-grow](flex-grow.jpg)
+        ![grow](grow.jpg)
+        - 부모의 남는 행 여백을 비율에 따라 각 flex item에 분배
+        - 아이템이 컨테이너 내에서 확장하는 비율을 지정
+        - flex-grow의 반대는 flex-shrink
+
+    - `flex-basis`
+        - flex-grow에서 비율이 어느정도 늘어나는지 모르겠을 때 내가 지정해버릴 수 있음
+        - flex-item의 초기 크기 값 지정
+        - flex-basis와 width 값을 동시에 적용한 경우 flex-basis가 우선
+
+- flex-wrap 응용 "반응형 레이아웃"
+    - 다양한 디바이스와 화면 크기에 자동으로 적응하여 콘텐츠를 최적으로 표시하는 웹 레이아웃 방식
+    
+    ![반응형 레이아웃](반응형레이아웃.jpg)
+
+※ 목적에 따른 속성 분류
+
+-> 배치: `flex-direction` , `flex-wrap`
+
+-> 공간 분배: `justify-content` , `align-content`
+
+-> 정렬: `align-items` , `align-self`
+
+※ 속성명 Tip!! justify(주축) / align(교차축)
+
+※ justify-items 및 justify-self 속성이 없는 이유는 'margin auto'를 통해 정렬 및 배치가 가능하기 때문에 필요가 없다
 
 
 ## 참고
 ### Margin collapsing (마진 상쇄)
 두 block 타입 요소의 martin top과 bottom이 만나 더 큰 margin으로 결합되는 현상
 
-사진
-
+![마진상쇄](마진상쇄.jpg)
 - margin을 쓰는 이유?는 복잡한 레이아웃에서 요소 간 간격을 일관되게 유지하기 위함
 - 요소 간의 간격을 더 예측 가능하고 관리하기 쉽게 만듦
 - 일관성, 단순화
@@ -342,14 +401,36 @@ ex. 다른 요소 위에 올리기, 화면의 특정 위치에 고정시키기 �
 - block 요소의 수평 정렬
     - margin: auto 사용
         - 블록 요소의 너비를 지정하고, 좌우 마진을 auto로 설정
+    
+- inline 요소의 수평 정렬
     - text-align 사용
-        - 부모 요소에 사용
+        - 부모 요소에 적용
 
 - inline-block 요소의 수평 정렬
      - text-align 사용
-        - 부모 요소에 사용   
+        - 부모 요소에 적용
 
+### Flexbox 속성 정리
+- flex-direction
 
+    ![flex-direction](f-d.jpg)
 
+- flex-wrap
 
+    ![flex-wrap](f-w.jpg)
 
+- justify-content
+
+    ![justify-content](j-c.jpg)
+
+- align-content
+
+    ![align-content](a-c.jpg)
+
+- align-items
+
+    ![align-items](a-i.jpg)
+
+- align-self
+
+    ![align-self](a-s.jpg)
