@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    function createPerson(name, age, city) {
+      return {
+        name,
+        age,
+
+        greeting() {
+          console.log(`${name}의 나이는 ${age}입니다.`)
+        },
+
+        [`livesIn${city}`]: city ? true : false
+      }
+    }
+    const person1 = createPerson('홍길동', 30, '옥천')
+    console.log(person1) // {name: '홍길동', age: 30, livesIn옥천: true, greeting: ƒ}
+    person1.greeting() // 홍길동의 나이는 30입니다.
+  </script>
+</body>
+</html>

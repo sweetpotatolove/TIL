@@ -8,7 +8,6 @@
 <body>
   
   <div class="container">
-
     <form id="form" class="my-3">
       <div class="mb-3">
         <input type="text" class="form-control" id="title">
@@ -21,29 +20,54 @@
       </div>
     </form>
     
-    <section id="cardsSection" class="row">
-      
-      <!-- 카드 예시 -->
-      <article class="col-4">
-        <div class="card m-1">
-          <div class="card-body">
-            <h5 class="card-title">Example</h5>
-            <p class="card-text">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti placeat odit rerum asperiores beatae vitae doloremque consectetur magni delectus, fuga autem laudantium, quidem iusto voluptates non earum dolorem totam dolores.</p>
-          </div>  
-        </div>
-      </article>
-      <!-- 카드 예시 -->
-      
-    </section>
-
+    <section id="cardsSection" class="row"></section>
   </div>
-
+  
   <script>
-    /* 
-      사용자가 form 에 title과 content를 입력하고 submit하면, 예시와 같은 카드를 생성하여 div#cardSection에 추가하는 코드를 작성하시오.
-      기능을 모두 구현하면 카드 예시 마크업은 주석처리 하거나 삭제한다.
-    */
+    const form = document.querySelector('#form')
+    const cardsSection = document.querySelector('#cardsSection')
+
+    // 카드 요소 생성을 위해 createCard를 함수로 분리
+    function createCard(title, content) {
+      const article = document.createElement('article')
+      article.classList.add('col-4')
+      
+      const card = document.createElement('div')
+      card.classList.add('card', 'm-1')
+      
+      const cardBody = document.createElement('div')
+      cardBody.classList.add('card-body')
+      
+      const cardTitle = document.createElement('h5')
+      cardTitle.classList.add('card-title')
+      cardTitle.innerText = title
+      
+      const cardText = document.createElement('p')
+      cardText.classList.add('card-text')
+      cardText.innerText = content
+      
+      cardBody.appendChild(cardTitle)
+      cardBody.appendChild(cardText)
+      card.appendChild(cardBody)
+      article.appendChild(card)
+
+      return article
+    }
+
+    form.addEventListener('submit', function (event) {
+      const title = document.querySelector('#title')
+      const content = document.querySelector('#content')
+      
+      const newCard = createCard(title.value, content.value)
+      cardsSection.appendChild(newCard)
+      
+      title.value = ''
+      content.value = ''
+
+      event.preventDefault()
+    })
 
   </script>
+
 </body>
 </html>

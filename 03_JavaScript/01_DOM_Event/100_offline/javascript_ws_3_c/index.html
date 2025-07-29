@@ -32,6 +32,36 @@
 
   <script>
     // 아래에 코드 작성
+    const inputTag = document.querySelector('.text-input')
+    const pTag = document.querySelector('p')
+    const colorInputTag = document.querySelector('.color-input')
+    const warningMsg = document.querySelector('.warning')
+
+    inputTag.addEventListener('input', function (event) {
+      pTag.textContent = event.currentTarget.value
+      if (pTag.textContent.length > 5) {
+        warningMsg.style.display = 'block'
+        pTag.style.display = 'none'
+      } else {
+        warningMsg.style.display = 'none'
+        pTag.style.display = 'block'
+      }
+    })
+
+    inputTag.addEventListener('focusin', function () {
+      pTag.classList.add('fs-2')
+      pTag.classList.add('bg-color')
+    })
+
+    inputTag.addEventListener('focusout', function () {
+      pTag.classList.remove('fs-2')
+      pTag.classList.remove('bg-color')
+    })
+
+    colorInputTag.addEventListener('input', function () {
+      const colorValue = colorInputTag.value
+      pTag.style.color = colorValue
+    })
   </script>
 </body>
 

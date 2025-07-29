@@ -37,10 +37,6 @@ img {
   align-items: center;
   border: 3px solid #60A5FA;
 }
-.machine {
-  display: flex;
-  flex-direction: column;
-}
 .modal {
   position: fixed;
   background-color: rgba(0, 0, 0, 0.5);

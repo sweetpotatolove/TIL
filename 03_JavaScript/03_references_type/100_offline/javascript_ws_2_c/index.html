@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+공통 사항
+작성하는 함수는 객체를 반환한다.
+반환하는 객체의 각 속성은 학생의 이름, 값은 해당하는 평균 점수를 나타낸다.
+
+함수 makeAvgScores1
+Javascript의 'for' statement를 활용하여 작성한다.
+
+함수 makeAvgScores2
+Javascript의 'for...of' statement를 활용하여 작성한다.
+
+함수 makeAvgScores3
+'Array Helper Methods'를 활용하여 작성한다.
+
+<body>
+  <script>
+    const students = [
+      { name: 'Alice', scores: [85, 90, 95] },
+      { name: 'Bella', scores: [50, 80, 80] },
+      { name: 'Caley', scores: [90, 55, 35] },
+      { name: 'Dave', scores: [100, 100, 100] },
+      { name: 'Eve', scores: [88, 90, 92] }
+    ]
+    // 아래에 코드 작성
+    const makeAvgScores1 = function (students) {
+      const avgScore = {}
+      for (let i = 0; i < students.length; i++) {
+        let totalScore = 0
+        for (let j = 0; j < students[i].scores.length; j++) {
+          totalScore += students[i].scores[j]
+        }
+        avgScore[students[i].name] = totalScore / students[i].scores.length
+      }
+      return avgScore
+    }
+
+    const makeAvgScores2 = function (students) {
+      const avgScore = {}
+      for (const student of students) {
+        let totalScore = 0
+        for (const score of student.scores) {
+          totalScore += score
+        }
+        avgScore[student.name] = totalScore / student.scores.length
+      }
+      return avgScore
+    }
+
+    const makeAvgScores3 = function (students) {
+      const avgScore = {}
+      students.forEach(student => {
+        let totalScore = 0
+        student.scores.forEach(score => {
+          totalScore += score
+        })
+        avgScore[student.name] = totalScore / student.scores.length
+      });
+
+      return avgScore
+    }
+    // 함수 호출
+    const result1 = makeAvgScores1(students)
+    const result2 = makeAvgScores2(students)
+    const result3 = makeAvgScores3(students)
+    console.log(result1)
+    console.log(result2)
+    console.log(result3)
+  </script>
+</body>
+
+</html>

@@ -27,6 +27,36 @@
     ]
 
     // 아래에 코드 작성
+    const headingTag = document.querySelector('.heading')
+    const subHeadingTag = document.querySelector('.sub-heading')
+    const pTag = document.querySelector('.contents')
+    const originalText = headingTag.textContent
+
+    headingTag.addEventListener('mouseover', function () {
+      headingTag.textContent = 'I am being hovered!'
+    })
+
+    headingTag.addEventListener('mouseout', function () {
+      headingTag.textContent = originalText
+    })
+
+    subHeadingTag.addEventListener('dblclick', function () {
+      subHeadingTag.classList.toggle('font-crimson')
+    })
+
+    pTag.addEventListener('wheel', function (event) {
+      event.preventDefault()
+      const randomIndex = Math.floor(Math.random() * randomTexts.length)
+      pTag.textContent = randomTexts[randomIndex]
+    })
+
+    // headingTag.addEventListener('mouseenter', function () {
+    //   headingTag.textContent = 'I am being hovered!'
+    // })
+
+    // headingTag.addEventListener('mouseleave', function () {
+    //   headingTag.textContent = originalText
+    // })
   </script>
 </body>
 

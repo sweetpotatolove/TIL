@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    function isValid (word) {
+      if (word.length >= 8) {
+        return true
+      } else {
+        return false
+      }
+    }
+    console.log(isValid('password'))
+		console.log(isValid('pwd')) 
+
+    const myJoin = function (array, separator) {
+      let result = ''
+
+      for (let idx = 0; idx < array.length; idx++) {
+        // let word = array[idx]
+        const word = array[idx]
+        result += word
+        if (idx < array.length - 1) {
+          result += separator
+        }
+      }
+
+      return result
+    }
+    console.log(myJoin(['010', '1234', '5678'], '-'))
+
+    const makeOrder = function (menu, size = 'regular') {
+      return { menu, size }
+    }
+    console.log(makeOrder('mocha'))
+
+
+    function celsiusToFahrenheit (celsius) {
+      return celsius * 9 / 5 + 32
+    }
+    const celsiusToFahrenheit3 = celsius => celsius * 9 / 5 + 32
+
+  </script>
+</body>
+</html>

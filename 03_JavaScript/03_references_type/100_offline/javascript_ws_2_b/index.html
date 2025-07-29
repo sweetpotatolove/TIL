@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 아래에 코드 작성
+
+    // 객체 person
+    // 속성 3개(name, age, city)와 메서드 1개(introduce)를 가진다.
+    // 속성 name은 이름을 표기할 수 있는 문자열 값을 가진다.
+    // 속성 age는 나이를 표기할 수 있는 숫자 값을 가진다.
+    // 속성 city는 지역을 표기할 수 있는 문자열 값을 가진다.    
+    const name = 'Alice'
+    const age = 30
+    const city =  'New York'
+
+    const person = {
+      name,
+      age,
+      city,
+      // name: 'Alice',
+      // age: 30,
+      // city: 'New York',
+      // introduce: function () {
+      //   return `안녕하세요 ${this.city}에 거주하는 ${this.age}살 ${this.name}입니다.`
+      // }
+      introduce() {
+        return `안녕하세요 ${this.city}에 거주하는 ${this.age}살 ${this.name}입니다.`
+      }
+    }
+
+    // 함수 printPersonInfo
+    // 구조 분해 할당을 활용하여 매개변수를 정의한다.
+    // person 객체를 인자로 받는다.
+    // function printPersonInfo() {
+      //   console.log(`${person.name} / ${person.age} / ${person.city}`)
+      // }
+      
+      // const printPersonInfo = function (person) {
+      //   console.log(`${person.name} / ${person.age} / ${person.city}`)
+      // }
+      // const printPersonInfo = function ({name, age, city}) {
+      //   console.log(`${name} / ${age} / ${city}`)
+      //   // introduce()
+      // }
+      const printPersonInfo = ({name, age, city}) => {
+        console.log(`${name} / ${age} / ${city}`)
+      }
+      // const printPersonInfo = function (name, age, city) {
+      //   console.log(`${name} / ${age} / ${city}`)
+      //   // introduce()
+      // }
+      // const printPersonInfo = (person) => {
+      //   console.log(`${person.name} / ${person.age} / ${person.city}`)
+      // }
+      
+      
+      // 메서드 및 함수 호출
+      console.log(person.introduce())  // 안녕하세요 New York에 거주하는 30살 Alice입니다.
+      printPersonInfo(person)  // Alice / 30 / New York
+      // printPersonInfo(person.name, person.age, person.city)  // Alice / 30 / New York
+  </script>
+</body>
+
+</html>

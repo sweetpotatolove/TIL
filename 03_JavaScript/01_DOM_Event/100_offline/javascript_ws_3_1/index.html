@@ -15,17 +15,19 @@
     </div>
 
     <script>
-      /* 
-        현재 코드에서는 input#userInput에 입력한 내용이 그대로 span#output에 출력된다.
-        아래 이미지를 참고하여 badWords에 포함된 단어가 사용자 입력에 포함되어 있을 경우,
-        span#output에서 해당 단어를 **로 바꿔 출력하도록 filterMessage 함수를 완성하시오.
-      */
       const badWords = ['바보', '멍청', '메롱', ]
       const userInput = document.querySelector('#userInput')    
       const output = document.querySelector('#output')
 
       function filterMessage(event) {
-        // badWords에 포함된 단어가 입력될 경우, '**'으로 변환하여 output에 출력 
+        let filteredInput = event.target.value
+        // forEach Array Helper Method를 활용하여 badWord 가 사용자 입력에 포함되어 있으면 교체
+        badWords.forEach(function (badWord) {
+          // 같은 badWord가 여러번 등장해도 모두 교체 가능하도록 while문 사용
+          while (filteredInput.includes(badWord)) {
+            filteredInput = filteredInput.replace(badWord, '**')
+          }
+        })
         output.innerText = filteredInput
       }
 
