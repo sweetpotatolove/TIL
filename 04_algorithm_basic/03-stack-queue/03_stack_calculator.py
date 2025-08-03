@@ -5,10 +5,10 @@ def infix_to_postfix(expression):
                '-' : 1,
                '*' : 2,
                '/' : 2,
-               '(' : 0}      # 닫는 괄호는 나오는 순간...뭘 빼내..?
+               '(' : 0}      # 닫는 괄호는 나오는 순간 여는괄호와 닫는괄호 사이에 있는 연산자 다 빼내서 우선 연산 
 
     stack = []      # 연산자를 저장할 스택
-    postfix = []    # 후위 표기실을 저장할 리스트
+    postfix = []    # 후위 표기식을 저장할 리스트
 
     for char in expression:     # 표현식 순회
         # 피연산자인 경우
@@ -17,7 +17,7 @@ def infix_to_postfix(expression):
         # 연산자인 경우
         elif char == '(':
             stack.append(char)
-        elif char == ')':
+        elif char == ')':               # 닫는 소괄호 만나면
             top_token = stack.pop()     # 연산자들을 스택에서 뺄 것이다
             while top_token != '(':     # 여는 소괄호 만날 때까지!
                 postfix.append(top_token)
@@ -25,7 +25,7 @@ def infix_to_postfix(expression):
         # 연산자인 경우
         # 스택에 있는 연산자들이 지금 검사하는 연산자보다
         # 우선순위가 높거나 낮을 때 서로 다르게 처리해야 함
-        else:
+        else:   
             while stack and op_dict[stack[-1]] >= op_dict[char]:
                 postfix.append(stack.pop())
             stack.append(char)
