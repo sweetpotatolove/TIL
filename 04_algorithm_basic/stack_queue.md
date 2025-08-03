@@ -32,21 +32,22 @@
 class Stack:
     # 생성자 함수: 스택 자료구조 인스턴스 생성 시, 이 자료구조의 최대 크기도 함께 넘겨줘야 함
     def __init__(self, capacity=10):
-        self.capacity = capacity    # 이 자료구조의 최대 수용 가능 공간(기본값 10)
+        self.capacity = capacity    # 이 자료구조의 최대 수용 가능 공간(기본인자 사용해서 기본값 10 설정)
         self.item = [None] * capacity   # 내 최대 크기만큼 리스트를 None으로 채운다
         self.top = -1   # 왜 top이 0이 아닌 -1로 초기화 하느냐?
                         # 여기서 -1은 리스트의 마지막을 의미하는 것이 아닌
-                        # push 연산 진행 시, top의 값을 1 증가시키고 그곳에 값을 삽입할 예정
+                        # push 연산 진행 시, top의 값을 1 증가시키고 그곳에 값을 삽입할 예정이므로 -1로 초기화해야 함
 
     # 삽입할 수 있는 공간을 생성자 함수로 만들어 놨으니, 이제 값을 삽입하자
-    # 주어진 값을 삽입
     def push(self, item):
+        
         # push를 계속 해서 스택이 가득 찼을 때 또 삽입하면 IndexError 발생
         # 스택이 가득 찼음을 확인해야 함 -> 예외처리
         if self.is_full():
             print('Stack is Full!!')
             return
             # 또는 에러 직접 발생시키기 가능 -> raise IndexError('Stack is Full')        
+        
         self.top += 1   # 올바른 삽입 위치 찾기(top의 위치를 옮긴 후 그 자리에 삽입)
         self.items[self.top] = item
     
@@ -55,14 +56,20 @@ class Stack:
             print('Stack is Empty!!')
             return
         item = self.items[self.top]     # 제거할 값은 top위치에 있음
-        self.items[self.top] = None     # 왜 그런지 설명쓰...
+        self.items[self.top] = None     # None으로 바꿔주지 않으면 값을 제거했음에도 
+                                        # 자료구조 상에 데이터가 여전히 존재하고 있는 형태로 보임
+                                        # 그래서 None으로 실제로 비어있는 형태로 만들자
         self.top -= 1
-        return item
+        return item     # 제거한 값은 사용해야하니 반환해주기
 
     def is_full(self):
         # stack이 가득 찼음을 어떻게 알 수 있을까?
         # top의 최대 위치가 어디인지 확인해 봤을 때
-        # 최대 용량의 -1에 top이 도달했다면 full?
+        # 최대 용량의 -1에 top이 도달했다면 full
+        # Why? top의 시작점은 -1이고, top은 push가 호출되면 1 증가 후 값이 삽입되는 방식
+        # 만약 top이 1 증가한 뒤 full인지 확인(capacity == top)을 하면 top이 이미 범위를 벗어나서 다시 full 확인 후 범위 안쪽으로 top을 옮기는 작업 필요
+        # 그래서 full을 먼저 확인(capacity-1 == top) 후 top을 1 증가시키도록 하자
+        # 탑의 최대 위치를 생각해보기!
         return self.capacity -1 == self.top
         
     # 스택이 비었는지 확인
@@ -72,21 +79,17 @@ class Stack:
             
 stack = Stack()
 
-# stack.push(1)
-# stack.push(2)
-# stack.push(3)
+stack.push(1)
+stack.push(2)
+stack.push(3)
 
-# print(stack.pop())
-# print(stack.pop())
-# print(stack.peek())
-# print(stack.is_empty())
-# print(stack.pop())
-# print(stack.pop())
-
-
-
+print(stack.pop())
+print(stack.pop())
+print(stack.peek())
+print(stack.is_empty())
+print(stack.pop())
+print(stack.pop())
 ```
-
 
 
 ### 스택 응용
@@ -105,52 +108,130 @@ stack = Stack()
 
     ![괄호검사](괄호검사.png)
 
-```python
-def check_match(expression):
-    # 여는 괄호들을 일단 담아둘 스택
-    # 여는 괄호들을 담아두다가 올바른 닫는 괄호가 나왔는지 확인하기 위함
-    stack = []
+    ```python
+    def check_match(expression):
+        # 여는 괄호들을 일단 담아둘 스택
+        # 여는 괄호들을 담아두다가 올바른 닫는 괄호가 나왔는지 확인하기 위함
+        stack = []
 
-    # 괄호의 짝을 매칭시킬 수 있어야 할 것 같다
-    # 문자열도 시퀀스 타입이므로 리스트 아니어도 괜츈
-    opening_bracket = '({['
-    closing_bracket = ')]}'
-    matching_dict = { ')':'(',
-                      '}':'{',
-                      ']':'['}
+        # 괄호의 짝을 매칭시킬 수 있어야 할 것 같다
+        # 문자열도 시퀀스 타입이므로 리스트 아니어도 괜츈
+        opening_bracket = '({['
+        closing_bracket = ')]}'
+        # 또는
+        matching_dict = { ')':'(',
+                        '}':'{',
+                        ']':'['}
 
-    for char in expression:
-        if char in matching_dict.values():  # 여는 괄호인지 물어보기
-            # 여는 괄호라면 스택에 넣어랏
-            stack.append(char)
-        elif char in matching_dict.keys():  # 닫는 괄호인지 물어보기
-            # 닫는 괄호라면?
-            # 스택에서 나와 매칭되는 짝을 찾을 수 있다면, 그 괄호를 제거
-            # 단, 스택이 비어있지 않아야 함!
-                # 스택이 비었거나, 마지막 요소 값이 내가 찾는 여는 괄호가 아니면 실패
-            if not stack or stack[-1] != matching_dict[char]:
-                return False
+        for char in expression:
+            if char in matching_dict.values():  #  matching_dict.values = ['(', '{', '[']
+                # 여는 괄호라면 스택에 넣어랏
+                stack.append(char)
+            elif char in matching_dict.keys():  # 닫는 괄호인지 물어보기
+                # 닫는 괄호라면?
+                # 스택에서 나와 매칭되는 짝을 찾을 수 있다면, 그 괄호를 제거
+                # 단, 스택이 비어있지 않아야 함!
+                    # 스택이 비었거나, 마지막 요소 값이 내가 찾는 여는 괄호가 아니면 실패
+                if not stack or stack[-1] != matching_dict[char]:
+                    return False
 
-            # 매칭 짝을 찾았으면 제거
-            stack.pop()
-    # 모든 문자를 다 순회했을 때, 스택이 비어있지 않다면 문제가 있는 것
-    return not stack
+                # 매칭 짝을 찾았으면 제거
+                stack.pop()
+        # 모든 문자를 다 순회했을 때, 스택이 비어있지 않다면 문제가 있는 것
+        return not stack
 
-
-# 예시
-examples = ["(a(b)", "a(b)c)", "a{b(c[d]e}f)"]
-for ex in examples:
-    if check_match(ex): 
-        print(f"{ex} 는 올바른 괄호") 
-    else:
-        print(f"{ex} 는 올바르지 않은 괄호")  
-```
+    # 예시
+    examples = ["(a(b)", "a(b)c)", "a{b(c[d]e}f)"]
+    for ex in examples:
+        if check_match(ex): 
+            print(f"{ex} 는 올바른 괄호") 
+        else:
+            print(f"{ex} 는 올바르지 않은 괄호")  
+    ```
 
 - Function call
+    - 프로그램에서 함수 호출과 복귀에 따른 수행 순서를 관리할 때 stack 사용
+    - 가장 마지막에 호출된 하무가 가장 먼저 실행을 완료하고 복귀하는 후입선출 구조
+    
+    1. 함수 호출이 발생하면, 호출한 함수 수행에 필요한 지역변수, 매개변수, 수행 후 복귀 주소 등의 정보를 stack frame에 저장하여 시스템 스택에 삽입
 
+        ![Function call2](FunctionCall2.jpg)
+
+    2. 함수 실행이 끝나면 시스템 스택의 top원소를 삭제(pop)하면서 프레임에 저장되어있던 복귀주소를 확인하고 복귀
+
+        ![Function call](FunctionCall.jpg)
+    
+    3. 함수 호출과 복귀에 따라 이 과정을 반복하여 전체 프로그램 수행 중료되면 시스템 스택은 공백 스택이 됨
 
 - 계산기
+    - 문자열 수식 계산의 일반적인 방법
+        1. 중위표기법 -> 후위표기법 변경(스택 이용)
+        2. 후위표기법의 수식을 계산(스택 이용)
+    
+    - Step1. 중위표기식 -> 후위표기식 변환
+        - 1단계: 수식의 각 연산자에 대해 우선순위에 따라 괄호를 사용하여 다시 표현
+        - 2단계: 각 연산자를 그에 대응하는 오른쪽 괄호의 뒤로 이동
+        - 3단계: 괄호 제거
 
+        ![후위표기식](후위표기식.jpg)
+    
+    - Step2. 후위 표기법의 수식을 스택 이용하여 계산
+        - 1단계: 피연산자 만나면 스택에 push
+        - 2단계: 연산자 만나면 필요한 만큼의 피연산자를 pop하여 연산하고, 연산 결과를 다시 스택에 push
+        - 3단계: 수식이 끝나면 마지막으로 pop하여 출력
+
+        ![계산기](계산기.jpg)
+        ![계산기2](계산기2.jpg)
+        ![계산기3](계산기3.jpg)
+        ![계산기 최종](계산기최종.jpg)
+
+    - 중위 -> 후위 표기법 변환 코드
+        ```python
+        def infix_to_postfix(expression):
+            # 연산자의 우선순위를 정의해야 함
+            # 괄호가 제일 우선순위 낮고, +,- -> *, / 순으로 높아짐
+            op_dict = {'+' : 1,
+                    '-' : 1,
+                    '*' : 2,
+                    '/' : 2,
+                    '(' : 0}      # 닫는 괄호는 나오는 순간 여는괄호와 닫는괄호 사이에 있는 연산자 다 빼내서 우선 연산 
+
+            stack = []      # 연산자를 저장할 스택
+            postfix = []    # 후위 표기식을 저장할 리스트
+
+            for char in expression:     # 표현식 순회
+                # 피연산자인 경우
+                if char.isnumeric():    # 정수라면
+                    postfix.append(char)    # 후위표기식에 삽입
+                # 연산자인 경우
+                elif char == '(':
+                    stack.append(char)
+                elif char == ')':               # 닫는 소괄호 만나면
+                    top_token = stack.pop()     # 연산자들을 스택에서 뺄 것이다
+                    while top_token != '(':     # 여는 소괄호 만날 때까지!
+                        postfix.append(top_token)
+                        top_token = stack.pop()
+                # 연산자인 경우
+                # 스택에 있는 연산자들이 지금 검사하는 연산자보다
+                # 우선순위가 높거나 낮을 때 서로 다르게 처리해야 함
+                else:   
+                    while stack and op_dict[stack[-1]] >= op_dict[char]:
+                    # 스택에 연산자가 있는 동안 계속 반복
+                    # 스택의 마지막에 잇는 연산자가 지금 연산자보다 우선순위가 크거나 같을 때
+                    # 스택의 마지막 연산자를 빼서 리스트에 추가
+                        postfix.append(stack.pop())
+                    stack.append(char)
+
+            while stack:
+                postfix.append(stack.pop())
+
+            # postfix에 넣었던 값들을 공백 넣어서 합치기
+            # 3 2 5 * + 8 4 / -
+            return ' '.join(postfix)
+        ```
+        - 이렇게 만든 후위표기식을 계산하고 싶다면
+        - 피연산자들을 스택에 넣다가 연산자를 만나면 스택에 들어있는 피연산자 2개를 빼내서 연산하고
+        - 그 결과를 다시 스택에 넣는 방식으로 함수 작성하면 됨
 
 
 ## 큐(Queue)
@@ -161,6 +242,7 @@ for ex in examples:
 
 ### 큐의 주요 연산
 ![큐연산](큐연산.png)
+- 큐는 원소가 나갈 수 있는 머리(front)가 어딘지, 원소가 들어올 수 있는 꼬리(rear)가 어딘지에 대해 총 2군데 위치를 알아야 함
 - `EnQueue` : 큐의 뒤쪽에 원소를 삽입
 - `Dequeue` : 큐의 앞쪽에서 원소를 삭제하고 반환
 - `IsEmpty` : 큐가 공백상태인지 확인
@@ -184,9 +266,14 @@ class Queue:
     # 꽉 찼니?
     def is_full(self):
         return self.rear == self.capacity -1
+        # stack의 top과 동일한 조건
+
     # 비었니?
     def is_empty(self):
         return self.front == self.rear
+        # 삽입 시 rear가 움직이고
+        # 삭제 시 front가 움직이므로
+        # front가 rear 위치까지 갔다면 모든 값이 제거되었다는 뜻
     
     # 값 삽입
     def enqueue(self, item):
@@ -208,33 +295,60 @@ class Queue:
         self.items[self.front] = None
         return item
     
-    
-    
-# queue = Queue()
+queue = Queue()
 
-# queue.enqueue(1)
-# queue.enqueue(2)
-# queue.enqueue(3)
-
-# print(queue.dequeue())
-# print(queue.dequeue())
-# print(queue.items)
-# print(queue.peek())
-
-# queue.enqueue(4)
-# queue.enqueue(5)
-
-# print(queue.items)
-# print(queue.is_full())
-# queue.enqueue(11)
-
-# 이렇게 작성했을 때 거짓 포화 상태 발생함
-# 왜? empty의 판별 조건을 front와 rear의 위치가 동일할 때로 설정했고
-# full의 판별 조건을 rear가 최대 용량 -1에 도달했을 때로 설정했어서
-# 웅앵
-# 원형 큐? 
-
+queue.enqueue(1)
+queue.enqueue(2)
+queue.enqueue(3)
+print(queue.dequeue())  # 1
+print(queue.dequeue())  # 2
+print(queue.items)      # [None, None, 3, None, None]
+queue.enqueue(4)
+queue.enqueue(5)
+print(queue.items)      # [None, None, 3, 4, 5]
+print(queue.is_full())  # True
+queue.enqueue(11)       # queue is full!!
 ```
+- 이렇게 작성하면 '거짓 포화 상태(false full)'가 발생함
+    - Why? 큐가 비었는지(empty)는 front와 rear가 같은 위치인지로 판별하고,
+    - 큐가 가득 찼는지(full)는 rear가 리스트의 끝(capacity - 1)에 도달했는지로 판별했기 때문
+- 그런데 front와 rear가 독립적인 입출구를 갖는 구조에서
+    - 요소를 dequeue해서 공간이 생겨도, rear가 끝에 도달하면 리스트 뒤쪽에 더 이상 삽입할 수 없다고 판단하게 됨
+    - 예를 들어 앞쪽(front)에 빈 공간이 생겼는데도 rear가 끝에 있어서 더 이상 enqueue할 수 없는 '거짓 포화 상태'가 발생할 수 있음
+- 이것은 큐가 선형구조 즉, 선형 배열로 구현되었기 때문에 생기는 문제
+- 이를 해결하려면 rear와 front가 원형으로 도는 '원형 큐' 구조를 사용해야 함
+
+### 큐 응용
+- 버퍼
+    - 데이터를 한 곳에서 다른 한 곳으로 전송하는 동안 일시적으로 그 데이터를 보관하는 메모리 영역
+    - 순서대로 입력/출력/전달되어야 하므로 FIFO 방식의 큐 활용
+
+- 마이쮸 나눠주기 시뮬레이션
+    - 20개의 마이쮸가 있을 때 마지막 것은 누가 가져갈까?
+    
+        ![마이쮸](마이쮸.jpg)
+
+    ![마이쮸2](마이쮸1.jpg)
+    ![마이쮸3](마이쮸2.jpg)
+
+
+## 원형 큐(Circular Queue)
+선형 큐를 이용한 삽입, 삭제는 리스트의 앞부분에 활용할 수 있는 공간이 있음에도 불구하고 rear = 최대용량 -1 에 다다르면 포화상태로 인식하여 더 이상의 삽입을 수행하지XX
+
+-> 매 연산이 이루어질 때마다 저장된 원소들을 배열의 앞부분으로 모두 이동시킨다면?
+
+-> 원소 이동에 많은 시간이 소요되어 큐의 효율성 떨어짐
+
+-> 그렇다면 1차원 배열을 사용하되, 논리적으로는 배열의 처음과 끝이 연결되어 원형 형태의 큐를 이룬다고 가정하고 사용해보자
+
+### 원형 큐의 연산과정
+
+
+
+---
+---
+---
+
 
 
 
