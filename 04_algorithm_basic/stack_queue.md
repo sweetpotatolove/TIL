@@ -342,15 +342,93 @@ queue.enqueue(11)       # queue is full!!
 -> 그렇다면 1차원 배열을 사용하되, 논리적으로는 배열의 처음과 끝이 연결되어 원형 형태의 큐를 이룬다고 가정하고 사용해보자
 
 ### 원형 큐의 연산과정
+1. 초기 공백 상태
+    - front = rear = 0
+    - create Queue
 
+        ![원형큐1](원형큐.jpg)
 
+2. front 변수
+    - 공백 상태와 포화 상태 구분을 쉽게 하기 위해 front가 있는 자리는 사용하지 않고 항상 빈 자리로 둠
+    - enQueue(A)
 
----
----
----
+        ![원형큐2](원형큐2.jpg)
 
+3. index의 순환
+    - front와 rear의 위치가 배열의 마지막 인덱스인 n-1를 가리킨 후, 그 다음에는 논리적 순환을 이루어 리스트의 처음 인덱스인 0으로 이동해야 함
+    - 이를 위해 나머지 연산자 `mod` 사용
+    - enQueue(B) -> deQueue() -> enQueue(C) -> enQueue(D)
 
+        ![원형큐3](원형큐3.jpg)
 
+- 원형 큐 코드
+    ```python
+    class CircularQueue:
+        # 원형 큐를 초기화하는 메서드
+        def __init__(self, size=5):
+            self.size = size  # 큐의 크기
+            self.items = [None] * size  # 큐를 지정된 크기의 None 리스트로 초기화
+            self.front = -1  # 큐의 앞쪽 인덱스 초기화
+            self.rear = -1  # 큐의 뒤쪽 인덱스 초기화
+
+        # 큐에 아이템을 추가하는 메서드
+        def enqueue(self, item):
+            if self.is_full():  # 큐가 가득 찬 경우
+                print("큐가 가득 찼습니다.")  # 경고 메시지 출력
+            else:
+                if self.front == -1:  # 큐가 비어 있는 경우
+                    self.front = 0  # front를 0으로 설정
+                self.rear = (self.rear + 1) % self.size  # rear 인덱스를 순환하여 증가
+                self.items[self.rear] = item  # rear 위치에 아이템 추가
+
+        # 큐에서 아이템을 제거하고 반환하는 메서드
+        def dequeue(self):
+            if self.front == -1:  # 큐가 비어 있는 경우
+                print("큐가 비었습니다.")  # 경고 메시지 출력
+                return None
+            else:
+                dequeued_item = self.items[self.front]  # front 위치의 아이템 제거
+                self.items[self.front] = None
+                if self.front == self.rear:  # 큐에 하나의 아이템만 있는 경우
+                    self.front = -1  # 큐를 비움
+                    self.rear = -1
+                else:
+                    self.front = (self.front + 1) % self.size  # front 인덱스를 순환하여 증가
+                return dequeued_item
+
+        # 큐의 맨 앞 아이템을 반환하는 메서드
+        def peek(self):
+            if self.front == -1:  # 큐가 비어 있는 경우
+                print("큐가 비었습니다.")  # 경고 메시지 출력
+                return None
+            else:
+                return self.items[self.front]  # front 위치의 아이템 반환
+
+        # 큐가 비어 있는지 확인하는 메서드
+        def is_empty(self):
+            return self.front == -1  # 큐가 비어 있는지 확인
+
+        # 큐가 가득 찼는지 확인하는 메서드
+        def is_full(self):
+            return (self.rear + 1) % self.size == self.front  # rear 인덱스가 front 인덱스의 바로 앞에 있는지 확인
+    ```
+    - 원형 큐는 가득 찼는지 판단하는 기준을 `(self.rear + 1) % self.size == self.front`라고 정의함
+    - ex. 나의 큐 사이즈가 5이고, rear가 index 4를 가리키고 있을 때 front가 0을 가리키고 있다면 가득 찼다고 판단!
+    - 삽입 위치 또한 이 규칙을 따라서 `self.rear = (self.rear + 1) % self.size`로 정의
+
+※ 우리는 Python의 deque(또는 list)를 사용할 예정이므로, 선형 큐에서 발생하는 '거짓 포화 상태' 문제는 생기지 않음
+
+※ 또한, Python의 리스트는 가변 크기이기 때문에 별도로 최대 크기를 정할 필요도 없음. 따라서, 원형 큐의 구조적 복잡성은 생략하고, 큐의 동작 개념만 간단히 이해하고 넘어가도 충분하다~
+
+-> `deque` 쓸거얌
+
+-> deque가 어떻게 동작하기에 이것들이 한번의 연산으로 진행이 되는 것일까?
+
+-> rear번째에 있는 위치에 값 삽입(1번)
+
+-> front번째에 있는 위치에 값 삭제(1번)
+
+-> 이런 형식으로 진행되기 때문에 deque의 pop이 리스트처럼 n번 연산이 아닌, 1번의 연산으로 실행 가능하다
 
 
 ### 리스트의 문제점
@@ -358,9 +436,10 @@ queue.enqueue(11)       # queue is full!!
 - 자료의 삽입/삭제 연산 과정에서 연속적인 메모리 배열을 위해 원소들을 이동시키는 작업이 필요함
 - 원소의 개수가 많고, 삽입/삭제 연산이 빈번하게 일어날수록 작업 소요 시간이 크게 증가함
 
-- 주소를 지정 안하면 된다?
-- 그럼 순서를 어떻게 만드냐?
-- 내 다음은 OO이다. 하고 알려주는거임
+- 이를 어떻게 해결할 수 있을까?
+    - 주소를 지정 안하면 됨
+    - 그럼 순서를 어떻게 만드냐?
+    - 내 다음은 OO이다. 하고 알려주는거임
 
 
 ## 연결 리스트(Linked List)
@@ -384,4 +463,188 @@ queue.enqueue(11)       # queue is full!!
 
 
 ### 단순 연결 리스트(Singly Linked List)
+노드가 하나의 링크 필드에 의해 다음 노드와 연결되는 구조
+- 헤드가 가장 앞의 노드를 가리키고, **링크 필드가 연속적으로 다음 노드를 가리킴**
+- 링크필드가 Null인 노드가 연결 리스트의 가장 마지막 노드
+
+    ![단순 연결 리스트](단순연결리스트.jpg)
+
+- 삽입 연산(첫 번째 노드로 삽입)
+    - 공백 리스트의 첫 번째에 'A'노드 삽입할 때
+
+        ![삽입연산1](연결리스트삽입.jpg)
+        ![삽입연산2](연결리스트삽입2.jpg)
+
+    - 'A'를 원소로 갖고 있는 리스트의 첫 번째에 'C'노드를 삽입할 때
+
+        ![삽입연산3](연결리스트삽입3.jpg)
+        ![삽입연산4](연결리스트삽입4.jpg)
+
+    ```python
+    class Node:
+        def __init__(self, data):
+            self.data = data
+            self.next = None
+    
+    class SinglyLinkedList:
+        def __init__(self):
+            self.head = None
+        
+        def insert(self, data, position):
+            new_node = Node(data)
+            if position == 0:
+                new_node.next = self.head
+                self.head = new_node
+            else:
+                current = self.head
+                for _ in range(position -1):
+                    if current is None:
+                        print("범위를 벗어난 값")
+                        return
+                    current = current.next
+                new_node.next = current.next
+                current.next = new_node
+    ```
+
+- **삽입 연산(마지막 노드로 삽입)**
+    - 'C', 'A'를 원소로 갖고 있는 리스트의 마지막에 'D' 노드 삽입할 때
+
+        ![삽입연산5](연결리스트삽입5.jpg)
+        ![삽입연산6](연결리스트삽입6.jpg)
+    
+
+    ```python
+    class Node:
+        def __init__(self, data):
+            self.data = data  # 노드의 데이터
+            self.next = None  # 다음 노드를 가리키는 포인터
+
+    class SinglyLinkedList:
+        def __init__(self):
+            self.head = None  # 링크드 리스트의 헤드 초기화
+
+        # 리스트의 끝에 노드를 추가하는 메서드
+        def append(self, data):
+            # 삽입하려고 하는 데이터를 토대로 Node 생성
+            new_node = Node(data)
+            if self.is_empty():     # 비어있다면
+                self.head = new_node
+            else:
+                current = self.head
+                while current.next:   # 1번 객체의 next를 봤을 때 가리키고 있는 2번 객체가 있다면
+                    current = current.next      # 2번 객체를 기준으로 next 확인
+                current.next = new_node         # 새로운 노드를 마지막 노드의 next가 가리킬 수 있도록..
+
+        # 리스트가 비어있는지 확인하는 메서드
+        def is_empty(self):
+            return self.head is None    # 헤드가 none이니?
+            # linkedlist가 비어있을 땐 head에 노드 추가해야 하므로 확인 필요
+    ```
+
+- 삽입 연산(가운데 노드로 삽입)
+    - 'C', 'A', 'D'를 원소로 갖고 있는 리스트의 두 번째에 'B'노드를 삽입할 때
+
+        ![삽입연산7](연결리스트삽입7.jpg)
+        ![삽입연산8](연결리스트삽입8.jpg)
+    
+    ```python
+    class Node:
+        def __init__(self, data):
+            self.data = data
+            self.next = None
+
+    class SinglyLinkedList:
+        def __init__(self):
+            self.head = None
+
+        def insert(self, data, position):
+            new_node = Node(data)
+            if position == 0:
+                new_node.next = self.head
+                self.head = new_node
+            else:
+                current = self.head
+                for _ in range(position -1):
+                    if current is None:
+                        print("범위를 벗어난 값")
+                        return
+                    current = current.next
+                new_node.next = current.next
+                current.next = new_node    
+    ```
+
+- 삭제 연산
+    - 'A', 'B', 'C', 'D'를 원소로 갖고 있는 리스트의 'B'노드를 삭제할 때
+
+        ![삭제연산](연결리스트삭제.jpg)
+        ![삭제연산2](연결리스트삭제2.jpg)
+
+    - 'A', 'C', 'D' 원소를 갖고있는 리스트의 'A'노드 삭제할 때
+
+        ![삭제연산3](연결리스트삭제3.jpg)
+        ![삭제연산4](연결리스트삭제4.jpg)
+    
+    ```python
+    def is_empty(self):
+        return self.head is None
+    
+    def delete(self, position):
+        if self.is_empty():
+            print("리스트가 비었습니다")
+            return
+        
+        if position == 0:
+            deleted_data = self.head.data
+            self.head = self.head.next
+        else:
+            current = self.head
+            for _ in range(position -1):
+                if current is None or current.next is None:
+                    print('범위를 벗어났습니다')
+                    return
+                current = current.next
+            deleted_node = current.next
+            deleted_data = deleted_node.data
+            current.next = current.next.next
+        return deleted_data
+    ```
+
+※ 단순 연결 리스트 최종 구현
+
+![단순연결리스트](단순연결리스트최종.jpg)
+![단순연결리스트2](단순연결리스트최종2.jpg)
+
+※ 단순 연결 리스트 장점
+
+-> 필요한만큼 메모리 사용
+
+※ 단순 연결 리스트 단점
+
+-> 특정 요소에 접근하려면 순차적으로 탐색 `O(N)`
+
+-> 역방향 탐색 불가
+
+
+## 이중 연결 리스트(참고)
+양쪽 방향으로 순회할 수 있도록 노드를 연결한 리스트
+- 두 개의 링크 필드와 한 개의 데이터 필드로 구성
+    
+    ![이중 연결 리스트](이중연결리스트.jpg)
+
+- 삽입 연산
+    - cur이 가리키는 노드 다음으로 D 값을 가진 노드를 삽입하는 과정
+
+        ![이중연결1](이중연결1.jpg)
+        ![이중연결2](이중연결2.jpg)
+        ![이중연결3](이중연결3.jpg)
+        ![이중연결4](이중연결4.jpg)
+        ![이중연결5](이중연결5.jpg)
+
+- 삭제 연산
+    - cur이 가리키는 노드를 삭제하는 과정
+
+        ![이중연결6](이중연결6.jpg)
+        ![이중연결7](이중연결7.jpg)
+        ![이중연결8](이중연결8.jpg)
+        ![이중연결9](이중연결9.jpg)
 
