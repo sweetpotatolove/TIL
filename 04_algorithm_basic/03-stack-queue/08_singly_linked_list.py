@@ -27,6 +27,7 @@ class SinglyLinkedList:
     # 리스트가 비어있는지 확인하는 메서드
     def is_empty(self):
         return self.head is None    # 헤드가 none이니?
+                                    # linkedlist가 비어있을 땐 head에 노드 추가해야 하므로
 
     # 특정 위치의 노드를 삭제하는 메서드
     def delete(self, position):
