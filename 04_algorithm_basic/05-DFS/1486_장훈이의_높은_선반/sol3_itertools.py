@@ -11,18 +11,16 @@ for tc in range(1, T + 1):
     arr = list(map(int, input().split()))
 
     # 직원당 키는 최대 10000이므로, 최대 높이는 10000 * N
-    min_height = 10000 * N 
-    
-    # 1부터 N개까지 선택한 조합
+    min_height = 10000 * N
+
+    # 1부터 N개 까지를 선택한 조합
     for r in range(1, N+1):
         for comb in combinations(arr, r):
             total = sum(comb)
-            
+
             if total >= B:
                 min_height = min(min_height, total)
-    # 조합 나오면 itertools 사용하기(속도차이 매우 남)
-    # 조합 실제로 구현하는건 연습용
-    
+
 
     # 목표 높이 B를 빼서 실제로 초과된 부분만 출력
     print(f"#{tc} {min_height - B}")
