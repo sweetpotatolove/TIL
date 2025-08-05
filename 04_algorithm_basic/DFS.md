@@ -179,7 +179,7 @@ depth_first_search('A')
 
         ![DFS 그래프](DFS18.png)
 
-- DFS 그래프 구현
+- DFS 그래프 재귀로 구현
     ```python
     def depth_first_search(vertex):
         '''
@@ -260,6 +260,60 @@ depth_first_search('A')
 
 -> 내가 방문할 수 있는 후보군들에 대해 방문하게 된다면, 그 후보군이 가진 다음 방문 대상에 바로 (후보군의 후보군 순으로) 이동해서 '깊이 우선'으로 탐색하는 것
 
+- DFS 그래프 구현(재귀XX)
+    ```python
+    def DFS(now):
+        '''
+        now: 현재 방문한 정점 정보
+        '''
+        # 방문 대상 후보군들을 stack에 삽입해서 관리
+        stack = []
+        visited.add(now)    # 현재 지점 방문
+        stack.append(now)   # 현재 위치 추가
+
+        # 순회: 언제까지? stack이 빌 때까지(=더이상 방문할 정점이 없다)
+        while stack:
+            target = stack.pop()    # 이번 방문 대상
+            print(target)           # LIFO 방문
+
+            # 이번 방문 대상의 인접 리스트 순회
+            for next in graph[target]:
+                # 그 대상(target: A 일 때, next = B, C) 을 방문한 적 없다면
+                if next not in visited:
+                    visited.add(next) # 방문처리는 위에서 프린트(print(target)) 하는데 
+                                      # 왜 visited 처리를 여기서 하나?
+                                        # 한번 방문한 곳 다시 방문하지 않으려고 visited 씀
+                                        # '방문'을 하는 행위를 하는 시점이 언제인지 생각해보자
+                                        # 내 후보군들을 스택에 다 넣고난 '후'에
+                                        # 돌아가서 스택 마지막에 있는 요소 빼냄(방문)
+
+                    # 만약 방문 표시를 실제 방문한 시점에 한다면
+                    # stack = [A, B] -> [A, B, C] -> [A, B, D] -> [A, B, B]
+                    # D에서 호출 가능한 후보군이 더이상 없을 때 그제서야 방문했다고 표기
+                    # 표기 후 B를 출력하면 최종적으로 A C D B가 출력 되겠지만
+                    # 코드는 스택이 빌 때까지 돌아가므로 (스택에는 [A, B] 남아있음)
+                    # A C D B B -> B가 또나옴
+                    stack.append(next)
+
+
+    # 그래프 인접 리스트
+    graph = {
+        'A': ['B', 'C'],
+        'B': ['A', 'D', 'E'],
+        'C': ['A', 'E'],
+        'D': ['B', 'F'],
+        'E': ['B', 'F'],
+        'F': ['D', 'E', 'G'],
+        'G': ['C']
+    }
+
+    start_vertex = 'A'
+    visited = set()     # 방문한 정점을 저장할 집합
+                        # 왜 집합?
+                        # 정점 정보를 인덱스로 처리하지 않기 때문에,
+                        # 정점이 가진 정보 자체가 방문 여부를 확인하는 집합에 '포함되어 있는지' 확인
+    DFS(start_vertex)
+    ```
 
 
 
