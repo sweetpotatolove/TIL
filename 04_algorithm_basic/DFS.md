@@ -176,71 +176,92 @@ depth_first_search('A')
         - 더이상 방문하지 않은 인접 노드가 없으므로 이전 호출 스택으로 리턴
         - DFS(F) -> FDS(D) -> DFS(B) -> DFS(A)
     9. 탐색 종료: 탐색 시작 정점의 모든 인접 정점을 모두 방문하여 탐색 종료
+
         ![DFS 그래프](DFS18.png)
 
----
----
----
-```python
-def depth_first_search(vertex):
-    '''
-        vertex: 현재 방문 정점의 index
-    '''
-    # global에 있는 visited를 방문할 때마다, 해당 idx번째를 True로 바꾸고 싶다
-    # 그러려면 함수는 기본적으로 LEGB룰을 따르기 때문에..
-    # global visited 선언하지 않아도 작동함
-    # visited[vertex] = True로만 가능
+- DFS 그래프 구현
+    ```python
+    def depth_first_search(vertex):
+        '''
+            vertex: 현재 방문 정점의 index
+        '''
+        # global에 있는 visited를 방문할 때마다, 해당 idx번째를 True로 바꾸고 싶다
+        # 그러려면 함수는 기본적으로 LEGB룰을 따르기 때문에
+        # 로컬 visited가 선언되는 것을 막기 위해
+        # global visited를 선언해야 하는건지 고민해봐야 함
 
-    # 그치만 글로벌에 있는 visited 사용한다고 명시하기
-    global visited
-    visited[vertex] = True
+        # global visited 선언하지 않아도 작동함
+        # visited[vertex] = True로만 가능
+        # visited는 False를 담고 있는 리스트(참조 자료형)을 참조 중이고
+        # visited 안의 값을 바꾸는 것이 아닌, 
+        # visited가 참조하고 있는 vertax번째의 값을 true로 바꾸는 것이기 때문에
+        # 글로벌을 쓰지 않아도, 메모리 상의 인덱스를 찾아가서 바꾸는 것이라 안적어도 되지만?
+        # 그치만 글로벌에 있는 visited 사용한다고 명시하기
+        global visited
+        visited[vertex] = True
 
-    # 정점 방문
-    print(graph[vertex])
+        # 정점 방문
+        print(graph[vertex])
 
-    # 현재 정점이 진출할 수 있을, 후보군을 찾자!
-    # 인접 행렬의 vertax번째 리스트를 순회
-    for candidate in adj_matrix[vertex]:
-        # 진출 후보군 A~G 중에, 가능한 경우에 대해서만(1)
-        if candidate:
-            # 서치 작업 진행하려고 했더니
-            # A후보군 0 1 1 0 0 0 0만으로는 곤란할 것 같다
-            depth_first_search()
-            
+        # 현재 정점이 진출할 수 있을, 후보군을 찾자!
+        # 인접 행렬의 vertax번째 리스트를 순회
+    #    for candidate in adj_matrix[vertex]:
+    #        # 진출 후보군 A~G 중에, 가능한 경우에 대해서만(1)
+    #        if candidate:
+    #            # 서치 작업 진행하려고 했더니
+    #            # A후보군 0 1 1 0 0 0 0만으로는 곤란할 것 같다
+    #            depth_first_search()
 
-    for idx in range(N):
-        # 인접 행렬에서, 내 번호(내가 진출 가능한 후보군)
-            # 내가 진출 가능한 idx인지 확인하고,
-            # 그 idx번째가 이전에 방문한적이 있는지 확인 
-            # (방문한 적 없다면 다음 후보군 방문)
-        if adj_matrix[vertex][idx] and visited[idx] == False:
-            depth_first_search(idx)
+        # 모든 정점의 인덱스 번호를 가지고 순회
+        for idx in range(N):
+            # 인접 행렬에서, 내 번호(내가 진출 가능한 후보군)
+                # 내가 진출 가능한 idx인지 확인하고,
+                # 그 idx번째가 이전에 방문한적이 있는지 확인 
+                # (방문한 적 없다면 다음 후보군 방문)
+            if adj_matrix[vertex][idx] and visited[idx] == False:
+                depth_first_search(idx)
 
 
-        # 0    1    2    3    4    5    6
-graph = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-# 정점 수: N
-N = 7
-# 해당 정점 방문 여부 표시: False로 초기화
-visited = [False] * N
+            # 0    1    2    3    4    5    6
+    graph = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+    # 각 정점들을 나열한 리스트를 통해서
+    # 0번에는 A가 있다, 1번에는 B가 있다 라는 형식의 고유한 키 값으로 사용할 예정
+    # 그래서 dfs 함수의 vertex에 인덱스(정수값)를 넣을 것임
 
-# 인접 행렬
-adj_matrix = [
-#   진입 차수
-#    A  B  C  D  E  F  G
-                            # 진출 차수
-    [0, 1, 1, 0, 0, 0, 0],  # A
-    [1, 0, 0, 1, 1, 0, 0],  # B
-    [1, 0, 0, 0, 1, 0, 0],  # C
-    [0, 1, 0, 0, 0, 1, 0],  # D
-    [0, 1, 1, 0, 0, 1, 0],  # E
-    [0, 0, 0, 0, 1, 0, 1],  # F
-    [0, 0, 0, 0, 0, 1, 0],  # G
-]
 
-# 시작 정점을 이번엔 0번인 A부터 시작
-depth_first_search(0)
-```
+    # 정점 수: N
+    N = 7
+
+    # 해당 정점 방문 여부 표시: False로 초기화
+    visited = [False] * N
+
+    # 인접 행렬
+    adj_matrix = [
+
+    #   진입 차수
+    #    A  B  C  D  E  F  G
+                                # 진출 차수
+        [0, 1, 1, 0, 0, 0, 0],  # A
+        [1, 0, 0, 1, 1, 0, 0],  # B
+        [1, 0, 0, 0, 1, 0, 0],  # C
+        [0, 1, 0, 0, 0, 1, 0],  # D
+        [0, 1, 1, 0, 0, 1, 0],  # E
+        [0, 0, 0, 0, 1, 0, 1],  # F
+        [0, 0, 0, 0, 0, 1, 0],  # G
+    ]
+
+    # 시작 정점을 이번엔 0번인 A부터 시작
+    depth_first_search(0)
+    ```
+
+**※ 깊이 우선 탐색**
+
+-> 내가 방문할 수 있는 후보군에 도달하자 마자 그 후보군을 방문하는 것이 아니라!!!!(재귀)
+
+-> 내가 방문할 수 있는 후보군들에 대해 방문하게 된다면, 그 후보군이 가진 다음 방문 대상에 바로 (후보군의 후보군 순으로) 이동해서 '깊이 우선'으로 탐색하는 것
+
+
+
 
 ### 연습문제
 1. 다음은 연결되어 있는 두 개의 정점 사이의 간선을 순서대로 나열해놓은 것이다
