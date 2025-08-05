@@ -259,6 +259,7 @@
     1. A -> T1 -> T2
     2. A -> **B (T3) E** -> **C F G**
     3. A B **D H I** E C F G
+
     ![전위순회](전위순회.png)
 ```python
 # 리스트 구현
@@ -299,6 +300,7 @@ def preorder_traversal(root):
     1. T1 -> A -> T2
     2. **(T3) B E** -> A ->  **F C G**
     3. **H D I** B E A F C G
+
     ![중위순회](전위순회.png)
 ```python
 # 리스트 구현
@@ -342,6 +344,7 @@ def inorder_traversal(root):
     1. T1 -> T2 -> A
     2. **(T3) E B** -> **F G C** -> A   
     3. **H I D** E B F G C A
+    
     ![후위순회](전위순회.png)
 ```python
 # 리스트 구현
