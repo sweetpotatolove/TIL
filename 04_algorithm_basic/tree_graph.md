@@ -1,4 +1,3 @@
-file:///c%3A/Users/SSAFY/Desktop/TIL/04_algorithm_basic/tree_graph.md {"mtime":1754265711417,"ctime":1754265711417,"size":0,"etag":"3ek6c7f6a0","orphaned":false,"typeId":""}
 # 트리와 그래프
 ## 트리
 상위 원소에서 하위 원소로 내려가면서 확장되는 트리(나무)모양의 구조
