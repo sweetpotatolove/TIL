@@ -2,30 +2,29 @@ import sys
 sys.stdin = open("input.txt")
 
 def dfs(idx, total):
-    # 현재 탐색 중인 점원의 index
-    # 지금까지 선택한 점원들의 키
     global min_height
-
     # 내 최종 결과가 min_height가 작아지길 바라는건데
-    # 이미 지금까지 더해 나간 총합이 min_height보다 크면
-    # 아직 점원이 남아있어도 점원의 키를 더해볼 필요가 없다
+    # 이미 지금까지 더해 나간 총합이 min_height보다 크면...
+    # 아직 점원이 남았어도 점원의 키를 더해볼 필요가 있을까?
+    # 점원의 키가 음수일 가능성은 없지 않음?
     if total >= min_height:
         return
 
+
+    # 현재 탐색 중인 점원의 index
+    # 지금까지 선택한 점원들의 키
+
     # idx가 얼마가 되면 종료? N
     if idx == N:
-        # 지금까지 선택된 점원들의 키의 총합이 B보다 커야하고
-        # 글로벌에 있었던 min_height 정보와 비교하여 더 작은 값 저장
+        # 지금까지 선택된 점원들의 키의 총합이
         if total >= B:
             min_height = min(min_height, total)
         return
-
-    # 아직 모든 점원에 대해 탐색하지 않았으므로
+    # 아직 모든 점원에 대해서 탐색하지 않았으므로,
     dfs(idx+1, total + arr[idx])
-    # 위 코드는 지금까지의 점원들 키 다 더한?
-
-    # 이번 점원의 키는 더하지 않는다
+    # 이번 점원의 키는 더하지 않는다.
     dfs(idx+1, total)
+
 
 T = int(input())
 for tc in range(1, T + 1):
