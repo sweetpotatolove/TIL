@@ -6,7 +6,7 @@ from collections import deque
 def bfs(start_index):
     visited = set()
     queue = deque()
-    queue.append(start_index)
+    queue.append([start_index])
     visited.add(start_index)
     last_level = []  # 같은 레벨의 최대값 구해야함
 

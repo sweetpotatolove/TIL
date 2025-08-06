@@ -93,21 +93,9 @@
     print(BFS('A'))
     ```
 
----
----
----
-
-
-
-노드가 가진 인접 노드의 정보를 
-
-..
-
-
 
 ## BFS(그래프)
-
-
+탐색 시작점의 인접한 정점들을 모두 차례로 방문한 후에, 방문했던 정점을 시작점으로하여 다시 인접한 정점들을 차례로 방문하는 방식
 
 - BFS(그래프) 탐색 순서
     1. Visited 리스트 생성 및 False 초기화 & 큐 생성 & 시작 정점(A) 방문처리 및 enqueue
@@ -139,14 +127,15 @@
 - BFS(그래프) 구현 코드
     ```python
     from collections import deque
-    def BFS(start_vertax):
+
+    def BFS(start_vertax):  # 인접 리스트는 시작 '정점(노드)' 넣어줌
         # 해당 정점 방문 여부 표시할 배열 필요함
         # visited = [0] * len(nodes)
         # 또는
         visited = set()
 
         # 후보군 저장
-        # deque는 첫번째 인자로  iterable 객체를 받음
+        # deque는 첫번째 인자로 iterable 객체를 받음
         queue = deque([start_vertax]) # 그냥 넣지말고 리스트로 만들어서 넣자
 
         # 조사 시작할 때 시작정점 넣어주기
@@ -167,9 +156,15 @@
                     queue.append(neighbor)  # 다음 후보군에 추가
         return result
 
+
     # BFS2 --------------------------------------
 
-    def BFS2(start_index):
+    # 인접 리스트와 달리 인접 행렬은 시작 '인덱스' 넣어줌
+    def BFS2(start_index):  
+        '''
+        인접 행렬로 순회 시 -> 정점의 index
+        인접 리스트로 순회 시 -> 정점의 값
+        '''
         visited = set()
         queue = deque([start_index])
         visited.add(start_index)
@@ -181,11 +176,13 @@
 
             # 모든 노드들에 대해 인덱스 조사
             for next_index in range(len(nodes)):
-                # ??
+                # 내가 찾으려는 다음 정점은 인접 행렬에서 내 위치(현재노드)의 next_index번째에 있음
                 if next_index not in visited and adj_matrix[node][next_index]:
                     visited.add(next_index)
                     queue.append(next_index)
         return result
+
+
     # 정점&간선 정보 -----------------------------
 
     # 정점 정보
@@ -206,10 +203,14 @@
     # 문제 풀 때는 간선 정보를 받는 경우가 많으니
     # 간선 정보를 토대로 인접 리스트 or 인접 행렬을 만드는 연습 해보기
 
+
     # 인접 리스트 --------------------------------
     
     # 간선 정보를 보기 쉬운 인접 리스트 형태로 만들어보자
-    adj_list = {        # dict comprehension
+    '''
+    adj_list = {'A':['B','C']}
+    '''
+    adj_list = {                         # dict comprehension
         node: [] for node in nodes
         # key: value
     }
@@ -219,20 +220,25 @@
         u, v = edge.split()     # 시작 정점, 도착 정점
         # print(f'{u}: {nodes[int(u)]}, {v}: {nodes[int(v)]})
 
+        # 'A'에 'B', 'C' 추가 -> 'A': ['B', 'C']
         adj_list[nodes[int(u)]].append(nodes[int(v)])
         # 현재 간선 정보는 '무방향' 그래프
         # -> 양쪽 다 갈 수 있다는 뜻
         # 반대방향도 넣어주자
         adj_list[nodes[int(v)]].append(nodes[int(u)])
+
     # 인접 리스트 완성
     # print(adj_list)
 
     print(BFS('A'))
+
+
     # 인접 행렬 ----------------------------------
 
     # 인접 행렬 -> [[], [], [], ...]
+    # 비어있는 리스트를 node 개수만큼 만들고, node 개수만큼 반복
     adj_matrix = [[0] * len(nodes) for _ in range(len(nodes))]
-                # 모든 정점에 못간다고 가정해두고
+                # 모든 정점에 못간다고 가정해두고(0)
                 # 갈 수 있는 정점을 1로 변경하자(아니면 나중에 0 다 채워야함)
 
     for edge in edges:
@@ -244,6 +250,35 @@
     print(BFS2(0))
     ```
 
+※  deque는 첫번째 인자로 iterable 객체를 받는 것에 대하여
+
+-> deque는 원래 초기화 시 첫번째 인자로 iterable 객체를 받는다
+
+-> 즉, `queue = deque([요소1, 요소2])` 이런식으로 deque를 만들면
+
+-> `queue = [요소1, 요소2]`와 같이 큐에 요소1, 요소2가 각각 한칸씩 차지하도록 큐가 구성됨
+
+-> 여기서 오해하면 안되는 것! [요소1, 요소2]가 통으로 한 칸에 들어가는 것이 아님 
+
+-> `queue = [[요소1, 요소2], [요소3?]]` 아님XXXX
+
+-> 초기화할 때 iterable 객체를 넣어야 하는데, 넣으려는 요소가 1개 뿐이라면 리스트에 감싸라는 뜻 `deque([요소1])`
+
+-> 또는
+
+-> `queue = deque()` -> `queue.append(요소1)` 이렇게 따로 작성하면 
+
+-> `queue = [요소1]` 요소1이 큐의 첫번째 칸에 요로콤 들어감
+
+-> 주의!! `queue = deque()` -> `queue.append([요소1])` 이렇게 넣으면XX 
+
+-> `queue = [[요소1]]` 요소1이 큐의 첫번째 칸에 리스트에 감싸진 채 들어감
+
+-> deque 초기화할 때만 iterable 객체로 넣는 것이지,
+
+-> append할 때 리스트로 감싸버리면 append 특징 상 통째로 queue에 추가하기 때문에
+
+-> `queue = [ 원래 있던 요소 , [요소1]]` 이렇게 들어가버림을 주의해라!!!
 
 
 ###  연습문제
