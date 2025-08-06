@@ -250,7 +250,7 @@
     print(BFS2(0))
     ```
 
-※  deque는 첫번째 인자로 iterable 객체를 받는 것에 대하여
+**※  deque는 첫번째 인자로 iterable 객체를 받는 것에 대하여**
 
 -> deque는 원래 초기화 시 첫번째 인자로 iterable 객체를 받는다
 
