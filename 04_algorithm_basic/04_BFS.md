@@ -477,5 +477,3 @@
 
         print(min_count)  # 결과 출력
         ```
-
-
