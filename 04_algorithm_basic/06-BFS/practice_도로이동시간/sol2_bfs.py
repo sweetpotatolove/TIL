@@ -9,9 +9,12 @@ dy = [0, 0, -1, 1]
 def get_road_move_time(road, N, M):
     # sol1에서는 후보군에 단순 좌표만 넣었다면,
     # 이번에는 후보군에, 그 후보군이 얼만큼의 누적시간을 가지고 있는지도 기록
+
     queue = deque()
+
     # x, y, cnt(누적합)
     queue.append((0, 0, 0))
+    
     # 물론, 후보군에 cnt 넣는거랑 별개로 visited는 필요함
     visited = [[0] * M for _ in range(N)]
     visited[0][0] = 1    # 시작정점 방문처리
