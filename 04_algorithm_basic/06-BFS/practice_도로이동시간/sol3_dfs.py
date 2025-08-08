@@ -4,10 +4,10 @@ sys.stdin = open('input.txt')
 dx = [-1, 1, 0, 0]
 dy = [0, 0, -1, 1]
 
-def dfs(row, col, acc):
+def dfs(row, col, acc):     # 행, 열, 누적값
     global min_count
 
-    ####
+    # 가지치기
     if acc >= min_count:
         return
 
@@ -27,7 +27,7 @@ def dfs(row, col, acc):
 
         # 갈 수 있으면 방문 표시하고 이동
         visited[nx][ny] = 1
-        dfs(nx, ny, acc + 1)    # 조사를 떠났다가 돌아왔으면
+        dfs(nx, ny, acc + 1)    # 조사를 떠났다가 돌아왔으면(백트래킹)
                                 # 다음 조사 후보군을 조사해야 함
         # 그러므로, 이전에 nx, ny 조사했던 시점은 없었던 일로 해야함
         # 갔었던 적 없는 깨끗한 길로 만들어줘야 함

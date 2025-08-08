@@ -282,22 +282,200 @@
 
 
 ###  연습문제
-1. 도로 이동시간
+- 도로 이동시간
 
     ![BFS연습](BFS연습1.png)
+    - 최단 거리를 구하는 문제에서는 너비 우선 탐색이 깊이 우선 탐색보다 평균적으로 더 빠르게 목적지에 도달하는 경우가 많음
 
-```python
+    - BFS Solution 1
+        ```python
+        import sys
+        sys.stdin = open('input.txt')
+        from collections import deque
+
+        #    상  하  좌  우
+        dx = [-1, 1, 0, 0]
+        dy = [0, 0, -1, 1]
+
+        def get_road_move_time(row, col):
+
+            # 너비 우선 탐색 -> queue
+            # deque의 첫 번째 인자는 iterable 객체이고,
+            # 내가 지금 queue에 넣고 싶은 후보군은 (0,0)
+            # queue = deque((0,0)) -> queue = deque[0,0] 이렇게 됨
+            # queue = deque([(0,0)]) -> 이렇게 해야 올바르게 (0,0)
+            # 헷갈리니까 아래와 같이 하자
+            queue = deque()
+            queue.append((0,0)) # 시작 정점 후보군에 삽입
+            distance[0][0] = 0  # 시작 위치까지 이동거리는 0
+
+            # BFS 탐색
+            while queue:    # 후보군이 있는 동안
+                row, col = queue.popleft()
+
+                # 이 위치에서 4방향에 대한 탐색
+                # for k in [(-1,0), (1,0), ..] 가능
+                for k in range(4):
+                    nx = row + dx[k]
+                    ny = col + dy[k]
+
+                    # 이제 그 다음 탐색지 data[nx][ny]번째가 이동 가능한지 판별
+                    # 그럴려면 1. 리스트 범위를 벗어나지 않아야 함
+                        # 2. 이전에 방문한 적 없어야 함 -> -1로 초기화 해 두었음
+                        # 3. 그 위치가 '길' 이어야 함 -> 1은 길, 0은 벽
+                    if 0 <= nx < N and 0 <= ny < M and distance[nx][ny] == -1 and data[nx][ny]:           
+                        # 위 조건을 모두 만족하면 후보군에 들 수 있음
+                        queue.append((nx, ny))
+
+                        # 다음 위치까지 도달하는 비용은, 내 위치 비용 + 1
+                        distance[nx][ny] = distance[row][col] + 1
+                        
+                        # 도착지점에 도착하면, BFS 특성상 가장 빠르게 도착한 길이니
+                        # 그때까지의 비용을 할당하고 종료
+                        if nx == N-1 and ny == N-1: # 도착지
+                            return
+            # 모든 후보군을 다 탐색했지만, return 되어서 함수가 종료된 적이 없다면??
+            # 코드가 이곳까지 도달했다면? 도착할 수 없다는 의미
+            return -1
 
 
-```
+        # 데이터 입력 --------------------------------------------
+        # row: N, col: M
+        N, M = map(int, input().split())
+        data = [list(map(int, input())) for _ in range(N)]
+            # map에 넣는 요소는 iterable한 요소
+            # 문자열도 iterable
+            # 문자열 자체를 받아서 차례대로 순회하여 int로 변경
+
+        # 방문 표시를 할거야 -> 우리의 최종 목적이 무엇이냐?
+        # 해당 위치까지 도달하는 데 걸린 비용이 얼마인지 기록하는 것!
+        distance = [[-1] * M for _ in range(N)]
+            # 내가 N-1, M-1 위치에 도달했을 때
+            # distance에 기록되어 있는 누적값이 최종 결과값이 됨
+            # 방문한 적이 없으면 -1, 방문했으면 방문하면서 든 비용이 얼마인지 가지고와서 누적
+
+        # 시작지점(0,0)은 distance를 0으로 초기화해주면 좋겠다
+        # (0,0) -> (0,1)로 이동했을 때 발생하는 1 이라는 비용을 어떻게 알까
+        # (0,0) -> (0,2)로 이동했을 때 발생하는 2 라는 비용을 어떻게 알까
+            # (0,1)로 갈 때 발생했던 비용 + 1
+            # 즉, 내 위치까지 도달하는 데 들었던 비용 + 1
+
+        get_road_move_time(0, 0)
+        print(distance[N-1][M-1])
+        ```
+    
+    - BFS Solution 2
+        - solution 1과의 차이점: 함수에 거리값(누적합)도 넣어주고, visited 만들어줌
+        ```python
+        import sys
+        sys.stdin = open('input.txt')
+
+        from collections import deque
+
+        dx = [-1, 1, 0, 0]
+        dy = [0, 0, -1, 1]
+
+        def get_road_move_time(road, N, M):
+            # sol1에서는 후보군에 단순 좌표만 넣었다면,
+            # 이번에는 후보군에, 그 후보군이 얼만큼의 누적시간을 가지고 있는지도 기록
+
+            queue = deque()
+
+            # x, y, cnt(누적합)
+            queue.append((0, 0, 0))
+            
+            # 물론, 후보군에 cnt 넣는거랑 별개로 visited는 필요함
+            visited = [[0] * M for _ in range(N)]
+            visited[0][0] = 1    # 시작정점 방문처리
+
+            while queue:
+                row, col, dist = queue.popleft()
+
+                for k in range(4):
+                    nx = row + dx[k]
+                    ny = col + dy[k]
+
+                    # 범위를 벗어났으면 조사 못함
+                    if nx < 0 or nx >= N or ny < 0 or ny >= M:
+                        continue
+
+                    # 이미 방문한 경우에도 넘어감
+                    if visited[nx][ny]:
+                        continue
+
+                    # 길이 아닌 경우에도 넘어감
+                    if road[nx][ny] == 0:
+                        continue
+
+                    # 도착 지점인 경우
+                    if nx == N-1 and ny == M-1:
+                        return dist + 1  # 지금까지 도달한 거리 + 1 해서 반환
+
+                    # 위 조건들을 다 통과하고 여기까지 왔다면
+                    # 다음 후보군에 등록해주자
+                    visited[nx][ny] = 1
+                    queue.append((nx, ny, dist+1))
+
+            return -1   # 도달할 수 없는 경우
+
+        # 도로의 크기 N * M 입력 받기
+        N, M = map(int, input().split())
+        road = [list(map(int, input())) for _ in range(N)]
+        result = get_road_move_time(road, N, M)     # 길 정보, 가로크기, 세로크기
+        print(result)
+        ```
+    
+    - DFS Solution
+        ```python
+        import sys
+        sys.stdin = open('input.txt')
+
+        dx = [-1, 1, 0, 0]
+        dy = [0, 0, -1, 1]
+
+        def dfs(row, col, acc):     # 행, 열, 누적값
+            global min_count
+
+            # 가지치기
+            if acc >= min_count:
+                return
+
+            if row == N-1 and col == M-1:   # 도착지이면
+                min_count = min(min_count, acc) # 여기까지 도달하는 데 든 비용과 최소값 비교
+                return
+
+            # 4방향 탐색
+            for k in range(4):
+                nx, ny = row + dx[k], col + dy[k]
+
+                # 범위를 벗어나거나, 방문한 적 있거나, 길이 아니면 넘어가자
+                if nx < 0 or nx >= N or ny < 0 or ny >= M:
+                    continue
+                if visited[nx][ny]: continue
+                if not road[nx][ny]: continue
+
+                # 갈 수 있으면 방문 표시하고 이동
+                visited[nx][ny] = 1
+                dfs(nx, ny, acc + 1)    # 조사를 떠났다가 돌아왔으면(백트래킹)
+                                        # 다음 조사 후보군을 조사해야 함
+                # 그러므로, 이전에 nx, ny 조사했던 시점은 없었던 일로 해야함
+                # 갔었던 적 없는 깨끗한 길로 만들어줘야 함
+                visited[nx][ny] = 0
 
 
-2. 섬 찾기
+        # 입력 처리
+        N, M = map(int, input().split())
+        road = [list(map(int, input())) for _ in range(N)]
 
-    ![BFS연습2](BFS연습2.png)
+        # 방문 배열 및 최소 이동 횟수 초기화
+        visited = [[False] * M for _ in range(N)]
+        min_count = float('inf')
 
-```python
+        # 시작점 방문처리 후 탐색 시작
+        visited[0][0] = True
+        dfs(0, 0, 0) # x, y, 누적값
 
+        print(min_count)  # 결과 출력
+        ```
 
-```
 
