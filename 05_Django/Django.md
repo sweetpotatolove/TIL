@@ -34,17 +34,24 @@
     - 사용자 인터페이스(UI)를 구성하고, 사용자가 애플리케이션과 상호작용할 수 있도록 함
     - HTML, CSS, JavaScript, 프론트엔드 프레임워크 등
 
-※ 프론트엔드 != 디자이너
-
--> 
-
--> 
-
-->
-
 - Backend (백엔드)
     - 서버 측에서 동작하며, 클라이언트 요청에 대한 처리와 데이터베이스와의 상호작용 등을 담당
     - 서버 언어(python, java 등) 및 벡엔드 프레임워크, 데이터베이스, API, 보안 등
+
+※ 프론트엔드 != 디자이너
+
+-> 클라이언트(요청의 주체) 즉, 크롬 브라우저 상에서 내 화면을 보고 서비스를 요청보낼 수 있는 쪽이 '어떻게 서버로 요청 보내도록 하는지?'에 대한 것들을 비개발자까지 누구든지 사용할 수 있도록 해야함
+
+-> 또한 클라이언트 측은 요청해서 응답받은 데이터를 화면에 랜더링할 수 있어야 함
+
+-> 그러려면 서버에 요청 보내는 방법, 응답받은 데이터를 어떻게 처리할지 알아야 하는데, 그것을 개발하는 것이 프론트엔드!!
+
+
+![프론트엔드와 백엔드](프론트와백엔드.jpg)
+
+-> 클라이언트에서 요청이 단순히 브라우저 상에서 벌어지는 html 문서로 끝나는게 아니라, 서버로 어떻게 요청할 것인지, 응답은 받아와서 어떻게 화면에 보여줄 것인가에 대한 것이 중요해지다보니 프론트 직군이 분화되어 나왔음
+
+-> 이번 시간에는 사용자 요청을 보냈을 때 응답을 받는 서버측에 집중해보자
 
 
 ## Web Framework
@@ -53,7 +60,7 @@
 -> 개발에 필요한 기본 구조, 규칙, 라이브러리 등을 제공
 
 ### Django framework
-Python 기반의 대표적인 웹 프레임워크
+Python 기반의 대표적인 웹 프레임워크( 개발에 사용)
 
 - Django 사용 이유
     1. 다양성
@@ -64,97 +71,125 @@ Python 기반의 대표적인 웹 프레임워크
         - 취약점으로부터 보호하는 보안 기능이 기본적으로 내장되어 있음
     4. 커뮤니티 지원
         - 개발자를 위한 지원, 문서 및 업데이트를 제공하는 활성화 된 커뮤니티
+
+- 가장 인기있는 Backend Framework
+    - `Laravel`
+    - **`Django`**
+    - `Spring`
+    - `Flask`
+    - `Express JS`
     
+※ Django를 사용해서 서버를 구현할 것임
+
 
 ### 가상 환경
 Python 애플리케이션과 그에 따른 패키지들을 격리하여 관리할 수 있는 **독립적인** 실행 환경
 
 - 가상 환경이 필요한 시나리오1
-    ```
+    ```Markdown
     1. 한 개발자가 2개의 프로젝트(A, B)를 진행해야 함
     2. 프로젝트 A는 requests 패키지 버전1을 사용해야 함
     3. 프로젝트 B는 requests 패키지 버전2를 사용해야 함
     4. 하지만 파이썬 환경에서 패키지는 1개의 버전만 존재할 수 있음
     5. A와 B 프로젝트의 다른 패키지 버전 사용을 위한 **독립적인 개발 환경**이 필요함
     ```
+    - 각 버전마다 의존하고 있는 다른 버전, 또는 그 환경에서만 호환되는 패키지가 있는 등의 복잡한 관계 존재
+    - 항상 최신 버전으로 사용하는 것이 아니라, 위에 말한 관계를 생각했을 때 특정 버전을 명시하고 사용할 필요가 있음
 
 - 가상 환경이 필요한 시나리오2
-    ```
+    ```Markdown
     1. 한 개발자가 2개의 프로젝트(A, B)를 진행해야 함
-    2. 
-
+    2. 프로젝트 A는 water라는 패키지 사용해야 함
+    3. 프로젝트 B는 fire라는 패키지 사용해야 함
+    4. 하지만 파이썬 환경에서 두 패키지를 함께 사용하면 충돌이 발생하기 때문에 설치할 수 없음
+    5. A와 B 프로젝트의 패키지 충돌을 피하기 위해 각각 **독립적인 개발 환경**이 필요함
     ```
 
+- 환경 구조 예시
 
+    ![환경구조](환경구조.jpg)
 
-바탕화면에 폴더 만듬(First_project)
+1. 가상환경 설정
+    - 바탕화면에 폴더 만듦 `First_project` (바탕화면 아니어도 편한곳에 만들기)
+    - 그 폴더 환경에 git bash 열기
+    - `pip list` : 현재 환경에 설치된 패키지 목록 확인(현재 많은 리스트 나오는거 확인됨)
+        - 패키지 목록은 팀원들끼리 공유해야 함
+        - 각자의 가상 환경 상황 공유 필수
+    - 가상환경 만들기
+        - `python -m venv folder_name` 
+        - `python -m venv venv` -> 보통 venv 이름으로 가상환경 만듦
+    - 가상환경 활성화
+        - `source venv/Scripts/activate`
+        - 가상환경 활성화 시킴으로써 사용할 수 있는 상태로 만들기
+        - 이제부터 실행시키는 명령어는 가상환경에서 실행됨
+    - 다시 pip list하면 아무것도 안나옴(가상환경 만들었으니까)
 
-그 폴더 환경에 git bash 열기
+※ 의존성 패키지: 한 소프트웨어 패키지가 다른 패키지의 기능이나 코드를 이용하여 그 패키지가 존재해야만 제대로 작동하는 관계
 
-`pip list`
-하니까 깔려있는 많은 리스트 나옴
+-> ex. requests 설치하면 1개만 설치되는 것이 아니라, 다른 패키지도 같이 설치됨
 
-가상환경 만들기
-`python -m venv folder_name` -> `python -m venv venv` 보통 venv 이름으로 가상환경 만듬
+2. 깃 관리에 가상환경은 배제시키자
+    - `code .gitignore` -> vscode로 내 폴더에서 .gitignore 파일 열기
+    - 파일에다가 gitignore.io 거기서 뭐 직접 추가해도 되는데
+    - 우리는 직접 추가하지 않고 일단 venv 폴더만 추가 -> `venv/` 입력
+    - 이로써 venv에 대한 변동사항은 깃이 신경쓰지 않음
+    - 깃 관리에 가상환경 배제시키는 이유
+        - 만약 venv에서 일어나는 변동사항을 깃이 관리하게 되면 .. 어케될까용
+        - 때문에 깃으로 venv 관리 안되게 만들자~!!
 
-`source venv/Scripts/activate` 가상환경 활성화 시킴으로써 사용할 수 있는 상태로 만들기
+3. `.gitignore.py`에서 터미널 열고 활성화
+    - bash에서 가상환경 활성화 한거랑 vscode에서 가상환경 활성화 한거랑 따로임!
+        - vscode에서도 활성화 해주자
+        - 항상 가상환경 활성화 됐는지 확인
+    - 현재 vscode 터미널 상태
+        ```bash
+        SSAFY@DESKTOP-763H707 MINGW64 ~/Desktop/First_project
+        $ source venv/Scripts/activate
+        (venv)
+        ```
 
-다시 pip list하면 아무것도 안나옴(가상환경 만들었으니까)
+3. `pip install django`
+    - 가상환경 폴더에 장고 설치
+    - 똑같이 장고 설치했지만 매번 버전이 다름 -> 버전 고정시키자!
 
-`code .gitignore` 입력해서 내 폴더에서 .gitignore 파일 열기
+4. `pip freeze > requirements.txt`
+    - 의존성 패키지 목록 생성
+    - 즉, 가상환경에 설치했던 패키지 목록들의 버전을 txt 파일에 얼려놓음
+        - 종속되어 함께 설치된 패키지의 버전까지 들어감
+    - 얘네는 gitlab 또는 github에 올림
+    - 다른 곳에서 설치할 때 txt 파일에 있는 목록대로 설치 가능!
+    - `pip install -r requirements.txt`
+        - 목록 읽어서 설치해라는 명령어
+        - 실습 시 글로벌에 설치하지 말고 모든 레포지토리에 목록 읽혀서 설치하기(각각 반복해서 입력)
 
-파일에다가 gitignore.io? 거기서 뭐 직접.. 추가해도 되는데
-
-우리는 직접 추가하지 않고 일단 venv만 추가 -> `venv/` 입력
-
-깃으로 venv 관리 안되게 만듬~!!
-
-venv에 대한 변동사항은 깃이 신경쓰지 않음
-
-.gitignore에서 터미널 열기
-
-
-bash에서 가상환경 활성화 한거랑 vscode에서 가상환경 활성화 한거랑 따로임
-
-항상 가상환경 활성화 됐는지 확인
-
-현재 vscode 터미널 상태
-```bash
-SSAFY@DESKTOP-763H707 MINGW64 ~/Desktop/First_project
-$ source venv/Scripts/activate
-(venv)
-```
-
-가상환경에 장고 설치 `pip install django`
-
-똑같이 장고 설치했지만 시간에 따라? 버전이 다름
-
-`pip freeze > requirements.txt`
-
-버전 얼려놓기
-
-다른 곳에서 설치할 때 txt 파일에 있는 목록대로 설치 가능!
-
-`pip install -r requirements.txt` 목록 읽어서 설치해라
-
-글로벌에 설치하지 말고 모든 레포지토리에 목록 읽어서 설치하기(각각 반복해서 입력)
-
+※ 프로젝트 시작하면 `venv 가상환경 폴더` -> `.gitgnore.py` , `requirements.txt` , `.git폴더` 한 세트로 만들어놓고 진행하자
 
 
 ### Django 프로젝트
-프로젝트 만들건데 이 폴더에 만들어 달라는 명령어래
-`django-admin startproject First_project .`
+- Django 프로젝트 생성 전 루틴
 
-`python manage.py runserver`
-```bash
-August 11, 2025 - 14:38:00
-Django version 5.2.5, using settings 'First_project.settings'
-Starting development server at http://127.0.0.1:8000/
-Quit the server with CTRL-BREAK.
-```
-주소 창 들어가기
+    ![플젝 생성 전 루틴](장고플젝.jpg)
 
-서버 끌 때는 ctrl + c
+- Django 프로젝트 생성
+    - `django-admin startproject first_pjt .`
+    - 장고의 관리자에게(django-admin) 프로젝트 시작해달라고 시킬건데(startproject) first_pjt라는 이름의 프로젝트를 현재 폴더에(.) 만들어 줘
+        - `django-admin startproject` : 명령어
+        - `first_pjt` : 프로젝트 이름
+        - `.` : 현재 폴더
+
+- Django 서버 실행
+    - `python manage.py runserver`
+        ```bash
+        August 11, 2025 - 14:38:00
+        Django version 5.2.5, using settings 'First_project.settings'
+        Starting development server at http://127.0.0.1:8000/
+        Quit the server with CTRL-BREAK.
+        ```
+        - manage.py와 동일한 경로에서 진행
+        - 주소 창 들어가기 `ctrl + click` -> 서버 확인
+        - 장고 웹 서비스 준비 끗.
+    - 서버 끌 때는 터미널에 `ctrl + c`
+
 
 ### Django Design Pattern
 - 디자인 패턴
@@ -172,8 +207,13 @@ Quit the server with CTRL-BREAK.
     - `Model` , `Template` , `Controller`
     - Django에서 애플리케이션을 구조화하는 패턴
     - 기존 MVC 패턴과 동일함(명칭만 다르게 정의)
+        - `View` -> `Template`
+        - `Controller` -> `View`
+    - 클라이언트 측에서는 사용자가 바라볼 화면이니까 view라고 부르는데, 장고 입장에서는 개발하는 사람한테 초점을 맞춰서 명칭 정의힘
 
 - Project & App
+
+    ![프로젝트와 앱](플젝과앱.jpg)
     - Django project
         - 애플리케이션의 집합
         - DB 설정, URL 연결, 전체 앱 설정 등을 처리
@@ -182,37 +222,42 @@ Quit the server with CTRL-BREAK.
         - 독립적으로 작동하는 기능 단위 모듈
         - 각자 특정한 기능을 담당하며 다른 앱들과 함께 하나의 프로젝트를 구성
     
+    - ex. 만약 온라인 커뮤니티 카페를 만든다면?
+        - 프로젝트: 카페(전체 설정 담당. 위에서 명령어 쳐서 만든거)
+        - 앱: 게시글, 댓글, 회원 관리 등(DB, 인증, 화면)
+
     - 앱 사용 순서
         1. 앱 생성
+            - `python manage.py startapp articles`
+            - 매니저야! 어플리케이션 만들건데, 이름은 articles라고 할게
+            - 앱 이름은 **복수형**으로 지정하는 것을 권장
+
         2. 앱 등록
+            - 어디에? 내 프로젝트에 대한 설정 파일에!
+            - `first_pjt - settings.py`에 등록!
+                ```python
+                INSTALLED_APPS = [
+                    'articles'  # 여기 적어서 등록하자
+                    'django.contrib.admin',
+                    'django.contrib.auth',
+                    'django.contrib.contenttypes',
+                    'django.contrib.sessions',
+                    'django.contrib.messages',
+                    'django.contrib.staticfiles',
+                ]
+                ```
+            - 'articles' 추가함
+            - 이로써 first_pjt라는 프로젝트에서 articles 어플리케이션 사용할 준비 완료
+            - 반드시 앱 생성 후 등록!!(등록 후 생성은 불가능)
+    
 
+    - 프로젝트 구조
 
+        ![프로젝트 구조](프로젝트구조.jpg)
 
-`python manage.py startapp articles`
+    - 앱 구조
 
-first_project - settings.py에서
-```
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-]
-```
-```
-INSTALLED_APPS = [
-    'articles'
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-]
-```
-'articles' 추가
+        ![앱 구조](앱구조.jpg)
 
 
 ## REST API
