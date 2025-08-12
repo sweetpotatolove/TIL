@@ -11,37 +11,46 @@ DB의 테이블을 정의하고 데이터를 조작할 수 있는 기능들을 �
 - 테이블 구조를 설계하는 '청사진(blueprint)'
 
 - models.py에 클래스 정의해주면 됨
-
-    ![class](model클래스)
     ```python
+    # articles/models.py
+
     class Article(models.Model):
         title = models.CharField(max_length=10)
         content = models.TextField()
     ```
-    - 설명..
+    - 클래스를 만들어 줌으로써 어떤 게시글에 대한 테이블 `Article`을 만들 수 있게 됨
+    - 제목과 내용을 `CharField`, `TextField`와 같은 문자열을 담을 수 있는 공간으로서 컬럼을 정의할 수 있음
+    - `max_length=10`과 같은 제약사항도 제공
 
 - 작성한 모델 클래스는 최종적으로 DB에 아래와 같은 테이블 구조를 만듦
 
-    ![classDB]()
+    ![classDB](class살펴보기.jpg)
+    - DB에서 중요한 것은 id라 할 수 있음 -> 클래스에 직접 정의하지 않더라도 장고가 알아서 id 필드까지 생성해주기도 함
+    - Django 모델 클래스에서 정의한 `title`, `content`와 같은 클래스 변수는 실제로는 `models.Field` 객체이고, Django가 이를 이용해 데이터베이스 테이블의 컬럼(필드)을 만듦
+        - `title`, `content`는 `models.Field`의 인스턴스를 참조하는 클래스 속성
 
 - `django.db.models` 모듈의 `Model` 이라는 부모 클래스를 상속받음
+
+    ![class상속](class살펴보기2.jpg)
     - Model은 model에 관련된 모든 코드가 이미 작성되어 있는 클래스
     - 개발자는 가장 중요한 **테이블 구조를 어떻게 설계할지에 대한 코드만 작성하도록 하기 위한 것**(상속을 활용한 프레임워크의 기능 제공)
-
-
-
+        - DB에서 데이터 조회, 생성, 수정, 삭제 등 요청과 관련된 메서드 등을 미리 정의해놓은 클래스를 상속받기만 하면 된다!
 
 - model class
+    
+    ![class](class.jpg)
     1. `클래스 변수명`
         - 테이블의 각 **필드(열) 이름**
+        - `title`, `content`
 
     2. `model Field` 클래스
         - 테이블 필드의 **데이터 타입**
-        - 설명..
+        - `CharField`, `TextField`
+        - 클래스 변수 명에 model Field 클래스를 할당해줌으로써 데이터 타입을 나타냄
 
     3. `model Field 클래스의 키워드 인자`(필드 옵션)
         - 테이블 필드의 **제약조건** 관련 설정
-        - 설명..
+        - `max_length=10`
 
 ※ 제약 조건
 
@@ -56,10 +65,13 @@ model 클래스의 변경사항(필드 생성, 수정 삭제 등)을 DB에 최�
 - Migrations 과정
 
     ![과정](migrations.png)
-    - 객체는 설계도...
+    - 클래스로 장고 내에서 사용할 객체를 정의 -> 그 객체는 설계도라 볼 수 있음
+        - 진짜 설계도는 ERD라고 따로 있는데, ERD 기반으로 파이썬 사용할 수 있도록 클래스 정의해둘 것임
     - 클래스로 정의해둔 내용을 토대로 청사진만들 것임(makemigrations)
     - 청사진 내용을 토대로 DB에 테이블 생성(migrate)
-    
+    - django 프로젝트를 만든 순간부터 `manage.py` 파일이 만들어 졌었음(매니저 역할 하는 파일)
+        - 모든 명령어는 앞으로 얘한테 시킬 예정
+        - `makemigrations`, `migrate`도 여기에서 사용
 
 - Migrations 핵심 명령어 2가지
     1. `python manage.py makemigrations`
@@ -69,90 +81,105 @@ model 클래스의 변경사항(필드 생성, 수정 삭제 등)을 DB에 최�
         - 최종 설계도를 DB에 전달하여 반영
 
 - migrate 후 DB 내에 생성된 테이블 확인
-    - Article 모델 클래스로 만들어진 articles_article 테이블
+    - 어디에, 어떻게, 무슨 이름의 테이블이 만들어 질까?
+        - Article 모델 클래스로 만들어진 articles_article 테이블
+        - 장고에서 쓰는 `SQLite3`는 MySQL처럼 서버가 돌아가는 것이 아니라, 파일 단위로 사용할 수 있음(`db.sqlite3`)
+        - 이 파일 자체가 내 프로젝트를 위한 DB
+        - 이 DB에는 테이블들이 여러개 있음
+        - Article 클래스는 articles라는 어플리케이션 안에 있던 article 클래스라서 테이블 명이 articles_article로 만들어짐
+        - 테이블 내부에 `id`, `title`, `content` 컬럼 확인 가능
 
-        ![article 테이블]()
+            ![article 테이블](SQLite.jpg)
 
 ### 추가 Migrations
 ※ 이미 생성된 테이블에 필드를 추가해야 한다면?
 
 1. 추가 모델 필드 작성
     
-    ![추가모델1]()
+    ![추가모델1](추가모델1.jpg)
+    - 필드를 클래스 변수로서 속성만 추가해주면 됨
+    - 제약사항 뿐만 아니라 추가적인 옵션도 달 수 있음
+        - `auto_now_add=True` 추가된 시간을 DB에 넣어줌
+        - `auto_now=True` 수정된 시간을 DB에 넣어줌
+    - 보통 방금 생성한 클래스에 대해 곧바로 까먹은 필드 추가하기 보다는, 데이터가 이미 만들어진 상태로 작업을 하다가~ 뒤늦게 필드를 추가하는 경우가 발생함
 
 2. 이미 기존 테이블이 존재하기 때문에 필드를 추가할 때 필드의 기본 값 설정이 필요
 
-    ![추가모델2]()
+    ![추가모델2](추가모델2.jpg)
+    - `python manage.py makemigrations`
     - 1번: 현재 대화를 유지하면서 직접 기본 값 입력하는 방법
-    - 2번: 현재 대화에서 나간 후 models.py에 기본 값 관련 설정하는 방법
+    - 2번: 현재 대화에서 나간 후 `models.py`에 기본 값 관련 설정하는 방법
 
 3. 추가하는 필드의 기본 값을 입력해야 하는 상황
-    - 날짜 데이터이기 때문에 직접 입력하기 보다 Django가 제안하는 기본 값을 사용하는 것 권장
-    - 아무것도 입력하지 않고 enter 누르면 Django가 제안하는 기본 값으로 설정됨
 
-    timezone: 시간 기준을 utc로 할건지, 아시아 서울로 할건디,,
+    ![추가모델3](추가모델3.jpg)
+    - 날짜 데이터이기 때문에(날짜는 어떻게 쓴다해도 시간은..?) 직접 입력하기 보다 Django가 제안하는 기본 값을 사용하는 것 권장
+    - 아무것도 입력하지 않고 enter 누르면 Django가 제안하는 기본 값으로 설정됨
+        - timezone: 시간 기준을 UTC로 할건지, 서울로 할건지 등을 정함
 
 4. migrations 과정 종료 후 2번째 migration 파일이 생성됨을 확인
 
-    ![추가모델4]()
+    ![추가모델4](추가모델4.jpg)
+    - 기본적으로 청사진은 `migragions` 폴더에 파이썬 파일들이 쌓아지는 형태
+    - 쌓여나가는 파일들은 지우는거 아님. 만약 지워야 한다면 0001, 0002처럼 넘버링된 파일들만 지울 수 있음(얘네가 내 명령어로 만들어진 청사진)
     - Django는 설계도를 쌓아가면서 추후 문제가 생겼을 시 복구하거나 되돌릴 수 있도록 함('git commit'과 유사)
-    - 버전 관리..!
+    - 쌓아놓는 이유: 버전 관리..!
 
 5. migrate 후 테이블 필드 변화 확인
     - `python manage.py migrate`
 
-        ![추가모델5]()
+        ![추가모델5](추가모델5.jpg)
     
 
 ### 실습
-02 폴더
+1. `05_django/02_model_serializer/01-ORM` 에서 gitbash로 vscode 켜기(`code .`)
+2. `$ python -m venv venv` 가상환경 만들기
+3. `$ source venv/Scripts/activate` 가상환경 활성화
+4. `$ pip install django` 가상환경에 장고 설치
+    - `pip list`로 올바르게 가상환경 활성화 되어있는지 확인
+5. `code .gitignore` .gitignore 파일 만들기
+    - `venv/` , `db.sqlite3` 작성
+    - 만약 `.gitignore`가 최상단 폴더에 있다면? 
+    - 하단 프로젝트 모든 곳에서 동일하게 사용하는 범용적인 내용들(venv/ , db.sqlite3)을 위한 .gitignore는 따로 안만들어도 됨
+    - 왜?! 항상 상대경로를 기준으로 하기 때문에 최상단 폴더의 안쪽에 있는 모든 venv, sqlit3은 전부 업로드가 되지 않음
+    - 오로지 하단 프로젝트 하나만을 위해 만들어진 파일들을 깃으로 관리하고 싶지 않을 때! 최상단 .gitignore가 있지만 하단 프로젝트 폴더에도 .gitignore를 만들어야 함
+6. 환경 세팅 다 했으면 전체 코드 슥 둘러보자
+    - `config/settings.py` -> INSTALLED_APPS에 `"article"` app 등록되어 있는지 확인
+        - 남의 코드 받아오더라도 내가 프로젝트 진행하는 것과 동일하게 진행해주는 것이 좋음
+    - `config/urls.py` -> 기본으로 쓰인 admin 외에도, articles로 요청이 들어왔을 때 articles 어플리케이션의 urls로 연결이 되겠다는 내용이 주석처리 되어있음 -> articles에 urls.py가 있구나! -> 이런저런 주석들이 적혀있구나! 확인
+    - `models.py`에는 클래스가 이미 정의되어 있는 상태
+    - `migrations` 폴더에는 별도의 init이 된 내용이 없는 것 같다???
 
-`$ python -m venv venv`
-
-`$ source venv/Scripts/activate` 
-
-`$ pip install django`
-
-`code .gitignore` -> `venv/` , `db.sqlite3`
-최상단에 깃이그노어가 있다면 뭐 따로 안만들어도 된다는데 뭔말이
-
-하단에 써야하는 이-유
-
-config -> settings.py -> INSTALLED_APPS에 "article" app 등록되어 있는지 확인
-
-config -> urls -> 주석.. -> articles -> urls가 있구나..
-
-내 프로젝트 입장에서는 articles가 새로운 뭐시기로 받아들여짐. 왜? 설계도가 없기 때문
-
-`python manage.py makemigrations` 설계도 생성
-
-`python manage.py migrate`
-
-Database -> `+` 버튼 -> SQLite -> Path에 02_어디에  Allfies 보게 해서 db.sqlite3 -> +content -> models.py에 아래 내용 작성
-
-```python
-created_at = models.DateTimeField(auto_now_add=True)
-updated_at = models.DateTimeField(auto_now=True)
-```
-
-다시
-`python manage.py makemigrations`
--> 1 -> 
-```
-  articles\migrations\0002_article_created_at_article_updated_at.py
-    + Add field created_at to article
-    + Add field updated_at to article
-```
-확인
-
-`python manage.py migrate`
+7. `1. model class 변경 2. makemigrations -> 3. migrate` 진행해보자!
+    - 내 프로젝트 입장에서는 Article 클래스가 새롭게 만들어진 것으로 인식됨. 왜? 이 클래스에 대한 어떠한 설계도도 없기 때문
+    - `python manage.py`로 내가 manage.py가 있는 곳에서 작업중인게 맞는지도 확인
+    - `python manage.py makemigrations` 설계도 생성
+        - Article 모델 추가됨
+        - magrations 폴더에 `0001_initial.py` 설계도 만들어진 것 확인됨
+    - `python manage.py migrate` -> `db.sqlite3` 추가된 것 확인된
+    - DB파일에 클래스가 추가된 것이 보고싶다면?
+        - Database client -> `+` 버튼 -> SQLite -> Path에 `05_django/02_model_serializer/01-ORM`로 가서 All Files 보게 해서 `db.sqlite3` 선택 -> `+content` -> articles_article 만들어진 것 확인됨
+    
+8. 필드 추가(models.py에 아래 내용 작성)
+    ```python
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    ```
+    - 다시 `python manage.py makemigrations` -> 1번 -> enter -> 필드 추가됨을 확인할 수 있음
+        ```
+        articles\migrations\0002_article_created_at_article_updated_at.py
+            + Add field created_at to article
+            + Add field updated_at to article
+        ```
+        - migrations 폴더에 `0002_article_created_at_...` 파일을 보면 ADDField 추가된거 확인 가능
+    - `python manage.py migrate` -> 내 DB에 추가된 정보 확인 가능
 
 ※ model class에 변경사항(1)이 생겼다면, 반드시 새로운 설계도를 생성(2)하고, 이를 DB에 반영(3)해야 함
 
 -> 1. model class 변경 2. makemigrations -> 3. migrate
 
 ### Model Field
-DB 테이블의 필드(열)을 정의하며, 해당 필드에 저장되는 데이터 타입과 제약조건을 정의
+DB 테이블의 **필드(열)**을 정의하며, 해당 필드에 저장되는 **데이터 타입**과 **제약조건**을 정의
 
 - `CharField()`
     - 길이의 제한이 있는 문자열을 넣을 때 사용
@@ -172,33 +199,40 @@ Django는 추가 설치 및 설정 없이 자동으로 관리자 인터페이스
 -> 데이터 확인 및 테스트 등을 진행하는데 매우 유용
 
 1. admin 계정 생성
-
+    - `python manage.py createsuperuser`
+    - email은 선택사항이므로 입력하지 않고 진행 가능
+    - 비밀번호 입력 시 보안상 터미널에 출력되지 않으니 무시하고 입력 이어가기
 
 2. DB에 생성된 admin 계정 확인
 
-
+    ![admin](admin.jpg)
 3. admin에 모델 클래스 등록
+    - `admin.py`에 작성한 모델 클래스 등록해야만 admin site에서 확인 가능
 
-
+        ![admin2](admin2.jpg)
 4. admin site 로그인 후 등록된 모델 클래스 확인
 
-
+    ![admin3](admin3.jpg)
 5. 데이터 생성, 수정, 삭제 테스트
 
-
+    ![admin4](admin4.jpg)
 6. 테이블 확인
 
+    ![admin5](admin5.jpg)
 
 
-## ORM
+## ORM (★★★)
 ### Object-Relational-Mapping
 객체지향 프로그래밍 언어를 사용하여 호환되지 않는 유형의 시스템 간에 데이터를 변환하는 기술
 
+-> 프로그래밍 언어가 아닌(파이썬이 아닌) 시스템과의 데이터를 변환하는 기술
+
 - ORM 역할
     - 사용하는 언어가 다르기 때문에 소통 불가
+    - 장고에 파이썬 객체 쓰면 SQL로 바꿔줌(QuerySet API 써서)
     - Django에 내장된 ORM이 중간에서 이를 해석!!
 
-        ![ORM역할]()
+        ![ORM역할](orm.jpg)
     
 
 ### QuerySet API
@@ -206,7 +240,40 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 
 -> API를 사용하여 SQL이 아닌 Python 코드로 데이터 처리
 
+-> 파이썬 언어를 사용해서 상대측에서 정해놓은 양식에 맞춰 코드 잘 작성해주면 ORM을 통해 SQL을 보내고 받아올 수 있도록 함
 
+![querysetAPI](querysetAPI.jpg)
+
+- QuerySet API 구문
+
+    ![querysetAPI구문](querysetAPI구문.jpg)
+    - `Article` : 내가 정의해놨던 클래스
+    - `objects` : Article이 가지고 있는 속성(상속받아서 쓸 수 있는 객체임)
+    - `all()`: Queryset API 메서드
+        - Article에 대한 전체 정보를 받아올 수 있음
+    - 직역하면 됨! Article 객체의 모든 내용 == 전체 조회 == 게시글 객체들 전부 (내놔라)
+    - manager가 구문에서 필요한 이유
+        - 우리가 다루는 데이터는 대체로 '관계형 데이터베이스'를 다룰 것임
+        - 게시글이 독립적으로 존재하지XX 작성자나 댓글 등에 관련되어 있음
+        - objects 안쓰면 작성자를 달라는건지 댓글 달라는건지 모름
+        - manager의 역할은 게시글에 대한 모든 '객체들의' 정보를 가져오라고 지정해주는 것
+
+- QuerySet API 구문 예시
+
+    ![querysetAPI](querysetAPI구문예시.jpg)
+
+- `Query`
+    - DB에 특정 데이터를 보여달라는 요청
+    - "쿼리문을 작성한다" == 원하는 데이터를 얻기 위해 DB에 요청을 보낼 코드를 작성한다
+    - 파이썬으로 작성된 코드가 ORM에 의해 SQL로 변환되어 데이터베이스에 전달되며, DB의 응답 데이터를 ORM이 QuerySet이라는 자료 형태로 변환하여 우리에게 전달
+
+- `QuerySet`
+    - DB에게서 전달받은 객체 목록(데이터 모음)
+        - 순회가 가능한 데이터로써 1개 이상의 데이터를 불러와 사용할 수 있음
+    - Django ORM을 통해 만들어진 자료형
+    - 단, DB가 단일한 객체를 반환할 때는 QuerySet이 아닌 모델(Class)의 인스턴스로 반환됨
+
+**※ QuerySet API는 python의 모델 클래스와 인스턴스를 활용해 DB에 데이터를 저장, 조회, 수정, 삭제하는 것**
 
 ### QuerySet API 실습
 1. Postman 설치
@@ -218,23 +285,41 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
         ![postman](postman화면.png)
 
 2. URL과 HTTP requests methods 설계
-    ![requests methods 설계]()
+    ![requests methods 설계](request설계.jpg)
 
-음..
+3. 스켈레톤 프로젝트
+    - 스켈레톤은 계속 바뀔 것임. 읽어보셍
 
+    ![스켈레톤1](스켈레톤1.jpg)
+    
+    ![스켈레톤2](스켈레톤2.jpg)
+
+    ![스켈레톤3](스켈레톤3.jpg)
+
+    ![스켈레톤4](스켈레톤4.jpg)
 
 
 ### QuerySet API 실습 - Create
 데이터 객체를 만드는(생성하는) 3가지 방법
 
-1. 
+1. 첫번째 방법
 
+    ![create1](create1.jpg)
 
-2. 
+    ![create2](create2.jpg)
 
+    ![create3](create3.jpg)
 
-3. 
+2. 두번째 방법
+    - save 메서드를 호출해야 비로소 DB에 데이터가 저장됨
+    - 테이블에 한 줄(행, 레코드)이 쓰여진 것
 
+    ![create4](create4.jpg)
+
+3. 세번째 방법
+    - QuerySet API 중 `create()` 메서드 활용
+
+    ![create5](create5.jpg)
 
 ※ `save()` : 객체를 데이터베이스에 저장하는 메서드
 
@@ -249,33 +334,57 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 - `all()`
     - 전체 데이터 조회
 
+        ![all](all.jpg)
+
 - `filter()`
     - 특정 조건 데이터 조회
+        
+        ![filter](filter.jpg)
 
 - `get()`
     - 단일 데이터 조회
 
-        ![]()
+        ![get](get.jpg)
+
     - get() 특징
         - 객체를 찾을 수 없으면 **DoesNotExist** 예외를 발생시킴
         - 둘 이상의 객체를 찾으면 **MultipleOjectsReturned** 예외를 발생시킴
         - 이런 특징으로 인해 **primary key 와 같이 고유성(uniqueness)을 보장하는 조회에서 사용**해야 함
 
 ### QuerySet API 실습 - Update
+- 데이터 수정
+    - 인스턴스 변수 변경 후 save 메서드 호출
 
+        ![update](save.jpg)
 
 ### QuerySet API 실습 - Delete
+- 데이터 삭제
+    - 삭제하려는 데이터 조회 후 delete 메서드 호출
 
+        ![delete](delete.jpg)
+
+---
+
+
+
+### 실습 (Create만)
 
 강사님이 요 실습 내용 말로 한번에 쭉ㄷ 설명함..
 
+[Django] Model&Serializer -> ORM - QuerySet API -> 7분30초
 
-## Django Serializer
+---
+
+
+## Django Serializer (★★★)
 ### Serialization (직렬화)
 여러 시스템에서 활용하기 위해 데이터 구조나 객체 상태를 나중에 구성할 수 있는 포맷으로 변환하는 과정
 
 - Serialization 예시
     - 데이터 구조나 객체 상태를 나중에 재구성할 수 있는 포맷으로 변환하는 과정
+
+        ![직렬화예시](직렬화예시.jpg)
+        ![직렬화예시2](직렬화예시2.jpg)
 
 -> 즉, Serialization는 어떠한 언어나 환경에서도 나중에 다시 쉽게 사용할 수 있는 포맷으로 변환하는 과정
 
@@ -284,32 +393,39 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 - Serializer
     - Serialization을 진행하여 Serialized data를 반환해주는 클래스
 
+        ![직렬화예시3](직렬화예시3.jpg)
+
 - ModelSerializer
     - Django 모델과 연결된 Serializer 클래스
     - 일반 Serializer와 달리 사용자 입력 데이터를 받아 자동으로 모델 필드에 맞춰 Serializaion 진행
 
 - ModelSerializer class 사용 예시
     - Article 모델을 토대로 직렬화를 수행하는 ArticleSerializer 정의
-    - serializers.py의 위치나 파일명은 자유롭게 가능
+
+        ![모델직렬화](모델직렬화.jpg)
+        - serializers.py의 위치나 파일명은 자유롭게 가능
 
 - Meta class
     - ModelSerializer의 정보를 작성하는 곳
     - `fields` 및 `exclude` 속성
         - exclude 속성을 사용하여 모델에서 포함하지 않을 필드 지정 가능
 
-        ![]()
+        ![exclude](exclude.jpg)
+
 
 ## CRUD with ModelSerializer
 ### GET
 - ModelSerializer를 적용한 리스트 조회 로직
     
-    ![]()
-    ![]()
-    ![]()
+    ![조회로직1](조회로직1.jpg)
+
+    ![조회로직2](조회로직2.jpg)
+
+    ![조회로직3](조회로직3.jpg)
 
 - ModelSerializer의 인자 및 속성
     
-    ![]()
+    ![직렬화인자](직렬화인자.jpg)
     - many 옵션
         - Serialize 대상이 QuerySet인 경우 입력
     - data 속성
@@ -318,20 +434,20 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 - 과거 view 함수와의 비교
     - 과거
         
-        ![]()
+        ![과거](과거.jpg)
     - 현재
 
-        ![]()
+        ![현재](현재.jpg)
 
 - ModelSerializer를 적용한 단일 조회 로직
     1. 단일 게시글 데이터 조회하기
         - 각 게시글의 상세 정보를 제공하는 ArticleSerializer 정의
 
-        ![]()
+        ![단일](단일조회.jpg)
     
     2. url 및 view 함수 작성
 
-        ![]()
+        ![단일2](단일조회2.jpg)
     3. `http://127.0.0.:8000/articles/1/` 응답확인
 
 ### POST
@@ -341,12 +457,16 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 
 1. **article_list** view 함수 구조 변경(method에 따른 분기처리)
 
-    ![]()
+    ![POST](post.jpg)
 
 2. `http://127.0.0.:8000/api/v1/articles/` 응답확인
 
+    ![POST응답](post응답.jpg)
+
 3. 새로 생성된 게시글 데이터 확인
     - GET `http://127.0.0.:8000/articles/6/`
+
+    ![POST2](post2.jpg)
 
 ※ `is_valid()` : 여러 유효성 검사를 실행하고, 데이터가 유효한지 여부를 Boolean으로 반환
 
@@ -357,32 +477,58 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
     - 유효성 검사 예시
         - content 필드가 누락됐을 때 반환 결과 확인
         
-        ![]()
+        ![유효성검사](유효성검사.jpg)
     
 
 ### DELETE
 1. 게시글 데이터 삭제하기
     - 요청에 대한 데이터 삭제가 성공했을 경우 204 No content 응답
 
-        ![]()
+        ![delete2](delete2.jpg)
+        - get으로 찾아와서 -> 유효성 검사 -> 삭제 -> 응답
     
 2. DELETE `http://127.0.0.:8000/api/v1/articles/1/` 응답확인
+
+    ![delete응답](delete응답.jpg)
 
 ### PUT
 1. 게시글 데이터 수정하기
     - 요청에 대한 데이터 수정이 성공했을 경우는 200 OK 응답
 
+    ![PUT](put.jpg)
+    - articles/1/ 등으로 요청이 왔을 때에 대한 처리들을 조회, 삭제, 수정을 모아놓은 `article_detail` 함수에서 진행할 것임
+    - 수정은 사용자 데이터가 필요함
+        - 게시글에 대한 정보에 대한 데이터를 담겠다 `(article, data=request.data)` 해서 처리
+
 2. PUT `http://127.0.0.:8000/api/v1/articles/5/` 응답확인
+
+    ![PUT응답](put응답.jpg)
 
 3. GET `http://127.0.0.:8000/api/v1/articles/5/` 수정된 데이터 확인
 
 - `partial` argument
 
-    ![]()
+    ![partial](partial.jpg)
     - 부분 업데이트를 허용하기 위한 인자
     - 예를 들어, partial 인자 값이 False일 경우 게시글 title만을 수정하려고 해도 반드시 content값도 요청 시 함께 전송해야 함
     - 기본적으로 serializer는 모든 필수 필드에 대한 값을 전달 받기 때문
         - 즉, 수정하지 않는 다른 필드 데이터도 모두 전송해야 하며, 그렇지 않으면 유효성 검사에서 오류 발생
+
+※ PUT vs PATCH
+
+-> PUT은 전체에 대한 수정
+
+-> patch는 일부에 대한 수정
+
+---
+
+
+### 실습 (Serializer)
+
+Django Serializer -> 3분30초..
+
+
+---
 
 
 ## 참고
@@ -407,7 +553,8 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
     - DB 쿼리를 추상화하여 Django 개발자가 데이터베이스와 직접 상호작용하지 않아도 됨
     - DB와의 결합도를 낮추고 개발자가 더욱 직관적이고 생산적으로 개발할 수 있도록 도움
 
-- `raise_exception` (꼭 기억하기!!)
+### 유효성 검사를 통과하지 못할 경우 (꼭 기억하기!!)
+- `raise_exception` 
     - `is_valie()`의 선택 인자
     - 유효성 검사를 통과하지 못할 경우 **ValidationError** 예외를 발생시킴
     - DRF에서 제공하는 기본 예외 처리기에 의해 자동으로 처리되며, 기본적으로 HTTP 400 응답을 반환
