@@ -3,7 +3,7 @@
 - Model을 통한 DB 관리를 배워보자
 
     ![DB](모델DB관리.png)
-    - article에서 title, content를 어디에 저장할 것인가?
+    - article(게시글)에서 title, content를 어디에 어떻게 저장할 것인가?
 
 ### Django Model
 DB의 테이블을 정의하고 데이터를 조작할 수 있는 기능들을 제공
@@ -13,6 +13,11 @@ DB의 테이블을 정의하고 데이터를 조작할 수 있는 기능들을 �
 - models.py에 클래스 정의해주면 됨
 
     ![class](model클래스)
+    ```python
+    class Article(models.Model):
+        title = models.CharField(max_length=10)
+        content = models.TextField()
+    ```
     - 설명..
 
 - 작성한 모델 클래스는 최종적으로 DB에 아래와 같은 테이블 구조를 만듦
