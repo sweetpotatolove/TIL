@@ -254,7 +254,7 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
     - 직역하면 됨! Article 객체의 모든 내용 == 전체 조회 == 게시글 객체들 전부 (내놔라)
     - manager가 구문에서 필요한 이유
         - 우리가 다루는 데이터는 대체로 '관계형 데이터베이스'를 다룰 것임
-        - 게시글이 독립적으로 존재하지XX 작성자나 댓글 등에 관련되어 있음
+        - 게시글이 독립적으로 존재하지XX. 작성자나 댓글 등에 관련되어 있음
         - objects 안쓰면 작성자를 달라는건지 댓글 달라는건지 모름
         - manager의 역할은 게시글에 대한 모든 '객체들의' 정보를 가져오라고 지정해주는 것
 
@@ -363,17 +363,207 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 
         ![delete](delete.jpg)
 
----
-
-
 
 ### 실습 (Create만)
+※ `05_Django > 02_model_serializer > 01-ORM 폴더`
 
-강사님이 요 실습 내용 말로 한번에 쭉ㄷ 설명함..
+1. articles/urls.py에서 게시글 생성 요청을 보낼 경로 필요함 -> config/urls.py에서 작성
+    ```python
+    # articles/urls.py
+    from django.urls import path
+    from . import views
 
-[Django] Model&Serializer -> ORM - QuerySet API -> 7분30초
+    urlpatterns = [
+        path('new/', views.article_create),
+        # path("list/", views.article_list),
+        # path("<int:pk>/", views.article_detail),
+        # path("<int:pk>/edit/", views.article_update),
+        # path("<int:pk>/delete/", views.article_delete),
+    ] 
+    ```
+    ```python
+    # config/url.py
+    from django.contrib import admin
+    from django.urls import path, include
 
----
+    urlpatterns = [
+        path("admin/", admin.site.urls),
+        # 요청이 articles/로 시작하면 뒤로 이어지는 URL path는 articles/urls.py에서 처리하도록 설정
+        path("articles/", include("articles.urls")),   
+    ]
+    ```
+    - config/urls.py에서의 `path("articles/", include("articles.urls"))` -> articles로 시작하는 모든 요청을 articles 앱의 urls.py로 넘겨 처리할 수 있도록 경로를 만드는 것
+    - articles/urls.py에서의 `path('new/', views.article_create)` -> articles의 new라는 곳으로 요청을 보내면 article_create 함수가 동작하도록 만들 것임
+
+2. 어떤 형식으로 게시글을 생성할 것인가? (생성!!)
+    ```python
+    # articles/views.py
+    from django.http import JsonResponse
+    from rest_framework.decorators import api_view
+    from rest_framework import status
+    from .models import Article
+
+    @api_view(['POST'])
+    def article_create(request):
+        # 데이터 객체를 만드는(생성하는) 첫번째 방법
+        article = Article() 
+        
+        article.title = request.data.get('title') 
+        article.content = request.data.get('content')
+        
+        # 데이터 객체를 만드는(생성하는) 두번째 방법
+        # article = Article(title=request.data.get('title'), content=request.data.get('content'))
+        
+        article.save() # 데이터베이스에 저장
+        
+        # 데이터베이스에 저장하는 세번째 방법  -> 위 두 방법과 달리 객체 생성과 동시에 데이터베이스에 저장됨
+        # Article.objects.create(title=request.data.get('title'), content=request.data.get('content'))
+        
+        # 반환값으로 article.id와 status.HTTP_201_CREATED를 응답 코드로 반환
+        return JsonResponse({'id': article.id}, status=status.HTTP_201_CREATED)
+    ```
+    - article = Article() 의 `Article` -> models.py에서 정의한 Artice class를 가지고 와서 쓰겠다!
+        - 어떻게 가지고 오냐? `from .models import Article`
+    - Article 클래스에서 정의한 변수인 title, content에 값을 넣을 것임
+        - `article = Article()` : Article 클래스로 만든 인스턴스 article
+        - `article.title = request.data.get('title')` : 인스턴스 변수 title에 사용자가 요청 보낸 정보(request)에서 데이터(data)를 얻어와(get) 할당!
+        - 할당하면 python 변수 article에 요청보내서 받아온 문자열이 title, content 변수에 들어감
+        - 여기까진 파이썬 객체에 값을 넣은 것 -> 이제 DB에 저장해야지
+    - `article.save()` -> DB 저장
+        - 사용자가 게시글 만들어달라고 요청 -> 게시글 만들어서 저장 -> 이제 사용자에게 응답해줘야 함
+    - `JsonResponse({'id': article.id}, status=status.HTTP_201_CREATED)`
+        - 무엇을 응답해주냐?
+        - `{'id': article.id}` -> ex. 너가 만든 게시글 1번으로 만들어 졌엉
+        - ` status=status.HTTP_201_CREATED` -> 성공을 의미하는 200번대! 201은 생성됨을 의미함
+
+4. 현재 Queryset API를 사용하는 이 방법은 사용자가 요청보낸 데이터를 그대로 가지고 와 DB에 쑤셔넣는 방식
+    - Article 클래스에서 title, content를 정의해놨음
+    - 사용자에게 두 데이터를 받을 것임 -> 받은 데이터 저장해야 함
+    - 그래서 article 인스턴스 만들고 이 인스턴스가 가진 title, content라는 변수에 사용자가 보낸 데이터를 넣고 DB에 우겨넣음
+    - 이런 우겨넣는 방식은 제약사항(ex. max_length=10)이 의미 없어짐
+    - 왜? 사용자가 10글자 이상의 데이터를 넣어도 우겨넣음(확인X)
+    - 그럼 유효한 데이터가 맞는지 확인하는 과정도 필요함(save 이전에 뭔가 과정을 더 거쳐야할 것 같다)
+    - 또, 지금은 title, content 두 개의 컬럼이지만, 컬럼이 10개, 100개, ... 늘어나면 `article.title = request.data.get('title')` 100줄 쓰는거 쉽지않음
+
+5. 게다가 조회할 때 `Article.objects.all()`을 통해 게시글 객체들을 모아놓은 QuerySet 객체를 가지고 올 것임
+    ```python
+    # articles/views.py
+
+    @api_view(['GET'])
+    def article_list(request):
+        articles = Article.objects.all()  # 저장된 모든 article 데이터를 가져옴
+        articles = Article.objects.filter(title='title1')
+        
+        # QeurySet 객체를 순회하며 각각의 데이터를 딕셔너리로 변환
+        if articles:
+            data = [model_to_dict(article) for article in articles]
+            return JsonResponse({'data': data})
+        return JsonResponse({'data': []})
+    ```
+    - article_list 함수가 하는 역할은, 전체 데이터 셋을 받아오면 그 정보를 articles 변수에 담을 것임
+    - articles 변수를 그냥 JsonResponse 하는 것은 곤란함
+    - 왜? all을 통해 받아온 데이터 안의 모든 내용들을 보여줄 '수도' 있겠지만, 여기엔 queryset이라는 데이터셋이 들어있는 것이고, 우리는 이 데이터를 변환해서 보여줘야 함
+
+6. Article 객체를 딕셔너리로 변환하는 함수
+    ```python
+    # articles/views.py
+    def model_to_dict(article):
+        '''
+        Article 객체를 딕셔너리로 변환하는 함수
+        :param article: Article 객체
+        :return: Article 객체를 딕셔너리로 변환한 결과
+        '''
+        return {
+            'id': article.id,
+            'title': article.title,
+            'content': article.content
+        }
+    ```
+    - 왜 변환해서 보여줘야 하냐?
+    - queryset 데이터는 배열 형태에 객체 자체가 들어있는 형태 `[<object> <object>]`
+    - 우리는 이 정보를 JSON형태로 넘겨주기로 했음 -> JSON은 문자열!!
+    - 쿼리셋에 있는 객체를 문자열로 바꿔주면 `<object>` 자체가 문자열로 보임(내가 원하는 형태XX)
+    - 그래서 변환 과정 필요
+    - id, title, content만 클라이언트에게 응답하겠다
+    - 응답할 데이터가 무슨 모양이 될 것인지 처리 과정 필요
+    - 이것 역시 Field가 100개면 100줄 쓰고 반복문 100번 돌려야 함
+
+7. 아래 코드에서 중요하게 봐야할 것(조회!!)
+    ```python
+    # articles/views.py
+
+    @api_view(['GET'])
+    def article_list(request):
+        articles = Article.objects.all()  # 저장된 모든 article 데이터를 가져옴
+        # title이 'article_02'인 데이터만 가져옴 존재하지 않으면 빈 리스트 반환
+        articles = Article.objects.filter(title='title1')
+        
+        # QeurySet 객체를 순회하며 각각의 데이터를 딕셔너리로 변환
+        if articles:  # articles가 존재하면
+            data = [model_to_dict(article) for article in articles]
+            return JsonResponse({'data': data})  # articles가 존재하면 데이터를 반환
+        return JsonResponse({'data': []})  # articles가 존재하지 않으면 빈 리스트 반환
+        # return JsonResponse(data, safe=False)  # 딕셔너리가 아닌 데이터를 반환할 때 safe=False로 설정
+
+    @api_view(['GET'])
+    def article_detail(request, pk):
+        article = Article.objects.get(pk=pk)
+        # article = Article.objects.get(title='title')  # title 필드에 저장된 값이 'title'인 데이터를 가져옴
+        return JsonResponse(model_to_dict(article))
+    ```
+    - 이 코드에서는 GET 요청하면 전체조회 할 것이라는 것!
+        - 그리고 `Article.objects.all()` 이렇게 쓴다는 것!이 중요
+    - 제목이 title1인 애들을 필터링해서 보여주는 `filter` queryset API도 있다
+    - 전체 또는 필터링하는 것이 아니라, 한개만 지정해서 가져오고 싶으면?
+        - Variable Routing 방법 이용해서 pk값을 통해 (id값이 primary key와 동일하다 보면 됨) 사용자에게 받은 정보를 하나 집어서 딕셔너리로 변환 후 JSON으로 응답하는 방법 있음
+
+8. 수정, 삭제
+    ```python
+    # articles/views.py
+
+    @api_view(['PUT'])
+    def article_update(request, pk):
+        article = Article.objects.get(pk=pk) # 수정할 article 데이터를 가져옴
+        # 수정할 데이터를 request.data로부터 가져와서 수정
+        article.title = request.data.get('title') 
+        article.content = request.data.get('content') 
+        article.save() # 수정된 데이터를 저장
+        return JsonResponse(model_to_dict(article))
+
+
+    @api_view(['DELETE'])
+    def article_delete(request, pk):
+        article = Article.objects.get(pk=pk)  # 삭제할 article 데이터를 가져옴
+        article.delete() # 데이터 삭제
+        return JsonResponse({'message': '삭제 완료~'})
+    ```
+    - 수정을 할 때는 보통 1개를 집어서 수정 -> `get` queryset api 이용해서 1개 집어오면 그 객체 article이 지정됨(인스턴스 하나 얻었을 것임)
+    - ex. article 1개 즉, 사용자가 넘겨준 pk=1인 인스턴스 하나를 지정
+        - 얘는 title, content에 대한 정보를 가지고 있음
+        - 이걸 나는 수정하고 싶다
+        - article.title에 사용자가 보내준 데이터를 가지고와서(`request.data.get('title')`) 바꿔줌
+    - 수정이라는 행위는 인스턴스가 가진 변수에 담긴 값을 바꾸는 것인데, 바꾸면 파이썬 객체에만 있는 값만 바뀌는 것임 -> DB에 반영해야 한다!!
+        - 반영 == 저장 `article.save()`
+    - 반영된 article 객체를 사용자에게 반환해주는 것이 article_update 함수의 역할
+    - 수정 정리
+        - `article_update` -> 게시글을 수정하는 함수구나 ^^
+        - 게시글을 수정하려면 필요한 것?
+        - `request` -> 사용자가 요청보낸 데이터가 필요하겠지 ^^ (그 정보를 토대로 수정할거니까)
+        - 하나의 게시글을 수정할거면 무슨 게시글을 수정할지 알아야겠지?
+        - `pk` -> 고유한 id 값이 무엇인지 알아야겠지 ^^
+        - `article = Article.objects.get(pk=pk)` -> id값을 가지고 Queryset API를 이용해서 DB에 있는 데이터를 집어옴으로써 내가 수정하려는 게시글을 찾을거야
+        - 집어온 객체는 python에서 인스턴스로서 변수에 할당해서 쓸 수 있고
+        - 그 인스턴스가 가진 속성(title, content) 정보에 인자로 받았었던 사용자의 요청 정보를 토대로 속성을 수정할거야
+        - 수정했으면 파이썬 객체로만 가지고 있는 것이 아니라, DB에 저장할거야
+        - 저장만 하는게 아니라, 사용자에게 응답도 해줄거야
+        - 수정 요청하신거 잘 수정해서 요롷게 돌려줄게. 맞니?^^ 하고 응답
+    - 삭제도 수정과 마찬가지
+        - 삭제를 하더라도 삭제를 성공했다고 사용자에게 응답해야 함
+        - 웹 서비스 상 모든 요청은 응답과 함께한다!!
+
+※ 이 코드를 RESTful하게 개선할 예정
+
+-> RESTful하게 응답을 제공하기 위해, 직렬화를 통해 모델 데이터를 JSON으로 표현한다
 
 
 ## Django Serializer (★★★)
@@ -524,8 +714,8 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
 
 
 ### 실습 (Serializer)
-
-Django Serializer -> 3분30초..
+※ `05_Django > 02_model_serializer > 02-serializer 폴더`
+Django Serializer -> 3분46초..
 
 
 ---
@@ -534,6 +724,7 @@ Django Serializer -> 3분30초..
 ## 참고
 - 데이터베이스 초기화
 
+    ![alt text](image.png)
 
 - Migrations 기타 명령어
     - `python manage.py showmigrations`
