@@ -704,21 +704,408 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
     - 기본적으로 serializer는 모든 필수 필드에 대한 값을 전달 받기 때문
         - 즉, 수정하지 않는 다른 필드 데이터도 모두 전송해야 하며, 그렇지 않으면 유효성 검사에서 오류 발생
 
-※ PUT vs PATCH
+**※ PUT vs PATCH**
 
 -> PUT은 전체에 대한 수정
 
 -> patch는 일부에 대한 수정
 
----
-
 
 ### 실습 (Serializer)
 ※ `05_Django > 02_model_serializer > 02-serializer 폴더`
-Django Serializer -> 3분46초..
+- 환경설정
+    - `python -m venv vnev`
+    - `source venv/Scripts/activate`
+    - `pip install django djangorestframework`
+        - django와 함께 djangorestframework도 설치
+    - `pip list`
+    - `pip freeze > requirments.txt`
+    
+- 장고 시작할 세팅 끝났으면 해야할 두 가지
+    - `django-admin startproject practice .`
+        - 장고 관리자야 프로젝트 만들어조 'practice' 이름으로, 현재 폴더에!
+    - `python manage.py startapp articles`
+        - 매니저야(만들어진 프로젝트 즉, parctice의 manage.py) 게시글들에 대한 기능을 만들기 위한 어플리케이션을 만들어줘
 
+        ![alt text](image-1.png)
+- 프로젝트에서 쓸 어플리케이션을 사용하겠다는 것을 설정에 알려야함
+    ```python
+    # practice/settings.py
+    INSTALLED_APPS = [
+        'articles',         # 추가
+        'rest_framework',       # 추가
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+    ]
+    ```
+    - INSTALLED_APPS 온김에 `rest_framework`도 추가
+    - INSTALLED_APPS에 등록을 해야 rest_framework가 만들어주는 기능들을 장고에서 쓸 수 있음
+    - django와 django rest framework는 서로 다른 프레임워크임! 그래서 장고가 rest_framework에 있는 기능을 그냥 사용하진 못함. 등록해!
 
----
+- 프로젝트에서 어플리케이션 등록 다음으로 해야할 것 -> **모델 등록**
+    ```python
+    # articles/models.py
+    from django.db import models
+
+    # Create your models here.
+    class Article(models.Model):
+        title = models.CharField(max_length=10)
+        content = models.TextField()    # 글자수 제한XX
+        created_at = models.DateTimeField(auto_now_add=True)
+        updated_at = models.DateTimeField(auto_now=True)
+
+        # 매직 메서드
+        def __str__(self):
+            # PRINT 했을때 사람이 보기 좋게 꾸밀때 쓴다.
+            return self.title
+    ```
+    - 기능 테스트를 위해선 모델이 있어야하기 때문에 어플 등록 다음으로 가장 먼저 모델 등록해야 함
+    - 매직 메서드인 `__str__` 함수의 역할
+
+        ![alt text](image-2.png)
+        - 매직메서드 사용 전에는 `<__main__.Person object ...>` 이런식으로 안예쁘게 나옴
+        - 그래서 매직메서드를 만들엇 print했을 때 사람이 보기 편하게 만들어 줌
+    - 그럼 `return self.title`로 작성을 했다면?
+        - print했을 때 그 객체의 제목 정보가 출력될 것임
+    
+- 모델 정의 끝났으면 설계도 만들어주기
+    - `python manage.py makemigrations`
+
+- 설계도 만들었으면 DB에 반영
+    - `python manage.py migrate`
+    - DB 반영은 꼭 설계도를 만든 후에 해야함! 설계도 makemigrations 이전에 migrate 하면XX
+
+        ![alt text](image-3.png)
+        - 내가 만든건 `articles.0001_initial...` 뿐인데 많은 것이 DB에 반영됨
+        - 왜? 관리자 페이지가 존재하기 위해선 회원가입, 유저 정보, 로그인 등등 여러가지 관리해야 하는데, Django는 기본적으로 관리해줌
+        - 그래서 내가 만든거 외에 장고가 기본적으로 제공해주는 것들이 같이 반영되는 것
+
+- 서버 활성화
+    - `python manage.py runserver`
+        - 당장 확인 가능한 것은 없지만, 서버 켜놓고 작업할 것임
+    - 서버 키면 바로 링크 들어가지 말고 문구 봐주기
+        - 별말 없으면 '작성한 모든 내용이 DB에 잘 들어가있음' -> 기본 warning 문구 나옴
+        - 빨간 글씨로 migrate 어쩌구.. 할 때도 있는데 그건 migrate 안했을 때 나타나는 반응 -> '변동사항 있는 것 같은데 DB에 반영 안했네? 안해도 됨?
+    - Django 개발 서버를 실행했을 때 나오는 기본 경고 메시지
+        ```bash
+        WARNING: This is a development server. 
+        Do not use it in a production deployment. 
+        Use a production WSGI or ASGI server instead.
+        For more information on production servers see: https://docs.djangoproject.com/en/stable/howto/deployment/
+        ```
+        - 개발 서버(development server) -> python manage.py runserver 명령어로 실행되는 Django의 기본 서버. 개발 편의를 위해 만들어진 서버라서 성능/보안이 약함
+        - 주의점 -> 실제 서비스(배포, production) 환경에서는 이 개발 서버를 쓰지 말라는 경고
+        - 이유 -> 동시 접속 처리, 보안, 속도 등에서 한계가 있음
+    - 서버 링크 들어가서 로켓 날아가는거 확인
+
+- 서버 켜놓은 채 작업 진행
+    - 데이터 조회 하고싶은데, 조회 하려면 생성부터 할 줄 알아야함
+    - 그걸 다 떠나서 프로젝트 즉, practice/urls.py에서 include부터 해야함
+        ```python
+        from django.contrib import admin
+        from django.urls import path, include
+
+        urlpatterns = [
+            path('admin/', admin.site.urls),
+                                                            # articles/로 요청이 왔을때
+            path('articles/', include('articles.urls')),    # articles앱이 가진 urls로 include(연결) 해줄 것이다
+        ]
+        ```
+        - articles/로 요청이 들어오면 articles 앱의 urls에서 처리하도록 할 것이라는 것을 장고에게 알렸음
+        - 근데 articles에는 urls.py가 없음 -> 만들면 됨(urls.py)
+        - 장고가 기본적으로 만들어주는 파일들 외에 내가 필요로 하는 파일이 있다면 파이썬 파일 만들어주면 됨
+        - 파일 이름이 urls.py인 것은 url들을 모아놓은 곳이라고 명시하는 것이지, 이름에 기능이 있는 것은 아님
+    
+- `articles/urls.py` 생성
+    ```python
+    # articles/urls.py
+    from django.urls import path    
+    from . import views
+
+    # 패턴 리스트
+    urlpatterns = [
+        # 왜? articles/ 경로에 GET or POST 요청이 왔을때,
+        # 행위 method에 따라, 서로 다른 작업을 진행한다.
+        # 경로만 보면 articles/
+        # 행위와 더해서 보면 GET or POST articles/
+        path('', views.article_get_or_create),
+        path('<int:article_pk>/', views.article_detail),
+    ]
+    ```
+    - `from django.urls import path`
+        - Django가 제공하는 URL 매핑 함수 path()를 가져오는 것
+        - path는 Django에서 URL(경로)과 views(함수/클래스)를 연결(mapping) 할 때 사용
+        - 즉, 특정 URL 요청이 들어왔을 때 어떤 view 함수가 실행될지 정해주는 도구
+    - `from . import views`
+        - 현재 폴더에 있는 views 가지고 와서 패턴들에 대한 리스트(urlpatterns=[]) 정의할 것임
+    - `path('', views.article_get_or_create)` 
+        - articles라는 곳으로 요청이 오면(`''`) views의 article_get_or_create 함수 실행시킬 것임
+        - articles라는 곳으로 요청온다는 것은 articles/ 뒤에 뭐 안붙은 'articles/' 이렇게 요청 왔을 때를 말하는 것임
+        - 그렇다면 views에 article_get_or_create를 정의하자
+
+- article_get_or_create 함수 생성
+    ```python
+    # articles/views.py
+    from .models import Article
+
+    # Create your views here.
+    def article_get_or_create(request):
+        # 전체 게시글 조회
+        articles = Article.objects.all()
+        # 전체 게시글 조회라서, id, title만 보여주고싶음.
+        # serializer라는걸 정의!
+    ```
+    - `def article_get_or_create(request):` -> request를 인자로 받는 것은 필수
+    - 전체 게시글을 조회하려면, 내 views.py와 같은 위치에 있는 model.py로부터 Article 클래스를 가지고 와야 게시글에 대한 처리가 가능함
+        - `from .models import Article`
+    - 전체 조회하고 return할 때 우리는 rest_framework한테 시킬 것임 -> serializer 사용해서!
+        - 시킬것이라면 그에 대한 코드가 어딘가에 있어야 함(serializer 정의)
+        - 어디에? articles/views.py에 `class ArticleSerializer()` 만들어도 상관없음
+        - 그치만! serializer들만 모아놓으면 좋을 것 같음
+        - serializers.py 만들자!!
+
+- `articles/serializers.py` 생성
+    ```python
+    from rest_framework import serializers
+    from .models import Article
+
+    class ArticleSerializer(serializers.ModelSerializer):
+        # 직렬화를 한다.
+        class Meta:
+            # 모델에 대한 정보를 토대로
+            model = Article
+            
+            # 필드를 전부
+            # fields = '__all__'
+            # 혹은 필드를 id, title만 반환
+            fields = ('id', 'title',)
+    ```
+    - serializer는 rest_framework가 제공해줌
+        - `from rest_framework import serializers`
+        - serializers는 모듈임
+        - 내가 필요한 것은 내가 만들 ArticleSerializer가 상속받을 클래스 필요
+        - serializers 모듈에 있는 ModelSerializer를 상속받자
+    
+    - 우리가 가진 모든 데이터가 model에 있을 필요XX 모두 DB에 있을 필요도XX
+        - 내 DB에 없는 데이터를 제공해 줄 수도 있어야 함
+        - 내 DB에 저장하지 않을 데이터도 사용자에게 넘겨받을 수 있어야 함
+        - 그렇다면? 내 모델에 없는 데이터를 받을 땐 serializers 모듈의 `Serializer`를 쓰고
+        - 모델에 있는 데이터를 사용한다면 serializers 모듈의 `ModelSerializer`를 상속받자
+    
+    - 모델에 대한 정보를 토대로 직렬화를 할 것임
+        - 클래스를 정의할건데, 그 클래스를 위한 정보를 보통 '메타 데이터'라고 부름
+        - 즉, 우리는 메타 데이터를 정의하는 것
+        - '모델에 대한 정보를 토대로' -> 여기서의 모델은 models.py에 있는 Article 클래스
+            -  `from .models import Article`
+    
+- `ArticleSerializer`는 어디서 쓸까?
+    ```python
+    # articles/views.py
+    from rest_framework.response import Response
+    from .models import Article
+    from .serializers import ArticleSerializer
+
+    # Create your views here.
+    def article_get_or_create(request):
+        # 전체 게시글 조회
+        articles = Article.objects.all()
+        # 전체 게시글 조회라서, id, title만 보여주고싶음.
+        # serializer라는걸 정의!
+        serializer = ArticleSerializer(articles, many=True)
+        # 직렬화를 마친 객체의 data만 사용자에게 반환.
+        # 그리고, 이 직렬화는 django가 아닌 DRF로 인해 만들어진 것!
+        # 즉, 반환도 django 기본 기능이 아니라 DRF의 반환방식을 쓸것
+        return Response(serializer.data)
+    ```
+    - articles/views.py에서 article에 대한 정보를 포맷팅할 때 사용
+        - 포맷팅한 정보 즉, ArticleSerializer를 쓰고 싶다 -> 클래스 import 받아야 함
+        - `from .serializers import ArticleSerializer` -> 나와 같은 폴더에 있는 serializer.py의 ArticleSerializer를 쓰겠다
+    - `serializer = ArticleSerializer(articles, many=True)` -> 결국 인스턴스 만드는 것
+        - ArticleSerializer가 하는 역할: 게시글 포맷팅
+        - 어떤 게시글? 전체 게시글! 즉, `articles`
+        - 게시글 한개 아니고 여러개 넘길거라고 알려주기! `many=True`
+    - 우리는 serializer 인스턴스가 가진 data만 반환하면 됨
+        - DRF의 반환방식을 쓴다고 했으니, import 받자
+        - `from rest_framework.response import Response`
+        - django rest framework가 반환하는 방법인 '어떠한 클래스로 인해 만들어진 객체를 반환하는 형태'로 반환할 것이다
+        - `return Response(serializer.data)`
+
+- 서버로 다시 돌아가보자
+    - `ModuleNotFoundError: No module named 'articles.urls'`
+        - articles.urls 만들기 전에 켜놓은거라 꺼져있을 것임
+        - 다시 켜주자
+    - `python manage.py runserver`
+        - 이제는 로켓이 아닌, 'Page not found'가 뜰 것임
+        - 왜? 경로가 생겼기 때문
+        - 주소창에 `127.0.0.1:8000/articles` 입력하면 -> 오류가 뜸;;
+
+            ![alt text](image-4.png)
+        - 뭘 빼먹었길래 응답을 위한 랜더링이 안된다는 것일까?
+        - **식별과 표현은 정의했는데, 행위를 정의하지 않음!!!!!!!!**
+        - Django REST framework는 Response 객체를 사용해 데이터를 반환함
+        - 이 과정에서 우리가 별도의 템플릿을 만들 필요는 없고, REST framework가 제공하는 @api_view 데코레이터를 통해 요청 방식(행위, HTTP Method)을 정의해야 함
+        - 이것을 지정하지 않았을 때, 아래와 같이 "응답을 렌더링하려면 APIView가 필요하다"는 메시지를 친절히 보여줌
+
+            ![alt text](image-5.png)
+        ```python
+        # articles/views.py
+        from rest_framework.response import Response
+        from rest_framework.decorators import api_view  # 추가
+        from .models import Article
+        from .serializers import ArticleSerializer
+
+        # Create your views here.
+        @api_view(['GET'])  # 추가
+        def article_get_or_create(request):
+            articles = Article.objects.all()
+            serializer = ArticleSerializer(articles, many=True)
+            return Response(serializer.data)
+        ```
+
+        ![alt text](image-6.png)
+        ![alt text](image-7.png)
+        - 지금은 별다른 데이터가 보이지 않음 `[]`
+
+- 데이터가 보이도록 게시글 생성 만들자
+    - 게시글 생성과 전체 조회는 pk값이 있어야 생성, 조회할 수 있는 것이 아니기 때문에 같은 경로에 메서드만 다르게 처리할 수 있음
+    ```python
+    # articles/views.py
+    from rest_framework.response import Response
+    from rest_framework.decorators import api_view
+    from .models import Article
+    from .serializers import ArticleSerializer
+
+    @api_view(['GET', 'POST'])  # 'POST' 추가
+    def article_get_or_create(request):
+        if request.method == 'GET':     # 조건 분기!!
+            articles = Article.objects.all()
+            serializer = ArticleSerializer(articles, many=True)
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            # 사용자가 보낸 데이터로 article을 생성하고,
+                # 앗, 지금 우리가 만든 시리얼라이저는... content에 대한
+                # 필드가 없다...
+            # 그 정보가 유효한지 검증하고,
+            # 정상적이면 저장하고
+            # 반환한다. 
+    ```
+    - 조건분기를 통해 `request.method == 'GET'`이면 전체 조회
+    - `request.method == 'POST'`이면 사용자가 보내준 데이터를 기반으로 값들을 넣어 저장하고, 저장된 결과를 반환할 것인데, 저장하는 과정에서 유효한지 데이터 검증
+        - 이것도 serializer가 해줄 것임
+        - 아까 만들었던 serializer에는 content에 대한 필드가 없으므로, 게시글 생성을 위한 serializer 하나 더 만들자
+
+- serializer.py에서 serializer 수정 및 추가 생성
+    - 게시글 생성하려면 title, content를 사용자가 작성해야 하는데, 아까 만든 직렬화 함수는 id, title만 처리하는 serializer였음
+        - 즉, ArticleSerializer의 사용성이 게시글에 대한 전체 로직에 대해 동작하지는 못할 것 같고, **오로지 article 리스트에 대한 serializer**가 됨 -> 이름 바꾸자
+        - 아까 만든 ArticleSerializer -> `ArticleListSerializer`로 이름 변경
+        - 이름 바꾸는 이유? ArticleListSerializer가 정의해주는 필드가 너무 한정적이라스
+    
+    - 이제 범용적으로 게시글에 대한 전반적인 처리가 가능한 시리얼라이즈 추가 생성
+        ```python
+        # articles/serializers.py
+        from rest_framework import serializers
+        from .models import Article
+
+        '''
+        Serializer를 통해 직렬화할 때 사용할 필드를 지정할 때 사용 가능한 속성
+        1. fields: 직렬화할 필드를 지정
+            - '__all__': 모든 필드를 직렬화
+        2. exclude: 직렬화에서 제외할 필드를 지정
+        3. read_only_fields: 읽기 전용 필드를 지정 - 1:N 관계에서 학습 예정
+
+        - 참고: 튜플 또는 리스트로 여러 개의 필드를 지정할 수 있음
+        '''
+
+        class ArticleListSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Article
+                fields = ('id', 'title',)
+
+        # 위에는 오로지 전체 목록만을 위한 시리얼라이저 였다면
+        # 이번에는 범용적으로 게시글에 대한 전반적인 처리가 가능한 시리얼라이저
+        class ArticleSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Article
+                fields = '__all__'
+                # exclude = ('created_at', 'updated_at',)
+        ```
+    
+- serializer.py 수정한거 반영해서 view.py 완성시키자
+    ```python
+    from rest_framework.response import Response
+    from rest_framework.decorators import api_view
+    from .models import Article
+    from .serializers import ArticleListSerializer, ArticleSerializer   # import도 두개!
+
+    @api_view(['GET', 'POST'])
+    def article_get_or_create(request):
+        if request.method == 'GET':
+            articles = Article.objects.all()
+            serializer = ArticleListSerializer(articles, many=True)    # Article'List'Serializer로 수정
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            serializer = ArticleSerializer(data=request.data)
+
+            if serializer.is_valid():   # 그 정보가 유효한지 검증하고,
+                serializer.save()       # 정상적이면 저장하고 
+                return Response(serializer.data)    # 반환한다.
+    ```
+    - POST 요청을 받았을 때 ArticleSerializer를 사용할 것임
+        - 이번에는 ArticleSerializer에게 넘길 articles는 존재하지 않음
+
+            ![alt text](image-8.png)
+        - ModelSerializer를 이용해서 게시글을 생성하고자 할 때는 '생성하려는 데이터'를 넣어주면 됨
+        - 생성하려는 데이터는 어디있냐? 사용자가 요청보낸 데이터에 들어있음
+        - 그리고 사용자가 요청보낸 데이터는 request에 들어있음 -> `request.data`
+        - 이때 데이터는 **키워드 인자**로 넘겨주는거 잊지 말기 -> `data=request.data`
+
+- 다시 서버 확인
+
+    ![alt text](image-9.png)
+    ![alt text](image-10.png)
+    - api view에 POST 허용했더니 POST 요청을 보낼 수 있는 곳이 추가가 됨
+    - 근데 여기에 입력하려면 JSON 형식으로 작성해야함
+    - 그래서 postman을 설치~
+
+- postman
+    1. 추가 버튼 클릭
+
+        ![alt text](image-11.png)
+    2. 주소란에 서버에 있던 주소 복사해서 넣기
+    3. GET 요청아니고 POST 요청이니까 GET -> POST로 바꿔주기(주소란 옆에)
+
+        ![alt text](image-12.png)
+    4. POST 요청 보낼 땐 Params 아님XX -> Body -> form-data
+
+        ![alt text](image-13.png)
+    5. key에 필드명, value에 값 입력해서 Send
+
+        ![alt text](image-14.png)
+    6. 결과 확인
+
+        ![alt text](image-15.png)
+    7. 동일한 경로로 GET 요청 보냈을 때도 게시글 조회 결과 확인 가능
+
+        ![alt text](image-16.png)
+        ![alt text](image-17.png)
+
+※ 상세 조회는 `all()` 대신 `get()` 사용
+
+-> Variable Routing 이용해서 한개 조회 가능하게 하자
+
+-> 삭제 또한 한개 찾아와서 삭제
+
+-> 수정도 한개 찾아서 수정
+
+-> 그러기 위해 경로(url.py), view함수(view.py), serializer(serializer.py) 정의해서 만들어 보면 됨
+
+-> DELETE, PUT 위에 이론 내용 다시 읽어보고, `05_Django/02_model_serializer/02-serializer`에 코드 참고해서 보기
 
 
 ## 참고
@@ -749,3 +1136,6 @@ Django Serializer -> 3분46초..
     - `is_valie()`의 선택 인자
     - 유효성 검사를 통과하지 못할 경우 **ValidationError** 예외를 발생시킴
     - DRF에서 제공하는 기본 예외 처리기에 의해 자동으로 처리되며, 기본적으로 HTTP 400 응답을 반환
+    - 즉, 유효성 검사를 통과하지 못하면 ValidationError가 발생하고, DRF의 기본 예외 처리기에 의해 HTTP 400 Bad Request 응답과 함께 에러 메시지가 반환됨
+
+    ![alt text](image-18.png)
