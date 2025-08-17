@@ -367,9 +367,12 @@ N:1 관계에서 1에서 N을 참조하거나 조회하는 것 `1 → N`
 
 -> N은 외래 키를 가지고 있어 물리적으로 참조가 가능하지만, 1은 N에 대한 참조 방법이 존재하지 않아 별도의 역참조 기능이 필요
 
-- 역참조 사용 예시 `article.comment_set.all()`
+- 역참조 사용 예시 
+    ![alt text](image-28.png)
     - `article` : 모델 인스턴스
+        - 클래스 자체의 매니저가 아니라, **해당 인스턴스(ex. 1번 게시글)를 참조**하고 있는 댓글들에 대한 역참조 매니저 
     - `comment_set` : related manager (역참조 이름)
+        - 매니저 이름은 나를 참조하고 있는 댓글 클래스 명을 소문자로 하여 _set을 붙임
     - `all()` : QuerySet API
     - 즉, 특정 게시글에 작성된 댓글 전체를 조회하는 명령
 
@@ -382,6 +385,233 @@ N:1 관계에서 1에서 N을 참조하거나 조회하는 것 `1 → N`
             - `comment.article`
         3. 특정 게시글의 댓글 목록 참조 (Article → Comment)
             - `article.comment_set.all()`
+
+※ 역참조 매니저는 누가 사용하냐?
+
+-> 참조 대상인 1의 객체 입장에서 정보를 가지고 와서 사용함
+
+
+### 실습
+- 1:N 관계를 정의했고, 1:N 관계에 대한 조회를 위해 ORM이 어떻게 구성되어있는지 앞에서 확인함 -> 기능 만들 차례
+- 지금까지 작성한 코드가 정상 동작하는지 테스트 해보자
+    - 댓글 생성하자
+    - 근데 댓글 생성하려면 게시글 먼저 생성해야 함
+- 게시글 생성
+
+    ![alt text](image-31.png)
+    ![alt text](image-29.png)
+    - postman 이용해서 게시글 생성 요청 보내기
+    - 서버 활성화 `python manage.py runserver`
+
+        ![alt text](image-30.png)
+        - 1번 게시글 작성된 것 확인
+        - 동시에 bash창에 `[13/Aug/2025 09:48:31] "POST /articles/ HTTP/1.1" 201 ...` 로그 확인(몇시에 어떤 요청이 어디로 와서 어떻게 응답했는지)
+
+- 댓글 생성
+    - 서비스 구성하는 우리 입장에선 사용자가 어디서 요청 보냈는지 보단, "어디로" 요청 보냈는지가 중요
+        ```python
+        # articles/urls.py
+        from django.urls import path
+        from . import views
+
+        urlpatterns = [
+            path('', views.article_list),
+            path('<int:article_pk>/', views.article_detail),
+            path('<int:article_pk>/comments/', views.comment_create),   # 주석 해제!!
+            # path('comments/', views.comment_list),
+            # path('comments/<int:comment_pk>/', views.comment_detail),
+        ]
+        ```
+    - `path('<int:article_pk>/comments/', views.comment_create)`
+        - 특정 게시글(pk값)의 comments라는 곳으로 요청을 보내면 comment_create 함수가 실행되도록 하겠다
+        - 그렇다면 comment_create라는 view함수를 만들어야함
+
+- comment_create 함수 작성
+    ```python
+    # articles/views.py
+    # 댓글 생성
+    @api_view(['POST'])
+    def comment_create(request, article_pk):
+        # 게시글을 하나 지정해서, 그곳에 댓글을 생성한다.
+        article = Article.objects.get(pk=article_pk)
+        # 댓글 생성은, 사용자가 보낸 content 정보를 저장한다.
+        # 유효성을 검사한다.
+            # DB에 반영한다.
+            # 완성된 댓글 정보를 사용자에게 반환한다. (JSON)
+    ```
+    - 게시글 저장할 때 serializer로 저장했었음 -> 댓글도 똑같다
+    - 댓글 serializer 만들자
+
+- CommentSerializer 작성
+    ```python
+    class CommentSerializer(serializers.ModelSerializer):
+
+        class Meta:
+            model = Comment
+    ```
+    - model은 Comment
+        - model 정보인 Comment는 import 받아온 Comment 정보!
+        - `from .model import Article, Comment`
+    - CommentSerializer도 `serializers.ModelSerializer`로 만들면 됨
+    - CommentSerializer 정의했으니 views.py 마저 만들자
+
+- comment_create 함수 마저 만들기
+    - `from .serializers import CommentSerializer` 추가
+    ```python
+    # articles/views.py
+    # 댓글 생성
+    @api_view(['POST'])
+    def comment_create(request, article_pk):
+        # 게시글을 하나 지정해서, 그곳에 댓글을 생성한다.
+        article = Article.objects.get(pk=article_pk)
+        # 댓글 생성은, 사용자가 보낸 content 정보를 저장한다.
+        serializer = CommentSerializer(data=request.data)
+        # 유효성을 검사한다.
+            # 유효하지 못한 경우, 예외 상황 알아서 발생시켜라
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            # DB에 반영한다.
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # 완성된 댓글 정보를 사용자에게 반환한다. (JSON)
+    ```
+    - 아까 serializer에서 필드는 content만 보내기로 했고, id, created_at, updated_at는 장고가 알아서 저장해줄 것임
+    - article은 찾아와놓고 쓰지도 않음;;
+    - 이 상태로 댓글 요청해보자
+
+        ![alt text](image-32.png)
+    - 그럼 500에러와 함께 `IntegrityError` 발생
+
+        ![alt text](image-33.png)
+        - 무결성 에러 발생
+        - 비어서는 안되는 제약조건이 있는 articles_comment 테이블의 article_id 컬럼에 값이 비어서 저장이 안되었다!
+        - 당연함
+        - 사용자가 보낸 데이터는 content밖에 없고, 저장하려고 할 때 article_id는 만들어놨는데, 여기 저장 안하면 참조하고 있는 대상을 저장할 수 없음
+        - 이 문제는 '저장할 때' 생긴 것
+        - `serializer.save(article=article)` 이렇게 작성함으로써 누락된 article 정보 넣어줌
+        - 사용자가 1번 게시글(article_pk)이라는 곳에 요청을 보냈다 -> 게시글 정보를 가지고 왔다(article에 할당함) -> 가지고 온 것을 저장할 때 '같이' 저장하면 됨(serializer.save(article=article))
+        - Comment 클래스에 article 정보를 넣어놨으니, 그 객체를 그대로 집어넣어도 상관XX
+
+- comment_create 함수 완성!
+    ```python
+    # articles/views.py
+    # 댓글 생성
+    @api_view(['POST'])
+    def comment_create(request, article_pk):
+        # 게시글을 하나 지정해서, 그곳에 댓글을 생성한다.
+        article = Article.objects.get(pk=article_pk)
+        # 댓글 생성은, 사용자가 보낸 content 정보를 저장한다.
+        serializer = CommentSerializer(data=request.data)
+        # 유효성을 검사한다.
+            # 유효하지 못한 경우, 예외 상황 알아서 발생시켜라
+        if serializer.is_valid(raise_exception=True):
+            # 저장 하려고 할 때, article 정보 누락되었다.
+                # 넣어주자.
+            serializer.save(article=article)
+            # DB에 반영한다.
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # 완성된 댓글 정보를 사용자에게 반환한다. (JSON)
+    ```
+
+    ![alt text](image-34.png)
+
+    - serializer에 content만 보여지게 했더니 아쉬움 -> 다 보여지게 하고싶다
+
+- CommentSerializer 클래스에 내용 추가!
+    ```python
+    class CommentSerializer(serializers.ModelSerializer):
+
+        class Meta:
+            model = Comment
+            '''
+                serializer에 정의하는 fields는?
+                사용자에게 보여줄 데이터를 정하는 곳
+                혹은, 사용자가 어떤 데이터를 보내야 하는지를 정하는 곳
+                comment의 id, created_at, updated_at, article은
+                사용자가 댓글 생성할때 보내는 데이터가 아니다!
+                    흠... 근데 의문...
+                    나는... 댓글을 작성하고 나서,
+                    정확히 1번 게시글에 작성되었다는 사실을...알고싶은데
+                    지금처럼 필드를 정의하면... 응답이 content만 올것같은데?
+                
+                댓글을 `생성` 할 때는 article의 정보를 사용자가 아닌, `서버`가 처리
+                단, 댓글을 `조회` 할 때는 article의 정보도 포함해서 반환
+                    -> article 필드는? 읽기 전용이어야 겠다.
+            '''
+            # tuple에 요소 1개 일때, trailing comma 찍어야 함.
+            # fields = ('content', )
+            fields = '__all__'
+            read_only_fields = ('article', )
+    ```
+    - articles/serializers.py에 `fields = ('content', )` 주석처리 -> `fields = '__all__'` 입력
+
+        ![alt text](image-35.png)
+        - 다 보여지게 했더니 articles 필드에 값을 안넣었다는 멘트 + 400에러(유저잘못)
+        - 유저가 댓글 쓰는데 게시글 번호를 주소창에 적고, 보내는 데이터에도 article을 넣는 것은 이상함
+        - 그치만 댓글 생성 시 게시글 정보를 같이 보고싶다면?
+            ```
+            댓글을 `생성` 할 때는 article의 정보를 사용자가 아닌, `서버`가 처리
+            단, 댓글을 `조회` 할 때는 article의 정보도 포함해서 반환
+                -> article 필드는? 읽기 전용이어야 겠다.
+            ```
+    - `read_only_fields = ('article', )`을 작성함으로써 article 정보를 읽기 전용으로 만듬
+        - 그럼 생성할 땐 안보내 주더라도 서버에서 내가 식별자로 준 정보를 토대로 저장함
+    - 조회할 때 모든 필드를 보여줌(`fields = '__all__'`)
+
+        ![alt text](image-36.png)
+        - article 필드는 읽기 전용이라 사용자가 보내지 않았더라도 서버가 저장하는 과정에서 내가 주소창에 보낸 pk정보를 토대로 알아서 저장
+
+            ![alt text](image-37.png)
+        - 조회할 땐 모든 필드를 볼 수 있도록 만들었다
+    
+    - Comment가 가진 article에 article 자체를 저장함 -> 보이는 것은 1밖에 없음
+        - DB에는 article_id(INTEGER)만 저장되어 있으니까!
+        - 이왕이면 게시글 id와 제목을 같이 표현하고 싶음
+        - 포맷팅은 serializer가 함
+        - 그럼 그 포맷팅한 serializer를 통해 내가 사용자에게 보여줄 필드들을 정의하고 있는 것임
+        - CommentSerializer에서 보여주고 있는 `"article": 1`에서 article 필드를 다시 Serializer로 재정의하자
+    
+- CommentSerializer 클래스 완성!
+    ```python
+    # articles/serializers.py
+    # 댓글 조회 시 게시글 정보도 함께 조회
+    class CommentSerializer(serializers.ModelSerializer):
+        '''
+            이 코멘트 시리얼 라이저의 어떤 특정한 필드를 다른 형태로 재 정의
+            article 필드에 대해서 재 정의 하겠다.
+                id랑 title을 보여주고 싶다!
+                1. id랑 title만 보여주는 serializer를 따로 정의하기
+                    -> 무엇만을 위한 시리얼라이저인가 
+                    -> CommentSerializer에서만 쓸 것 같다
+                    -> 그렇다면 CommentSerializer 안에다가 정의하자
+                2. 이미 있는 시리얼라이저 사용하기
+        '''
+        class ArticleForCommentSeializer(serializers.ModelSerializer):
+            class Meta:
+                model = Article
+                fields = ('id', 'title', )
+
+        article = ArticleForCommentSeializer(read_only=True)    # 읽기 전용
+
+        class Meta:
+            model = Comment
+
+            # tuple에 요소 1개 일때, trailing comma 찍어야 함.
+            # fields = ('content', )
+            fields = '__all__'
+            # read_only_fields = ('article', ) -> 위에서 읽기 전용 표기했으니 주석처리
+    ```
+    - CommentSerializer가 호출될 때 ArticleForCommentSerializer에 의해서 article 필드가 재정의되어 사용자에게 보여질 것임!
+
+        ![alt text](image-38.png)
+
+※ 우리는 이제 CommentSerializer를 이용해서 '댓글 목록 조회' 또는 '댓글 상세 조회'를 할 수 있어야 함
+
+    ![alt text](image-39.png)
+
+-> 게시글 조회, 수정, 삭제와 동일함
+
+-> 단지 pk가 comment로 바뀌었을 뿐!
+
 
 ## DRF with DRF with N:1 Relation
 ### 사전준비
@@ -551,6 +781,7 @@ DRF에서 제공하는 읽기 전용 필드
     - 일관성
         - view에서 별도로 data 수정 없이도 직렬화 결과를 제어
 
+
 ## Many to many relationships
 ### Many to many relationships N:M or M:N
 한 테이블의 0개 이상의 레코드가 다른 테이블의 0개 이상의 레코드와 관련된 경우
@@ -562,6 +793,8 @@ DRF에서 제공하는 읽기 전용 필드
 ### ManyToManyField 예시 (스켈레톤 프로젝트)
 
 - 스켈레톤 프로젝트 django-many-to-many-pjt
+
+※ `05_Django/03-many_to_one/02-many_to_many`
 1. 가상환경 생성, 활성화 및 패키지 설치
     - `python -m venv venv`
     - `source venv/Scripts/activate`
@@ -575,9 +808,40 @@ DRF에서 제공하는 읽기 전용 필드
     
     ![스켈레톤플젝2](스켈레톤플젝2.png)
 
+- python과 DB 구분!!
+
+    ![alt text](image-40.png)
+    ![alt text](image-41.png)
+    - python에서는 '객체'를 사용했을 때 얻을 수 있는 장점
+        - Course 클래스에 assistant_teachers 필드를 만들었음
+        - 나중에 views함수에 적을 때 `Course.assistant_teachers`라고 적을 수 있다
+        - teacher/models.py의 Teacher는?
+        - 자기 클래스에 없으면 '역참조 매니저'를 통해 teacher.course_set.all()로 M:N 관계에 있는 대상의 정보를 받아올 수 있다
+    - DB에서는?
+        - 서로가 1:N의 관계를 맺고 있는 정보를 Teacher 테이블, Course 테이블 둘 다 만들지XX
+        - 1:N일 땐 Course가 반드시 바라봐야할 대상이 1개가 있었기 때문에 컬럼을 FK로 만들었지만
+        - M:N일 땐 내가 바라보고 있는 다대다 대상이 없을 수도 있음
+
 4. 강좌와 보조 강사 간 N:M 관계 설정
 
     ![스켈레톤플젝3](스켈레톤플젝3.png)
+    - M:N 관계를 중개 모델에 저장
+    - 별도의 테이블을 만들어서
+        - ex. 1번 python 1번강의 1번강사
+        - ex. 2번 python 1번강의 2번강사
+        - ex. 3번 web 2번강의 1번강사
+        - 이렇게 중개 모델 형식으로 만들 수 있음
+    
+    ![alt text](image-42.png)
+    - 클래스를 만들어 course, teacher에 각각 FK를 지정해서 테이블을 만들고 싶은데,
+        - 중개 테이블을 중개 모델에 직접적으로 만드는 경우는 '추가적인 value가 필요할 때만(예시 사진의 name처럼)' 클래스를 따로 정의
+        - 만약 양쪽에 대한 FK 정보만 필요할 때는 중개모델 따로 안만들어도 됨 -> 장고가 알아서 처리(ManyToManyField를 통해서)
+    - ManyToManyField를 assistant_teachers라고 정의해두면 강의(Course)와 강사(Teacher)의 FK들을 저장해주는 테이블을 알아서 만들어 주는구나!
+        - 대신, assistant_teachers는 파이썬에서 쓰기 위한 클래스 변수구나!
+        - 하고 생각하기
+    - 따라서 M:N 관계 만들고 싶으면 ManyToManyField 사용해서
+        - Course가 바라보고 있는 강사들에 대한 정보를 assistant_teachers에 저장하고
+        - Teacher 입장에서는 Teacher.course_set이라는 object를 역참조 매니저를 통해 M:N 관계에 있는 Course를 바라볼 수 있음
 
 - ※ `ManyToManyField()`
     - M:N 관계 설정 모델 필드
@@ -592,12 +856,14 @@ DRF에서 제공하는 읽기 전용 필드
     - Migration 진행 후 에러 발생
 
         ![스켈레톤플젝5](스켈레톤플젝5.png)
+        - 이거 봐야돼~~!!!
+        - 스앵님. teacher가 쓰려는 course_set이 충돌나는데, 뭐 해야댐? 하고 물어보는 
 
     - 역참조 매니저 충돌
-        - `N:1`
+        - `N:1` -> `main_teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)`
             - "주 강사로 참여하는 강좌"
             - `user.article_set.all()`
-        - `M:N`
+        - `M:N` -> `assistant_teachers = models.ManyToManyField(Teacher)`
             - "보조 강사로 참여하는 강좌"
             - `user.article_set.all()`
         - assistant_teachers 필드 생성 시 자동으로 역참조 매니저인 `.article_set`가 생성됨
@@ -605,6 +871,8 @@ DRF에서 제공하는 읽기 전용 필드
             - `tescher.course_set.all()` -> 해당 강사가 주 강사로 참여하는 모든 강좌
         - 주 강사로 참여하는 강좌(tescher.course_set)와 보조 강사(tescher.course_set)로 참여하는 강좌를 구분할 수 없게 됨
         - teacher와 관계된 ForeignKey 혹은 ManyToManyField 둘 중 하나에 `related_name` 작성 필요
+        - 역참조 매니저 이름 바꾸는거임!
+        - 각각의 매니저 명을 일치시켜 주는 것을 권장함(assistant_courses처럼)
 
     - `related_name` 작성 후 Migration 재진행
 
@@ -615,9 +883,15 @@ DRF에서 제공하는 읽기 전용 필드
 
 - `Teacher - Course`간 사용 가능한 전체 related manager
     - `course.main_teacher` : 강좌의 주 강사 정보 N:1
+        - course는 본인이 참조하고 있는 main_teacher를 **course.변수명** 즉, 객체로 접근 가능
     - `teacher.course_set` : 강사가 주 강사로 참여하는 강좌 정보 - N:1
+        - 1의 입장에 있는 teacher는 자신을 참조하고 있는 강의들을 `.course_set`이라는 매니저를 통해 QuerySet API로 데이터셋을 불러옴
     - `course.assistant_teachers` : 강좌의 보조강사 정보 - M:N
-    - `user.assistant_courses` : 강사가 보조 강사로 참여하는 강좌 정보 - M:N
+        - M:N에서는 course가 본인이 참조하고 있는 assistant_teachers 불러올 때 1개가 아니므로 직접적인 객체를 불러올 순 없음
+        - 그래서 assistant_teachers는 객체가 아닌 역참조 매니저
+        - 따라서 받아오려면 .all , .get 등 사용
+    - `teacher.assistant_courses` : 강사가 보조 강사로 참여하는 강좌 정보 - M:N
+        - teacher 입장에서도 assistant_teachers는 매니저!
 
 - ManyToManyField의 대표 인자 3가지
     1. `related_name`
@@ -651,6 +925,14 @@ DRF에서 제공하는 읽기 전용 필드
         - 관련 객체 집합에서 지정된 모델 객체를 제거
 
 ### 기능 구현
+※ 우리는 Teacher-Course 관계를 생성할 수 있어야 함
+
+-> 즉, POST요청을 보낼 수 있어야 함
+
+---
+---
+18분56초
+
 - url 작성
 
     ![기능구현1](기능구현1.png)
