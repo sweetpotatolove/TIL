@@ -1,22 +1,231 @@
 # Django Relationships
+### 실습
+※ `05_Django/03-many_to_one/01-many_to_one`
+- 이 폴더에는 config라는 프로젝트에 articles라는 어플리케이션이 만들어 져있음
+- 코드 작성 전 환경설정
+    - `python -m venv venv`
+    - `source venv/Scripts/activate`
+    - `pip install -r requirements.txt`
+        - requirements.txt에 뭐 있는지도 확인
+
+- config/settings.py의 INSTALLED_APPS 확인
+    - articles 추가되어 있는 것 확인
+    - articles/views.py를 보면 rest_framework를 쓰고 있는데, INSTALLED_APPS에 추가되어 있지않음 -> "rest_framework" 추가 
+    - 외부 프로젝트를 가지고 왔을 땐 제일 먼저 설정들을 보면서 내가 어떻게 구성해야 할지 둘러보기
+
+- 작성되어있는 코드 둘러보기
+    - 코드 작성과 동일한 루틴으로 둘러보기
+        1. 프로젝트 가상환경(venv) 활성화
+        2. 프로젝트 기획이 어느정도 되어있다는 가정 하에, 그렇다면 모델들의 관계도 구성되어 있을 것 -> model 확인
+            ```python
+            # articles/models.py
+            from django.db import models
+
+            # Aricles 클래스가 장고의 model클래스를 상속받고 있음
+            # 그래서 manage가 있었고
+            # article에 대한 전체 정보를 불러오려면 objects라는 매니저를 통해 전체 조회를 해야하는 QuerySet API가 있었음
+            class Article(models.Model):
+                # 각 컬럼들을 어떤 데이터 타입으로 만들 것인지 필드 정의된 것 확인
+                # 필드들마다 제약사항이 있거나, 장고에게 맡길 추가적인 옵션이 들어있음
+                title = models.CharField(max_length=120)    # 제약사항
+                content = models.TextField()
+                created_at = models.DateTimeField(auto_now_add=True)    # 옵션
+                updated_at = models.DateTimeField(auto_now=True)    # 옵션
+
+                # 매직메서드를 통해 디버깅 쉬울지도 확인
+                def __str__(self):
+                    return self.title
+            ```
+
+        3. model을 활용한 식별자(url)와
+            - 프로젝트의 urls.py 먼저 확인
+            ```python
+            # config/urls.py
+            from django.contrib import admin
+            from django.urls import path, include
+
+            urlpatterns = [
+                path("admin/", admin.site.urls),
+                path("articles/", include("articles.urls")),
+            ]
+            # articles/로 요청 들어오면 그 이후는 articles.urls에서 뒷부분을 처리하겠다는 코드 확인
+            # articles/로 요청 들어오면 articles.urls이 처리한다 하니 이 파일도 확인해보자
+            ```
+            ```python
+            # articles/urls.py
+            from django.urls import path
+            from . import views
+
+            urlpatterns = [
+                path('', views.article_list),
+                path('<int:article_pk>/', views.article_detail),
+                path('<int:article_pk>/comments/', views.comment_create),
+                # path('comments/', views.comment_list),
+                # path('comments/<int:comment_pk>/', views.comment_detail),
+            ]
+            # 비어있는 문자열 ''은
+            # 만약 사이트 주소가 https://example.com/이라면
+            # https://example.com/로 접속했을 때 views.article_list 함수가 실행된다는 뜻
+            # 즉, ''은 홈페이지에 해당하는 URL 경로
+            # 그럼 article_list 함수를 살펴보자
+            ```
+        4. 메서드와 표현(views) 확인
+            ```python
+            # articles/views.py
+
+            @api_view(['GET', 'POST'])  # api_view 데코레이터로 GET과 POST 두 개의 메서드를 허용하고 있음 
+            def article_list(request):
+                if request.method == 'GET':     # 만약 GET요청 받으면 
+                    articles = Article.objects.all()    # Article이라는 내 모델에서부터 
+                                                        # object 속성(장고가 만들어준 매니저)으로
+                                                        # all 이라는 QuerySet API를 사용해서
+                                            # 내 DB에 있는 전체 게시글 가져와서 articles 변수에 전달
+                                            # 이것을 ArticleListSerializer 이용해서 표현
+                                            # ArticleListSerializer 생긴거 보러 가자
+                    serializer = ArticleListSerializer(articles, many=True) 
+                    return Response(serializer.data)
+                elif request.method == 'POST':      # 만약 POST 요청 받으면
+                    serializer = ArticleSerializer(data=request.data)   # ArticleSerializer에
+                                                                        # 사용자가 넘겨준 데이터를
+                                                                        # data 위치에 키워드 인자로 넘겨줌
+                    # class에 인스턴스 생성하기 위한 인자 전달 시.. 키워드 인자를 써야하는 이유?
+                    '''
+                        class Some:
+                            def __init__(self, arg1, arg2='default', arg3='default'...):
+                                pass
+                        s1 = Some('arg1', arg3='other data')
+                    '''
+                    # serializer의 역할은 '어떠한 데이터를 포맷팅 하는 것'
+                    # 그럼 serializer의 첫번째 인자는 당연히 '포맷팅할 데이터'가 들어가는 것을 기대함
+                    # 즉, 내가 가진 데이터가 들어오길 기대함 -> 그래서 첫번째 인자
+                    # 그래서 articles는 객체를 넘기기로 한 첫번째 인자에 위치 맞춰서 들어간거라 위치 인자로서 들어간 것
+                    # serializer에게 기대하는 두번째는
+                    # 나한테 데이터 없고, 저쪽에서 온 데이터를 내가 쓰고싶을 때 들어갈 데이터가 있을 것
+                    # 즉, 요청받은 데이터가 들어가길 기대함 -> 두번째 인자
+                    # 생성하려고 하는데 요청받은 데이터를 내가 가진 데이터 없이 넘기려고 하니 키워드 인자로 넘김
+                    # (넘길 인자가 한개인데 위치 인자로 넣으려면 두번째에 넣어야하니)
+                    # (키워드 인자로 넘긴 것)
+
+                    if serializer.is_valid(raise_exception=True):
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+
+            @api_view(['GET', 'DELETE', 'PUT'])
+            def article_detail(request, article_pk):
+                # article = Article.objects.get(pk=article_pk)
+                article = Article.objects.annotate(num_of_comments=Count('comment')).get(
+                    pk=article_pk
+                )
+                # comments = article.comment_set.all()
+                if request.method == 'GET':
+                    serializer = ArticleSerializer(article)
+                    return Response(serializer.data)
+                
+                elif request.method == 'DELETE':
+                    article.delete()
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+                
+                elif request.method == 'PUT':
+                    serializer = ArticleSerializer(article, data=request.data)
+                    if serializer.is_valid(raise_exception=True):
+                        serializer.save()
+                        return Response(serializer.data)
+                    # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            # GET은 특정 pk 지정해서 조회할 수 있음
+            # 이 pk값을 urls.py에서부터 받아옴 
+                # path('<int:article_pk>/', views.article_detail),
+            # DELETE -> 조회한 대상을 삭제
+            # PUT -> 조회해온 대상(article)을 저쪽에서 보내온 데이터로 수정
+                # 내가 수정할 대상과, 거기에 넣을 데이터!
+                # 총 두개의 인자 넣음
+            ```
+        5. serializers -> 메서드와 표현 확인하려면 serializers도 함께 확인해야 함
+            ```python
+            # articles/serializers.py
+            from rest_framework import serializers
+            from .models import Article, Comment
+
+            class ArticleListSerializer(serializers.ModelSerializer):
+                class Meta:
+                    model = Article 
+                    exclude = ('created_at', 'updated_at',)
+            # 내 모델 Article을 가지고(model = Article)
+            # 모델 정보를 토대로 직렬화를 할 수 있는(ModelSerializer) ArticleListSerializer 만들어 놓은거 확인
+            # 메타데이터 정보가 Article 클래스를 기반으로 함
+            # exclude -> 제외시킨다
+            # 즉, 사용자에게 제공되는 데이터가 id, content, title, created_at, updated_at 전부 모이는 것이 아닌
+            # id, content, title 세 개만 보여주겠다
+            ```
+        6. 테스트해보고 싶으면 admin 정보도 확인
+
+-> 살펴보기 끝^^;;
+
+-> 이제 여기에 Comment라는 댓글 모델을 추가할 예정
+
+-> 그냥 추가XX 1:N의 관계로 추가해보자
+
 ## Many to one relationships
 ### Many to one relationships N:1 or 1:N
 한 테이블의 0개 이상의 레코드가 다른 테이블의 레코드 한 개와 관련된 관계
 
 - `Comment - Article` : 0개 이상의 댓글은 1개의 게시글에 작성될 수 있음
-- `Comment(N) - Article(1)` : **0개 이상**의 댓글은 1개의 게시글에 작성될 수 있음
+    - `Comment(N) - Article(1)` : **0개 이상**의 댓글은 1개의 게시글에 작성될 수 있음
 - 테이블 관계
 
     ![테이블관계](테이블관계.png)
-    - 설묭..
-    - models.py에 있는 Aritcle 클래스의 내용을 Comment 클래스 만들 때 그대로 복사
+    - 테이블을 구성한다(=내 데이터를 저장할 공간을 만든다)고 가정했을 때, 현재 Article 테이블이 오른쪽과 같이 만들어져있음을 알고있음
+        - 왜? 클래스 이렇게 만들었으니까
+
+            ![alt text](image-19.png)
+        - id는 장고가 알아서 만들어줌
+    - 댓글(Content)도 비슷하게 만들 것임
+        - models.py에 있는 Aritcle 클래스의 내용을 Comment 클래스 만들 때 그대로 복사
+            ```python
+            # articles/models.py
+            from django.db import models
+
+            # Create your models here.
+            class Article(models.Model):
+                title = models.CharField(max_length=120)
+                content = models.TextField()    # 복사
+                created_at = models.DateTimeField(auto_now_add=True)    # 복사
+                updated_at = models.DateTimeField(auto_now=True)    # 복사
+
+                def __str__(self):
+                    return self.title
+
+            class Comment(models.Model):
+                content = models.TextField()    # 붙여넣기
+                created_at = models.DateTimeField(auto_now_add=True)    # 붙여넣기
+                updated_at = models.DateTimeField(auto_now=True)    # 붙여넣기
+            ```
+        - Comment는 어디에 작성하며, Article은 자신을 참조하고 있는 댓글들이 누군지 어떻게 알 수 있을까?
+
     - 어떻게 해야 이 두개의 클래스를 가지고 N:1 관계를 만들 수 있을까?
-    - 참조..
-    - N이 0일 '수도' 있으니 1개 ..
-    - 반드시 한 개가 있어야 하는..
+        - 내(Comment)가 참조할 대상(Article)에 대한 정보를 저장할 수 있는 공간을 만들어주면 됨
+        - N이 0일 '수도' 있으니, 1의 입장인 Article에 0개일 수도 있는 N을 위한 공간을 만드는 것은 이상함
+        - 반드시 한 개가 있어야 하는 N의 입장에서, 본인이 바라보고 있는 대상이 누군지를 저장할 공간을 마련하는게 맞음
+
     - Comment는 Article을 바라보고 있음
-        - Comment에 `article = 
-    - Comment의 PrimaryKey인 id와 구분이 되어야 하므로 Article의 id..는 외래키..?
+        ```python
+        class Comment(models.Model):
+            article = ??
+            content = models.TextField()
+            created_at = models.DateTimeField(auto_now_add=True)
+            updated_at = models.DateTimeField(auto_now=True)
+        ```
+        - article을 바라보고 있는 곳에 저장해야할 것? (article = ??)
+        - 일반적으로 클래스 변수에 필드에 대한 정보를 할당함
+        - 그럼 게시글 정보 중 어떤 정보를 댓글에 저장해야 올바른 게시글을 찾아갈 수 있을까?
+        - 고유한 정보는 Article이 가진 `id`!!
+        - id 외의 나머지 필드는 중복될 수 있음
+    
+    - Comment의 id(primary key)와는 구분되야 하므로 Article의 id는 외부에서 가져왔다 하여 `ForeignKey`라고 함
+
+    - Comment 모델 구성할 때 Article에 대한 외래키를 구성해야 함 
 
 
 ### 댓글 모델
@@ -31,7 +240,7 @@
 - `ForeignKey(to, on_delete)`
     - `to` : 참조하는 모델 class 이름
     - `on_delete`
-        - 외래 키가 참조하는 객체(1)가 사라졌을 때, 외래 키를 가진 객체(N)를 어떻게 처리할 지를 정의하는 설정(데이터 무결성)
+        - 외래 키가 참조하는 객체(1)가 사라졌을 때, 외래 키를 가진 객체(N)를 어떻게 처리할 지를 정의하는 설정(**데이터 무결성**)
         - on_delete의 'CASCADE' : 부모 객체(참조된 객체)가 삭제됐을 때 이를 참조하는 객체도 삭제
 
 - Migration 이후 댓글 테이블 확인
@@ -42,23 +251,115 @@
         ![댓글테이블](댓글테이블확인.png)
 
 ### 실습
+```python
+from django.db import models
 
-comment는 article보다 밑에 있어야 ㅎ된다는디
+# Create your models here.
+class Article(models.Model):
+    title = models.CharField(max_length=120)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-1:N의 관계 클래스에 대해서 순서 맞춰서 써야하는가
+    def __str__(self):
+        return self.title
 
-복잡함
+class Comment(models.Model):
+    # Article class를 참조 하는데, 내가 참조 중인 게시글이 삭제되면, 나도 삭제
+    '''
+        project의 urls.py에서, 내가 지금 요청 들어온것에 대한 처리를
+        다른 위치에 있는 다른 모듈 혹은 어떠한 함수에 대해 처리를 위임하려고 할때
+        그 대상을 직접적으로 호출하여 작성하는 것이 아니라,
+        문자열 형태로 (현재 활성화 되지 않았어도) 지금 코드가 실행되는데 문제없도록
+        실행 대상의 명확한 위치를 기록
+        include("articles.urls") -> app_name.module_name
+    '''
+    article = models.ForeignKey('articles.Article', on_delete=models.CASCADE)
+    # article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+```
+- `article = models.ForeignKey(Article, on_delete=models.CASCADE)` 작성
+    - ForeignKey 지정
+        - to : Article
+        - on_delete: models.CASCADE
+- Comment 클래스가 article이라는 필드에 FK 설정하는데, 그 대상이 Article 클래스임
+    - 문제없이 정상동작하는 이유는
+    - Comment 클래스가 Article 클래스보다 나중에 정의되어 있어서 사용 가능한 것!!
+    - Comment 클래스가 Article 클래스보다 먼저 정의되어 있으면(위에 정의되어 있으면) 당연히 못씀
+        ```python
+        print(dust)
+        dust = 60
+        # name 에러 -> 참조 불가능
+        ```
+    
+- 1:N의 관계 클래스에 대해서 순서 맞춰서 써야하는가?
+    - 관계에 따라 클래스에 정의되는 위치가 달라져야 하나?
+    - 아주 복잡쓰
+    - 이를 위해 클래스 위치 계속 바꿀 수 없음
+    - 클래스 직접적으로 참조하도록 하는 방법이 일반적인데,
+    - '안전하게' 하고싶다면 `include("articles.urls")`처럼 문자열 형태로 작성
+    - `'app이름.module이름'`
+    - Article 클래스는 articles 어플리케이션에 있음
+    - `"articles.Article"`
 
-이를 위해 클래스 위치 계속 바꿀 수 없음
+- 즉, `article = models.ForeignKey('articles.Article', on_delete=models.CASCADE)` 이렇게 작성
 
-클래스 직접적으로 참조하도록 하는 방법이 일반적임
+- 모델에 변경사항 생겼으니 설계도 작성
+    - `python manage.py makemigrations`
+        ```python
+        class Migration(migrations.Migration):
 
-안전하게 하고싶다면 include("articles.urls")처럼 문자열 형태로 
+            dependencies = [
+                ('articles', '0001_initial'),
+            ]
 
-마
+            operations = [
+                migrations.CreateModel(
+                    name='Comment',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('content', models.TextField()),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('updated_at', models.DateTimeField(auto_now=True)),
+                        ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='articles.article')), # 추가된거 확인
+                    ],
+                ),
+            ]
+        ```
+        - `('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='articles.article')),`
+        - 참조 대상이 대문자로 작성한 Article이 아닌 article이 된 것도 확인
+        - 우린 대문자로 썼는데 왜 설계도엔 소문자로 들어갔을까?
 
+- DB 반영
+    - `python manage.py migrate`
 
+        ![alt text](image-20.png)
+        - db.sqlite3 생긴거 확인
 
+- DB 확인
+    - Database - sqlite - path - 현재 폴더로 가서 - All Files - db.sqlite3 - +connect 
+
+        ![alt text](image-21.png)
+        ![alt text](image-22.png)
+        ![alt text](image-23.png)
+        ![alt text](image-24.png)
+        ![alt text](image-25.png)
+        ![alt text](image-26.png)
+
+    - article_comment 테이블에 `article_id` 추가된 것 확인
+        
+        ![alt text](image-27.png)
+        - article은 왜 `_id`가 붙었을까?
+        - python에서 객체를 사용할 때 편의성과 DB에서 어떤 테이블을 구성할 때 각 컬럼에 들어갈 value에 대해 생각해보면 좋을듯
+        - 우리는 comment 테이블에 FK(참조 대상)을 게시글의 id값을 넣을 것임 = INTEGER
+        - 파이썬 객체에서 article 변수에 굳이 숫자를 넘길 필요가 있을까?
+        - 나는 Comment가 가진 article 속성에 게시글 인스턴스 자체를 넣고싶은데, 굳이 id값을 찾아서 넣어야 하는가?
+        - 객체의 속성에는 다른 객체를 넣을 수 있는데,
+        - 모델 정의할 때 article에 Comment 클래스로 인해 만들어진 댓글은 본인의 article에 대한 정보를 저장하거나 조회해서 출력하려고할 때 그 값이 정수일 필요가 있을까? 없지 않을까?
+        - 생각해보기
+        
 
 ## 관계 모델 참조
 ### 역참조
