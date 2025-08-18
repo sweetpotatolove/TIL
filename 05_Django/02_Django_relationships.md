@@ -909,6 +909,8 @@ DRF에서 제공하는 읽기 전용 필드
             - 즉, 내가 니 친구면 니도 내 친구
         - False일 경우
             - True와 반대. 대칭되지 않음
+            - 나는 니 친군데 니는 나 친구 아니래..
+            - 내가 쟤를 참조있다고 해서 쟤는 나를 참조하고 있는 것이 XX
         - ※ source 모델: 관계를 시작하는 모델
         - ※ target 모델: 관계의 대상이 되는 모델
     3. `through`
@@ -929,16 +931,39 @@ DRF에서 제공하는 읽기 전용 필드
 
 -> 즉, POST요청을 보낼 수 있어야 함
 
----
----
-18분56초
-
 - url 작성
 
     ![기능구현1](기능구현1.png)
+    - 식별자에 courses/로 요청보내게 되면 courses의 새로운 관계를 정의한 url패턴에 따라, 강사와 강좌관 1:N 또는 M:N 관계를 처리하는 뷰로 연결됨
+        ```python
+        # courses/urls.py
+        urlpatterns = [
+            # 1:N
+            path("<int:teacher_pk>/", views.create_course), # 강사 pk를 받아서 새로운 강좌를 생성하는 페이지로 이동
+            # M:N
+            path("<int:teacher_pk>/assistant/<int:course_pk>/", views.assistant),  # 강사 pk와 강좌 pk를 받아서 강좌의 부강사를 지정하는 페이지로 이동
+        ]
+        ```
+        - 1:N 관계에서 N의 입장인 course를 생성할 땐 course의 pk가 필요 없음(내가 참조할 teacher_pk만 받아오면 됨)
+        - M:N 관계에서, 이미 있는 강의와 이미 있는 강사가 관계를 맺을 수 있도록 teacher_pk와 course_pk가 둘 다 필요
 - view 함수 작성
 
     ![기능구현2](기능구현2.png)
+    - course 테이블을 만들거나 teacher 테이블을 만드는 것이 아니라, 중개 테이블 생성함
+    - 그래서 양쪽의 FK를 둘 다 가져와야 함
+    - 그리고 추가(.add)하는 형식으로 사용
+        - 제거(.remove)도 함
+    - course와 teacher는 대등한 관계이므로, `course.assistant_teachers`뿐만 아니라 `teacher.assistant_couses`도 똑같이 사용 가능
+        - 그럼 둘 중 뭘로 써야하나?
+        - 논리적으로 생각했을 때 누구를 통해서 관계를 맺는게 옳다고 판별될 때 그 대상으로 사용
+    - remove, add하는 것들은 어디에 저장되냐?
+        - manytomany 필드 쓰더라도 새로운 테이블 만들어 짐!
+
+            ![alt text](image-43.png)
+        - courses라는 어플리케이션의 course 모델에 assistant_teachers 테이블이 만들어져서(만들어진 얘가 바로 중개모델)
+        - 필드가 id, course_id, teacher_id로 구성되어
+        - add하면 요기 추가됨
+    
 - 결과 확인
 
     ![기능구현3](기능구현3.png)
@@ -957,6 +982,8 @@ DRF에서 제공하는 읽기 전용 필드
     - 모델 manager objects에서 `get()`을 호출하지만, 해당 객체가 없을 땐 기존 DoesNotExist 예외 대신 **Http404를 raise** 함 
 
     ![get_object_or_404](get_object_or_404.png)
+    - get 요청이나 all요청 보냈는데, 표현해야 할 데이터가 없을 때 원래는 all -> 빈리스트 반환, get -> 500에러 남
+    - get_object_or_404은 get 했을 때 있으면 object, 없으면 404 반환
 
 - `get_list_or_404()`
     - 모델 manager objects에서 `filter()`의 결과를 반환하고, 해당 객체 목록이 없을 땐 **Http404를 raise** 함
@@ -967,4 +994,82 @@ DRF에서 제공하는 읽기 전용 필드
     - 존재하지 않는 게시글 조회 시 이전에는 상태 코드 500을 응답했지만 현재는 404를 응답
 
     ![적용비교](적용비교.png)
+
+- View와 Serializer 역할
+
+    ![alt text](image-44.png)
+
+
+### 게시글을 보여줄 때의 댓글 Serializer
+- 지금까지 작성한 코드엔 게시글을 보여줄 때 댓글에 대한 정보를 보여주는 Serializer가 없음
+    - 게시글 입장에서 댓글들의 정보를 불러오려면 역참조 매니저(comment_set)를 이용
+        - articles/views.py의 article_detail 함수에서
+        - `comment = article.comment_set.all()` -> 게시글이 가진 댓글 정보 가지고올 수 있음
+        - 그런데 comment_set에 들어있는 정보도 나는 같이 표현하고 싶다
+        - 즉, ArticleSerializer의 `fields= '__all__'`에 모든 댓글 정보도 함께 표현하고 싶다
+        - comment_set에 있는 댓글 정보를 사용자가 수정할 일 없음
+    - 그렇다면? 읽기 전용으로 보여주자
+    ```python
+    # 게시글 조회 할 때 해당 게시글의 댓글도 함께 조회
+    class ArticleSerializer(serializers.ModelSerializer):
+        class CommentDetailSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Comment
+                fields = ('id', 'content',)   # 댓글의 id와 content만 보여준다.
+
+        # read_only=True 옵션을 통해 해당 필드를 읽기 전용으로 설정할 수 있다.
+        comment_set = CommentDetailSerializer(many=True, read_only=True) # related_name을 통해 역참조
+        # 댓글 갯수 표시
+        num_of_comments = serializers.SerializerMethodField()
+
+        def get_num_of_comments(self, obj):
+            # 여기서 obj는 Serializer가 처리하는 Article 인스턴스
+            # view에서 annotate 한 필드를 그대로 사용 가능
+            return obj.num_of_comments
+
+        class Meta:
+            model = Article
+            fields = '__all__'
+            # # fields = ('id', 'title',)
+            # exclude = ('created_at', 'updated_at',)
+    ```
+    - CommentDetailSerializer를 이용해서 댓글이 가진 id, content 정보를 보여주겠다
+        - 몇개를? `many=True` 여러개
+        - `read_only=True` 읽기 전용으로!
+
+- 그럼 이제 게시글 조회할 때 게시글 정보만 나오는 것이 아니라, 게시글을 참조하고 있는 댓글들을 포함해서 보여줌
+
+    ![alt text](image-45.png)
+    - 1번 게시글에 대한 상세조회 요청했을 때 comment_set도 함께 보이는 것 확인
+    - comment_set는 article 객체가 이미 가지고 있는 역참조 매니저이므로
+        - comment_set 역참조 매니저를 통해 댓글들이 어떻게 보일 것인지 표현해줄 수 잇음
+
+- 만약 댓글의 개수를 알고 싶다?
+    - 장고가 제공하는 기능 `annotate` -> 집계함수 사용해서 추가필드 만들 수 있음
+        ```python
+        @api_view(['GET', 'DELETE', 'PUT'])
+        def article_detail(request, article_pk):
+            # article = Article.objects.get(pk=article_pk)
+            article = Article.objects.annotate(num_of_comments=Count('comment')).get(
+                pk=article_pk
+            )
+        ```
+        - 게시글에 대한 댓글 정보를 토대로 num_of_comments라는 추가 필드 만들었음
+        - 그럼 article는 id, title, content, create_at, update_at, **comment_set, num_of_comments** 필드들 가지게 됨
+        - article 객체는 num_of_comments 정보를 가진 채 serializer에게 넘어가고, serializer는 필드 구성할 때 num_of_comments 필드도 함께 정의해야 함
+        - 그런데 num_of_comments는 모델에 정의된 것이 아니고 내가 넘겨받은 객체만 가진 정보임 -> Serializer 만들어줘야 함
+    
+    - num_of_comments는 method를 통해 재구성한 정보를 보여주자
+        ```python
+        num_of_comments = serializers.SerializerMethodField()
+
+        def get_num_of_comments(self, obj):
+            # 여기서 obj는 Serializer가 처리하는 Article 인스턴스
+            # view에서 annotate 한 필드를 그대로 사용 가능
+            return obj.num_of_comments
+        ```
+        - `get_` + `필드명` (필드명은 현재 num_of_comments)
+        - 인자로 넘겨받은 objs는 현재 article 정보임
+        - 현재 obj가 가진 num_of_comments 필드에 들어있는 값을 반환해서 보여줄 수 있음
+
 
