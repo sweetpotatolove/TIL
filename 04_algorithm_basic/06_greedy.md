@@ -17,6 +17,112 @@
         - 이후 다음 최적이라고 생각하는 100을 선택함
         - 그러나 400원짜리가 있다면? 이 선택이 최종적으로는 최적이 아니게 됨
 
+    - 거스름돈 줄이기 **그리디** 
+    ```python
+    '''
+        - 거스름돈 문제 그리디로 해결
+        - 가장 큰 거스름돈을 먼저 거슬러주고, 남은 금액을 다음 단위로 해결
+    '''
+    def get_minimum_coins(coins, change):
+        # 어떤 동전이: 몇개 사용되었는가?
+        result = {}
+
+        # 가장 큰 코인부터 coins에서 빼나갈 것이다 -> 오름차순
+        coins.sort(reverse=True)
+
+        # 코인 종류별로 change에서 제거
+        for coin in coins:
+            count = 0               # 몇 번 뺐는지 알아야 하므로 count 세자
+            while change >= coin:   # 뺄 수 있으면
+                change -= coin
+                count += 1
+                result[coin] = count    
+                # count = change // coin 이렇게 정의하는 것도 가능(알아서하셍)
+        return result
+
+    coins = [1, 5, 10, 50, 100, 500]  # 동전 종류
+    change = 882  # 잔돈
+
+    # 아래의 경우라면 어떨까?
+    '''
+    coins = [1, 5, 10, 50, 100, 400, 500]  # 동전 종류
+    change = 882  # 잔돈
+    # 400원짜리가 끼면 그리디로 해결되지 않음
+    # 빠른 것보다 정확도가 중요!!
+    # 백트래킹 방식으로 진행해보자
+    '''
+    result = get_minimum_coins(coins, change)
+    for coin, count in result.items():
+        print(f"{coin}원: {count}개")
+    ```
+
+    - 거스름돈 줄이기 **백트래킹**
+    ```python
+    def get_minimum_coins_backtrack(coins, change):
+        coins.sort(reverse=True)
+        min_coins = change      # 최소 동전 개수(얘를 만드는게 백트래킹 조건?)
+                                # 함수 내부에 정의하는 이유
+                                    # get_minimum_coins_backtrack 안에서 사용할
+                                    # 비교 대상 변수이기 때문
+
+        result = {}             # 최저 조건을 모은 result
+
+        def backtrack(remain, target, curr_comb, acc):
+            nonlocal  min_coins, result   
+            # get_minimum_coins_backtrack에 있는 min_coins 쓰고싶을 때
+            # 일단 글로벌은 당연히 아니고
+            # backtrack의 로컬이 아닌 곳에 있기 때문에
+            # nonlocal이라고 쓰면 사용 가능
+            '''
+                remain: 0으로 만들어야 하는 남은 금액
+                target: 현재 어느 동전을 사용할 것인지 index
+                curr_comb: 지금까지 만들어진 조합
+                add: 지금까지 사용한 동전의 개수
+            '''
+
+            if remain == 0:     # 기저 조건: 남은 금액이 없을 때!
+                if acc < min_coins:     # 누적값이 min_coins보다 작을때만 최솟값 갱신
+                    min_coins = acc
+                    # result = curr_comb  # 결과는 내가 모아놓은 동전
+                    # curr_comb -> 딕셔너리 형태(참조형) -> 원본 그대로 넣는거 곤란함
+                    # 복사본을 넘겨줘야 함
+                    result = dict(curr_comb)
+                return
+
+            # 가지치기
+            if acc >= min_coins:
+                return
+
+            # 유도 조건: 남은 동전들에 대해서 모두 시도(완탐)
+            # 위 조건 다 안맞아서 여기까지 온거
+            for idx in range(target, len(coins)):
+                coin = coins[idx]
+                if coin <= remain:    # 코인이 남아있는 ramain보다 작아야 뺄 수 있음
+                    # 여기서 만큼은 그리디하게 생각했을 때
+                    # 100원을 1번, 2번, 3번 ... 반복 조사는 의미 없음
+                    # 200원 거슬러야 하는데 100원 거슬러주고 남은걸
+                    # 50원으로 처리하라고 하면 2번이 돼서
+                    # 어차피 조사하러 가봤자, 내가 원하는 최솟값 못구함
+                    max_count = remain // coin  # 내가 쓸 수 있는 코인을 remain에서 최대한 씀
+                    curr_comb[coin] = max_count
+                    backtrack(remain - coin * max_count, idx + 1, curr_comb, acc + max_count)
+
+                    # 조사하러 갔다가 돌아오면
+                    curr_comb[coin] = 0 # 원래대로 돌려놓기
+        backtrack(change, 0, {}, 0) 
+        return result
+
+    # 사용 예시
+    coins = [1, 5, 10, 50, 100, 400, 500]  # 동전 종류
+    change = 882  # 잔돈
+
+    result = get_minimum_coins_backtrack(coins, change)
+    for coin, count in result.items():
+        if count > 0:
+            print(f"{coin}원: {count}개")
+    ```
+
+
 **※ 어떤 문제를 해결하기 위해 진행하는 순서**
 1. 그리디로 풀리는지 검증 -> 안될 것 같으면 완전탐색
 
@@ -37,7 +143,7 @@
     3. 이 조건 만족하지 못하면 다 제외되고 선택지가 하나만 남겠구나
     4. 그리디로 해결해볼 수 있겠구나 를 시도
 
-->  이런 사고 방식을 가지고 있어야 함..!
+-> 이런 사고 방식을 가지고 있어야 함..!
 
 -> 여러가지 방법으로 사고할 수 있어야 함..!
 
@@ -98,57 +204,54 @@
         - 탐욕적인 방법: (물건1 5kg + 물건3 20kg + 물건2의 절반 5kg) => 30kg
         - (50만원 + 140만원 + 30만원) => 220만원
 
-    - 배낭 짐싸기 **그리디** 
+
+    - 배낭 짐싸기 **Factoinal knapsack** 
     ```python
-    '''
-        - 거스름돈 문제 그리디로 해결
-        - 가장 큰 거스름돈을 먼저 거슬러주고, 남은 금액을 다음 단위로 해결
-    '''
-    def get_minimum_coins(coins, change):
-        # 어떤 동전이: 몇개 사용되었는가?
-        result = {}
+    def fractional_knapsack_greedy(capacity, items):
+        '''
+        # 무게당 가격이 얼마인지 우선 구한다
+        # 가성비 따져서 넣을거라서
+        items[1] / items[0]  # 무게 당 가격을 구한다
+        # 그 후에, 그 무게 당 가격이 가장 높은 대상을 먼저 사용한다
+        가성비 = []
+        for item in items:
+            무게당가격 = items[1] / items[0]
+            가성비.append(무게당가격)
+        '''
+        # items의 첫번째를 두번째로 나눈 값들을 기준으로 오름차순 정렬
+        items.sort(key=lambda x: x[1] / x[0], reverse=True)
 
-        # 가장 큰 코인부터 coins에서 빼나갈 것이다 -> 오름차순
-        coins.sort(reverse=True)
+        result = 0
+        remain_capacity = capacity
 
-        # 코인 종류별로 change에서 제거
-        for coin in coins:
-            count = 0               # 몇 번 뺐는지 알아야 하므로 count 세자
-            while change >= coin:   # 뺄 수 있으면
-                change -= coin
-                count += 1
-                result[coin] = count    
-                # count = change // coin 이렇게 정의하는 것도 가능(알아서하셍)
-        return result
+        # 이제 가성비 높은순으로 정렬되었으니, 차례대로 순회
+        for weight, value in items:
+            if remain_capacity <= 0:    # 남아있는 무게가 없으면 종료
+                break
 
-    coins = [1, 5, 10, 50, 100, 500]  # 동전 종류
-    change = 882  # 잔돈
+            # 내 현재 물건을 전체를 담을 수 있는 경우
+            if remain_capacity >= weight:
+                remain_capacity -= weight
+                result += value
+            # 나눠서 담아야 하는 경우
+            else:
+                fraction = remain_capacity / weight
+                result += value * fraction
+                remain_capacity = 0
+        return  result
 
-    # 아래의 경우라면 어떨까?
-    '''
-    coins = [1, 5, 10, 50, 100, 400, 500]  # 동전 종류
-    change = 882  # 잔돈
-    # 400원짜리가 끼면 그리디로 해결되지 않음
-    # 빠른 것보다 정확도가 중요!!
-    # 백트래킹 방식으로 진행해보자
-    '''
-    result = get_minimum_coins(coins, change)
-    for coin, count in result.items():
-        print(f"{coin}원: {count}개")
+
+    capacity = 30  # 배낭의 최대 무게
+    items = [(5, 50), (10, 60), (20, 140)] # (무게, 가치)
+    result = fractional_knapsack_greedy(capacity, items)
+    print(f"최대 가치: {result}")
     ```
-
-    - 배낭 짐싸기 **백트래킹**
-    ```python
-
-
-    ```
-
 
 2. 활동 선택 문제(회의실 배정)
     - 문제
         - 회의실은 하나만 존재하고 다수의 회의가 신청된 상태이다
-        - 회의는 시작 시간과 종료 시간이 있으며, 회의 시간이 겹치는 회의들은 동시에 열릴 수 없다
-        - 가능한 많은 회의가 열리기 위해서는 어떻게 배정해야 할까?
+        - 회의는 시작 시간과 종료 시간이 있으며, 회의 시간이 겹치는 회의들은 **동시에 열릴 수 없다**
+        - **가능한 많은 회의**가 열리기 위해서는 어떻게 배정해야 할까?
 
         ![회의실1](회의실1.png)
     - 문제 정의
@@ -168,6 +271,8 @@
             ![회의실3](회의실3.png)
             ![회의실4](회의실4.png)
             ![회의실5](회의실5.png)
+        - 동시에 열릴 수 없는 회의들을 가능한 많이 열기 위해 종료시간으로 정렬해야함을 '조건을 통해' 떠올려야함
+        - 입력값으로 아이디어 생각하지XX
         
 
 ## 탐욕 알고리즘 필수 요소
