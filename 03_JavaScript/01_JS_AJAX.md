@@ -374,19 +374,17 @@ console.log(names.length) // 3
 
 ※ python에서의 map 함수와 비교
 
-![파이썬에서의 map](python_map.png)
 - python의 map에 square 함수를 인자로 넘겨 numbers 배열의 각 요소를 square 함수의 인자로 사용
 
-![자바스크립트에서의 map](JS_map.png)
+    ![파이썬에서의 map](python_map.png)
+
 - map 메서드에 callBackFunc 함수를 인자로 넘겨 numbers 배열의 각 요소를 callBackFunc 함수의 인자로 사용
+
+    ![자바스크립트에서의 map](JS_map.png)
 
 - 파이썬 map에서 square 부분이 함수라서 익명함수(lambda) 형식으로 처리할 수 있는데, 이런 부분이 자바 스크립트의 map에서 콜백함수 사용하는 것과 거의 똑같음
 
-- 단, 파이썬의 map은 map object 자체가 반환이 되어 list 형변환 했어야 했고, 자바 스크립트의 map은 ...
-
----
----
----
+- 단, 파이썬의 map은 map object 자체가 반환이 되어 list 형변환 했어야 했고, 자바 스크립트의 map은 array가 가진 메서드이기 때문에 자체적으로 새로운 배열 반환함
 
 
 ### 배열 순회 종합
@@ -396,8 +394,8 @@ console.log(names.length) // 3
 
 ### 기타 Array Helper Methods
 - filter(★)
-
-    - 조건에 해당하는 것을 쓸거다?
+    - 콜백 함수의 반환값이 참인 요소들만 모아서 새로운 배열 반환
+    - return에 '조건에 해당하는 것'을 적을 것임
     - true면 그 item들을 모아서 
     - 배열이 가진 요소들 중에 조건을 만족하는 요소들을 반환하는 형식
 - find(★)
@@ -405,9 +403,11 @@ console.log(names.length) // 3
     - filter와 달리 조건 만족하는 요소를 '한개' 찾으면 찾고 끝남
 
 - some
-
+    - 배열의 요소 중 적어도 하나라도 콜백 함수를 통과하면 true를 반환하여 즉시 배열 순회 중지
+    - 반면에 모두 통과하지 못하면 false를 반환
 - every
-
+    - 배열의 모든 요소가 콜백 함수를 통과하면 true를 반환
+    - 반면에 하나라도 통과하지 못하면 즉시 false를 반환하고 배열 순회 중지
 
 ### 참고
 "배열은 객체다"
@@ -420,18 +420,21 @@ console.log(names.length) // 3
     ![배열은 객체다](배열은객체2.png)
 
 
+※ arr[-1] = 4로 마지막 요소의 값을 바꾸려는 의도였지만, **-1 속성에 4가 들어가버림** -> 배열은 객체이기 때문!!
 
-배열은 객체이기 때문에 arr
+![배열은객체](배열은객체.png)
 
-![ㄹ](배열은객체.png)
+※ 생각해볼 문제!
 
+![이상하다](이상하다.png)
 
-![](이상하다.png)
-- 암묵적 형변환??
+-> 자바 스크립트의 암묵적 형변환에 의한 상황!
 
-문자열에 문자열 더하는건 가능하지만,
-문자열에 문자열 빼는건 안돼서?
-오류 방지를 위해 문자열을 정수로 바꿔서 뺄셈 진행/?
+-> 문자열에 문자열 더하는건 가능하지만, 문자열에 문자열 빼는건 안됨
+
+-> 오류 방지를 위해 문자열을 정수로 바꿔서 뺄셈 진행된 상황(연산할 수 있도록 형변환 된 것)
+
+-> (DB에 값 삽입 시 데이터타입을 엄격히 지켜야하는 이유)
 
 
 ## 비동기
@@ -458,18 +461,27 @@ console.log(names.length) // 3
 
 ### Asynchronous(비동기)
 프로그램의 실행 흐름이 순차적이지 않으며, 작업이 완료되기를 기다리지 않고 다음 작업이 실행되는 방식
-- 작업 완료 여부를 신경쓰지 않고 동시에 다른 작업들을 수행할 수 있음
+- 작업 완료 여부를 신경쓰지 않고 **동시에 다른 작업들을 수행할 수 있음**
     1. ex. Gmail에서 메일 전송 누르면 목록 화면으로 전환되지만 실제로 메일 보내는 작업은 병렬적으로 별도로 처리됨
     2. ex. 브라우저는 웹 페이지를 먼저 처리되는 요소부터 그려 나가며 처리가 오래 걸리는 것들은 별도로 처리가 완료되는 대로 병렬적으로 진행
 
 - Asynchronous 예시
 
-설명명
+    ![alt text](image.png)
 
-
+    ![alt text](image-2.png)
+    - 만약 동기적으로 진행됐다면 slowRequest 호출 -> 오래 걸리는 작업 시작(1 출력) -> myCallBack을 넘겨받아 callBack함수 실행(2 출력) -> 3초 뒤 다른작업 실행(3 출력) 순으로 진행
+    - 비동기니까
+        - slowRequest 호출 -> 1 출력
+        - setTimeout 호출 -> callBack함수 실행할 '거다' (3초뒤에)
+        - slowRequest 함수가 일은 다 안끝났지만 다음 작업 진행 -> 3 출력
+        - 3초 뒤 callback함수 실행 -> 2 출력
+        
 - Asynchronous 특징
     - 병렬적 수행
     - 당장 처리를 완료할 수 없고 시간이 필요한 작업들은 별도로 요청을 보낸 뒤 응답이 빨리 오는 작업부터 처리
+
+        ![alt text](image-3.png)
 
 ### JavaScript와 비동기
 **JavaScript는 Single Thread 언어**
@@ -484,6 +496,7 @@ console.log(names.length) // 3
     - 자바 스크립트가 동작할 수 있는 환경(Runtime)
     - 자바 스크립트 자체는 Single Thread이므로 비동기 처리를 할 수 있도록 도와주는 환경이 필요함
     - 자바 스크립트에서 비동기 관련 작업은 "브라우저" 또는 "Node"와 같은 환경에서 처리
+    - 즉, 브라우저와 같은 환경을 통해 브라우저에서 실행될 때 알아서 멀티 스레드 형식으로 여러 작업을 동시에 처리할 수 있음
 
 - 브라우저 환경에서의 JavaScript 비동기 처리 관련 요소
     1. JavaScript Engine의 Call Stack
@@ -491,12 +504,39 @@ console.log(names.length) // 3
     3. Task Queue
     4. Event Loop
 
+- 런타임의 시각적 표현
+
+    ![alt text](image-4.png)
+    ![alt text](image-5.png)
+    ![alt text](image-6.png)
+    ![alt text](image-7.png)
+    ![alt text](image-8.png)
+    ![alt text](image-9.png)
+    ![alt text](image-10.png)
+    ![alt text](image-11.png)
+    ![alt text](image-12.png)
+    ![alt text](image-13.png)
+    ![alt text](image-14.png)
+    ![alt text](image-15.png)
+    ![alt text](image-16.png)
+    ![alt text](image-17.png)
+    ![alt text](image-18.png)
+    ![alt text](image-19.png)
+
 ### 브라우저 환경에서의 JavaScript 비동기 처리 동작 방식
-1. 모든 작업은 Call Stack(LIFO)으로 들어간 후 처리됨
-2. 오래 걸리는 작업이 Call Stack으로 들어오면 Web API로 보내 별도로 처리하도록 함
-3. Web API에서 처리가 끝난 작업들은 곧바로 Call Stack으로 들어가지 못하고 Task Queue(FIFO)에 순서대로 들어감
+1. 모든 작업은 `Call Stack(LIFO)`으로 들어간 후 처리됨
+2. 오래 걸리는 작업이 Call Stack으로 들어오면 **Web API로 보내 별도로 처리**하도록 함
+3. Web API에서 처리가 끝난 작업들은 곧바로 Call Stack으로 들어가지 못하고 `Task Queue(FIFO)`에 순서대로 들어감
 4. Event Loop가 Call Stack이 비어있는 것을 계속 체크하고 Call Stack이 빈다면 Task Queue에서 가장 오래된(가장 먼저 처리되어 들어온) 작업을 Call Stack으로 보냄
 
+- 비동기 처리 동작 요소
+
+    ![alt text](image-20.png)
+    ![alt text](image-21.png)
+
+- 정리
+    - JavaScript는 한 번에 하나의 작업을 수행하는 Single Thread 언어로 동기적 처리를 진행
+    - 하지만 브라우저 환경에서는 Web API에서 처리된 작업이 지속적으로 Task Queue를 거쳐 Event Loop에 의해 Call Stack에 들어와 순차적으로 실행됨으로써 비동기 작업이 가능한 환경이 됨
 
 ## AJAX
 XMLHttpRequest 기술을 사용해 복잡하고 동적인 웹 페이지를 구성하는 프로그래밍 방식(Asynchronous JavaScript and XML)
@@ -506,7 +546,8 @@ XMLHttpRequest 기술을 사용해 복잡하고 동적인 웹 페이지를 구�
 - AJAX를 사용하면 페이지 전체를 새로고침 하지 않고도 동적으로 데이터를 불러와 화면 갱신 가능
 - AJAX의 'x'는 XML이라는 데이터 타입을 의미하긴 하지만, 요즘은 더 가벼운 용량과 JavaScript 일부라는 장점 때문에 'JSON'을 더 많이 사용
 - AJAX 목적
-    - 전체 페이지
+    - 전체 페이지가 다시 로드되지 않고 HTML 페이지 일부 DOM만 업데이트
+    - 웹 페이지 일부가 다시 로드되는 동안에도 코드가 계속 실행되어, 비동기식으로 작업할 수 있음
 
 ### XMLHttpRequest 객체
 서버와 상호작용할 때 사용하는 객체(XHR)
@@ -518,19 +559,33 @@ XMLHttpRequest 기술을 사용해 복잡하고 동적인 웹 페이지를 구�
     - XML뿐만 아니라 모든 종류의 데이터를 가져올 수 있음
 
 - XHR 구조
-    ```
+    ```html
+    <script>
+        const xhr = new XMLHttpRequest() // XHR 객체 인스턴스 생성
+            xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts')
+            xhr.send() // 요청 전송
 
-
+            xhr.onload = function () {  // 요청이 완료되었을 때 호출
+            // 응답 상태 코드가 200이라면
+            if (xhr.status == 200) {
+                console.log(xhr.responseText)  // 응답 받은 결과 출력
+            } else {
+                console.error('Request failed')  // 200 이외 상태에 대한 예외 처리
+            }
+        }
+    </script>
     ```
     - HTTP 요청을 생성하고 전송하는 기능 제공
     - AJAX 요청을 통해 서버에서 데이터를 가져와 웹 페이지에 동적으로 표시
 
 ※ 기존 기술과의 차이 - 기존 방식
 
+![alt text](image-22.png)
 
 ※ 기존 기술과의 차이 - AJAX
 
-
+![alt text](image-23.png)
+    
 ※ 이벤트 핸들러는 비동기 프로그래밍의 한 형태
 
 -> 이벤트 발생할 때마다 호출되는 함수(콜백 함수)를 제공하는 것
@@ -540,22 +595,30 @@ XMLHttpRequest 기술을 사용해 복잡하고 동적인 웹 페이지를 구�
 
 ## Callback과 Promise
 - 비동기 처리의 단점
-    - 비동기 처리의 핵심은 Web API로 들어오는 순서가 아니라, 작업이 완료되는 순서에 따라 처리한다는 것
-    - 개발자 입장에서 코드의 실행 순서가 불명확하다는 단점 존재
+    - 비동기 처리의 핵심은 Web API로 들어오는 순서가 아니라, **작업이 완료되는 순서에 따라 처리**한다는 것
+    - 개발자 입장에서 **코드의 실행 순서가 불명확**하다는 단점 존재(실행 결과 예상하면서 코드 작성하기 어려움)
     - 콜백 함수를 사용하자!
 
 ### 비동기 콜백
 비동기적으로 처리되는 작업이 완료되었을 때 실행되는 함수
 - 연쇄적으로 발생하는 비동기 작업을 순차적으로 동작할 수 있게 함
 - 작업의 순서와 동작을 제어하거나 결과를 처리하는 데 사용
+- 비동기 콜백의 한계
+    - 비동기 콜백 함수는 보통 어떤 기능의 실행 결과를 받아서 다른 기능을 수행하기 위해 많이 사용됨
+    - 이 과정을 작성하다 보면 비슷한 패턴이 계속 발생
 
+        ![alt text](image-24.png)
+    - 즉, `콜백 지옥` 발생
 
-콜백 지옥
+- 콜백 지옥(Callback Hell)
+    - 비동기 처리를 위한 콜백을 작성할 때 마주하는 문제
 
+        ![alt text](image-25.png)
 
--> 콜백 함수는 비동기 작업을 순차적으로 실행할 수 있게 하는 반드시 필요한 로직인데, 비동기 코드를 작성하다 보면 콜백 함수로 인한 콜백 지옥이 빈번히 나타남
-
--> 지옥에 빠지지 않는 다른 표기 형태 필요!
+        - 콜백 함수는 비동기 작업을 순차적으로 실행할 수 있게 하는 반드시 필요한 로직
+        - 비동기 코드를 작성하다 보면 콜백 함수로 인한 콜백 지옥이 빈번히 나타남
+        - 코드 가독성 해치고 유지보수 어려워짐
+    - 지옥에 빠지지 않는 다른 표기 형태 필요!
 
 ### 프로미스(Promise)
 JavaScript에서 비동기 작업의 결과를 나타내는 객체
@@ -570,10 +633,31 @@ JavaScript에서 비동기 작업의 결과를 나타내는 객체
         - 성공에 대한 약속 `then()`
         - 실패에 대한 약속 `catch()`
 
+    ![alt text](image-26.png)
+    - new 연산자로 프로미스 객체 만들어서 성공, 실패에 대해 각각 어떻게 처리할지 정의
 
+※ 비동기 콜백 vs Promise
 
+![alt text](image-27.png)
 
+- then 메서드 chaining의 목적
+    - 비동기 작업의 **순차적인** 처리 가능
+    - 코드를 보다 직관적이고 가독성 좋게 작성할 수 있도록 도움
 
+- then 메서드 chaining의 장점
+    1. 가독성
+        - 비동기 작업의 순서와 의존 관계를 명확히 표현할 수 있어 코드 가독성 향상됨
+    2. 에러 처리
+        - 각각의 비동기 작업 단계에서 발생하는 에러를 분할해서 처리 가능
+    3. 유연성
+        - 각 단계마다 필요한 데이터를 가공하거나 다른 비동기 작업을 수행할 수 있어, 더 복잡한 비동기 흐름을 구성할 수 있음
+    4. 코드 관리
+        - 비동기 작업을 분리하여 구성하면 코드 관리 용이
+
+- Promise가 보장하는 것(vs 비동기 콜백)
+    
+    ![alt text](image-28.png)
+    - then 메소드로 호출 순서 보장!!!!!
 
 ## Axios
 JavaScript에서 사용되는 HTTP 클라이언트 라이브러리
@@ -586,19 +670,65 @@ JavaScript에서 사용되는 HTTP 클라이언트 라이브러리
     - 주로 웹 애플리케이션에서 서버와 통신할 때 사용
 
 ### AJAX를 활용한 클라이언트 서버 간 동작
-XHR 객체 생성 및 요청 -> 응답 데이터 생성 -> JSON 데이터 응답 -> Promise 객체 데이터를 활용해 DOM 조작(웹 페이지 일부분만 다시 로딩)
 
-![클라이언트 서버 간 동작]()
+![alt text](image-29.png)
 
 ### Axios 사용
 - CDN 방식으로 사용하기
-- 
-
+    ```html
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    ```
 
 ### Axios 구조
 1. axios 객체를 활용해 요청을 보낸 후 응답 데이터를 promise 객체를 받음
 2. promise 객체는 then과 catch 메서드를 활용해 각각 필요한 로직을 수행
 
+    ![alt text](image-30.png)
+
+3. `then` 메서드 사용해서 "성공하면 수행할 로직" 작성
+4. `catch` 메서드 사용해서 "실패하면 수행할 로직" 작성
+
+    ![alt text](image-33.png)
+
+### then & catch의 chaining
+- axios로 처리한 비동기 로직은 항상 promise 객체를 반환
+- 즉, then과 catch는 모두 항상 promise 객체를 반환
+    - 계속해서 chaining을 할 수 있음
+- then을 계속 이어나가면서 작성할 수 있게 됨
+
+    ![alt text](image-32.png)
+
+- then & catch
+    - then(callback)
+        - 요청한 작업이 성공하면 callback 실행
+        - callback은 이전 작업의 성공 결과를 인자로 전달 받음
+    - catch(callback)
+        - then()이 하나라도 실패하면 callback 실행(남은 then 중단)
+        - callback은 이전 작업의 실패 객체를 인자로 전달 받음
+
+### 실습
+![alt text](image-34.png)
+![alt text](image-35.png)
+![alt text](image-36.png)
+
+- 심화
+
+![alt text](image-37.png)
+![alt text](image-38.png)
+![alt text](image-39.png)
+![alt text](image-40.png)
+![alt text](image-41.png)
+
+### 정리
+![alt text](image-42.png)
+
+### 참고
+- 비동기를 사용하는 이유 - "사용자 경험"
+    - ex. 아주 큰 데이터를 불러온 뒤 실행되는 앱이 있을 때, 동기식으로 처리한다면 데이터를 모두 불러온 뒤에야 앱의 실행 로직이 수행되므로 사용자들은 마치 앱이 멈춘 것과 같은 경험을 겪게 됨
+    - 즉, 동기식 처리는 특정 로직이 실행되는 동안 다른 로직 실행을 차단하므로
+    - 마치 프로그램이 응답하지 않는 듯한 사용자 경험을 만듦
+    - 비동기로 처리한다면 먼저 처리되는 부분부터 보여줄 수 있으므로, 사용자 경험에 긍정적인 효과를 볼 수 있음
+    - 이와같은 이유로 많은 웹 기능은 비동기 로직을 사용해서 구현됨
 
 
 
