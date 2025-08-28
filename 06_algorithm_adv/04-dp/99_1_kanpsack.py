@@ -11,6 +11,7 @@ def knapsack(weights, values, capacity):
             else:  # 현재 물건을 담을 수 있는 경우
                 # 현재 물건을 담는 경우와 담지 않는 경우 중 최대 가치를 선택
                 K[i][w] = max(values[i - 1] + K[i - 1][w - weights[i - 1]], K[i - 1][w])
+            print(f'{i} - when capacity is {w}: {K[i]}')
 
     return K[n][capacity]  # 최대 담을 수 있는 가치 반환
 
