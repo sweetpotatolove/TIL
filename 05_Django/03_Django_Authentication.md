@@ -682,4 +682,3 @@ def article_list(request):
 
 ### DRF 학습 이유
 ![alt text](image-81.png)
-
