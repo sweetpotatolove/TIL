@@ -38,13 +38,16 @@ INSTALLED_APPS = [
     'articles',
     'accounts',
     'rest_framework',
-    # 'rest_framework.authtoken',
-    # 'dj_rest_auth',
-    # 'django.contrib.sites',
-    # 'allauth',
-    # 'allauth.account',
-    # 'allauth.socialaccount',
-    # 'dj_rest_auth.registration',
+    # 토큰이 저장될 table이 필요하니 migrate 진행해서 테이블 생성
+    'rest_framework.authtoken',
+    # 로그인, 회원가입시 토큰이 생성되어야 하므로, 
+    # 그 토큰 생성 및 반환 방식은 dj-rest-auth에게 위임
+    'dj_rest_auth',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj_rest_auth.registration',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,17 +58,17 @@ INSTALLED_APPS = [
 
 # SITE_ID = 1
 
-# REST_FRAMEWORK = {
-#     # Authentication
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         'rest_framework.authentication.TokenAuthentication',
-#     ],
-#     # permission
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.AllowAny',
-#         # 'rest_framework.permissions.IsAuthenticated',
-#     ],
-# }
+REST_FRAMEWORK = {
+    # Authentication
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    # permission
+    'DEFAULT_PERMISSION_CLASSES': [
+        # 'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,7 +78,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'allauth.account.middleware.AccountMiddleware',
+    # dj-rest-auth의 회원가입 기능은 소셜 로그인 (구글, 카카오 처럼) 기능을
+    # 제공해주는 django-OAuth를 사용하는 django AllAuth를 쓴다.
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 
@@ -152,4 +157,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'accounts.User'
