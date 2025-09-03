@@ -2,10 +2,11 @@
   <div>
     <!-- template syntax -->
     <p>Message: {{ msg }}</p>
+    <!-- <p>{{ rawHtml }}</p> -->
     <div v-html="rawHtml"></div>
     <div v-bind:id="dynamicId"></div>
     {{ number + 1 }}
-    {{ ok ? 'YES' : 'NO' }}
+    {{ ok ? dynamicId : number }}
     {{ msg.split('').reverse().join('') }}
 
     <!-- directive -->

@@ -10,7 +10,7 @@
   import { ref } from 'vue'
 
   const imageSrc = ref('https://picsum.photos/200')
-  const myUrl = ref('https://www.google.co.kr/')
+  const myUrl = ref('https://www.google.com/')
   const dynamicattr = ref('title')
   const dynamicValue = ref('Hello Vue.js')
 </script>
