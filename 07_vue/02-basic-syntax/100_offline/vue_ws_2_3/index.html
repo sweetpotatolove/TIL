@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    li {
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      background-color: #f5f5f5;
+    }
+    .cheap {
+      background-color: #e1f7e1;
+    }
+    .expensive {
+      background-color: #f7e1e1;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <div id="app">
+    <h1>다양한 전시 정보</h1>
+    <label for="isActive">전시 중인 정보만 보기</label>
+    <input type="checkbox" id="isActive" v-model="isActive">
+    <ul>
+      <li 
+        v-for="info in (isActive ? isActiveExhibition : infos)" 
+        :key="info.title"
+        :class="{'cheap': info.price <= 5000, 'expensive': info.price > 20000}"
+      >
+        <h3>{{ info.title }}</h3>
+        <hr>
+        <p>전시 장소: {{ info.museum }}</p>
+        <p>가격: {{ info.price }}</p>
+        <p v-show="info.price === 0">무료 전시입니다.</p>
+        <hr>
+      </li>
+    </ul>
+  </div>
+  <script>
+    const { createApp, ref, computed } = Vue
+    const app = createApp({
+     setup() {
+      const isActive = ref(false)
+      const infos = ref([
+        {
+          title: '무라카미 다카시 : 무라카시좀비',
+          museum: '부산 시립 미술관',
+          price: 1000,
+          isActive: '전시 중'
+        },
+        {
+          title: '마우라치오 카텔란 개인전',
+          museum: '리움 미술관',
+          price: 30000,
+          isActive: '전시 중'
+        },
+        {
+          title: '조선백자전',
+          museum: '리움 미술관',
+          price: 30000,
+          isActive: '전시 중'
+        },
+        {
+          title: '한국 실험미술 1960 - 1970',
+          museum: '국립현대미술관',
+          price: 0,
+          isActive: '전시 중'
+        },
+        {
+
+          title: '에드워드 호퍼 : 길 위에서',
+          museum: '서울 시립 미술관',
+          price: 1000,
+          isActive: '전시 종료'
+        },
+        {
+          title: '알렉산더 칼더 x 이우환',
+          museum: '국제갤러리 서울점',
+          price: 15000,
+          isActive: '전시 종료'
+        }
+      ])
+      const isActiveExhibition = computed(() => {
+        return infos.value.filter((info) => info.isActive === '전시 중')
+      })
+      return {
+        isActive,
+        infos,
+        isActiveExhibition
+      }
+    }
+  })
+  app.mount('#app')
+</script>
+</body>
+</html>

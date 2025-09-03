@@ -1,6 +1,7 @@
 <template>
   <div>
     <!-- Inline Handlers -->
+    <!-- <button v-on:click="count++">Add 1</button> -->
     <button @click="count++">Add 1</button>
     <p>Count: {{ count }}</p>
 
@@ -37,11 +38,16 @@
 
   const greeting = function (message) {
     console.log(message)
+    // console.log(event)
   }
   
   const warning = function (message, event) {
     console.log(message)
     console.log(event)
+  }
+
+  const onSubmit = function() {
+    console.log('on Submit!!')
   }
 </script>
 

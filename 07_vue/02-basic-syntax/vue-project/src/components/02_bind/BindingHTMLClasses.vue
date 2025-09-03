@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Binding to Objects -->
-    <div :class="{ active: isActive }">Text</div>
+    <div :class="{ 'active': isActive }">Text</div>
     <div class="static" :class="{ active: isActive, 'text-primary': hasInfo }">Text</div>
     <div class="static" :class="classObj">Text</div>
 

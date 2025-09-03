@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .is-completed {
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <h1>Todo Application</h1>
+    <!-- completed가 true인 애들만 모아서 todos에 할당. -->
+    {{ filtering }}
+    <p>{{ filteredTodos }}</p>
+    <!-- 입력값들은 항상 form으로 관리하자. -->
+    <!-- form은 submit 이벤트 발생시 -> GET 요청을 보냄 -->
+      <!-- action이라는 옵션에 작성된 위치로 -->
+        <!-- action에 작성하는 경로는 상대경로 -->
+          <!-- 상대경로에 빈값 -> 현재 위치 -->
+    <!-- submit의 기본 동작을 막는다. -->
+    <form @submit.prevent="addTodo">
+      <input type="text" v-model="newTodo">
+      <button>add</button>
+    </form>
+    <!-- v-for는 반복할 요소에 직접 작성 -->
+    <ul>  <!-- ul 태그는 li들을 감싸서 스타일을 결정ㄴ -->
+      <!-- 각각의 list item -->
+       <!-- v-for 사용시 key값 필수 -->
+      <li
+        v-for="todo in todos"
+        :key="todo.id"
+      >
+        <!-- 양방향 바인딩 v-model -->
+        <!-- 사용자의 입력값 <-> vue의 data -->
+        <!-- 양쪽의 변동사항을 서로 주고 받는 형태 -->
+        <input type="checkbox" v-model="todo.isCompleted">
+        <!-- is-completed class는 todo.isCompleted가 true일때 할당 -->
+        <!-- 
+          v-bind:class로 객체 형태로 값을 나타낼때 
+          key값에 해당하는 (부여될 클래스명)은 JS의 object를 사용하므로
+          그때의 키값 작성 방법을 따라야한다.
+        -->
+        <!-- class binding objects -->
+         <!-- {'부여할 클래스명': '부여 가능 여부 조건'} -->
+        <span :class="{'is-completed': todo.isCompleted}">
+          {{ todo.text }} {{ todo.isCompleted }}
+        </span>
+        <!-- 각각의 todo마다 삭제 할 수 있도록 -->
+        <button @click="deleteTodo(todo.id)">DELETE</button>
+      </li>
+    </ul>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script>
+    const { createApp, ref, computed } = Vue
+
+    const app = createApp({
+      setup() {
+        // 반응성 데이터
+        // 기능을 구현하기전, dummy데이터를 토대로 우선 테스트
+        // 기능 구현이 마무리 되면, dummy데이터는 삭제
+        const todos = ref([
+          // {id: 1, text: '생필품 구입', isCompleted: true},
+          // {id: 2, text: '빨래', isCompleted: false},
+          // {id: 3, text: '방 청소', isCompleted: false},
+        ])
+        
+        const newTodo = ref('')
+
+        // todos 배열에 객체를 추가.
+        const addTodo = function() {
+          // 기능을 구현하다보면 자연스레
+          // 동일한 패턴의 예외 상황들을 마주하게 된다.
+          // 그런것들이 모이고 모여서 디자인패턴이 된다.
+            // 델타탐색 -> `0 <= nx < N`
+          // if (newTodo.value !== '') {
+          if (newTodo.value.trim()) {
+            // todos => 반응형 데이터 객체
+            const todoObj = {
+              // id는 어떠한 고유값이 되어야 한다.
+              // DB이외의 곳에서 어떠한 고유값을 만들고자 할때
+              // 자주쓰는방법은 날짜 정보를 가지고 만든다.
+              id: Date.now(),
+              // Event.target.value로 사용하고 싶으면?
+              // 그 이벤트가 발생한 input tag에 핸들러를 부착
+              // `add` 버튼으로는 어떻게 처리하느냐?
+              // 입력 값들은 항상 form과 한세트로 움직인다.
+              text: newTodo.value,
+              isCompleted: false
+            }
+            todos.value.push(todoObj)
+            newTodo.value = ''
+          }
+        }
+
+        const deleteTodo = function (todoId) {
+          // 이번에는 반응형 데이터인 todo의 id값을 받는데
+          // todoId.value가 아니라 todoId냐?
+          // 이건 인자로부터 넘겨받은 값이므로....
+          todos.value = todos.value.filter(todo => todo.id !== todoId)
+        }
+
+        const filtering = function () {
+          console.log(todos.value)
+          todos.value = todos.value.filter(todo => todo.isCompleted)
+        }
+
+        const filteredTodos = computed(() => {
+          return todos.value.filter(todo => todo.isCompleted)
+        })
+        return {
+          todos, newTodo,
+          filteredTodos, 
+          addTodo, deleteTodo, filtering
+        }
+      }
+    })
+
+    app.mount('#app')
+  </script>
+</body>
+
+</html>
