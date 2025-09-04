@@ -112,11 +112,11 @@ class와 style은 모두 HTML 속성이므로 다른 속성과 마찬가지로 v
 
 - Class and Style Bindings가 가능한 경우
   1. Binding HTML Classes
-    - Binding to Objects
-    - Binding to Arrays
+      - Binding to Objects
+      - Binding to Arrays
   2. Binding Inline Styles
-    - Binding to Objects
-    - Binding to Arrays
+      - Binding to Objects
+      - Binding to Arrays
   
 - Binding HTML Classes - Binding to Objects
   - 객체를 `:class`에 전달하여 클래스를 동적으로 전환할 수 있음
@@ -180,6 +180,7 @@ DOM 요소에 이벤트 리스너를 연결 및 수신
 
 - **v-on** shorthand(약어)
   - `@`
+
     ```
     @event="handler"
     ```
@@ -564,6 +565,7 @@ form input 요소 또는 컴포넌트에서 양방향 바인딩을 만듦
 
 - `npm run dev`
   - 화면 구성
+
     ![alt text](image-119.png)
   
 - Template Syntax
@@ -791,7 +793,8 @@ form input 요소 또는 컴포넌트에서 양방향 바인딩을 만듦
                  원래 윈도우가 가진 이벤트를 넘겨줄 수 있는 창구가 없어짐
                  window.event라고 하기엔 이 템플릿은 아직 렌더링이 되지 않은 것!!이라 이벤트를 모름 
                  $ 가 붙은건 대체로 '전역변수'라고 생각하면 됨
-                 뷰에 정의했거나, 윈도우에 정의해놨거나, 자바스크립트의 변수명은 $로부터 시작할 수 있도록 만들어짐
+                 뷰에 정의했거나, 윈도우에 정의해놨거나, 
+                 자바스크립트의 변수명은 $로부터 시작할 수 있도록 만들어짐
                  개발자들이 혹시나 변수명 헷갈려서 원래 기능용으로 만든 변수들이 오버라이드 되지 않도록
                  덮어쓰기 되지 않도록하기 위해 $ 붙인거임. 구분용! -->
             <!-- '$' 붙은 변수들은 뷰가 기능용으로 따로 만들어놓은 친구구나 정도로 기억해두기 -->
