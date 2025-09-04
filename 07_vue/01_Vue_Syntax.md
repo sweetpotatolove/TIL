@@ -314,7 +314,10 @@ form input 요소 또는 컴포넌트에서 양방향 바인딩을 만듦
 ※ v-if와 v-show의 적절한 사용처
 - v-if (cheap initial load, expensive toggle)
   - 초기 조건이 false인 경우 아무 작업도 수행하지 않음
+    - 렌더링을 아예 하지XX
+    - v-if가 적힌 div태그 안쪽의 많은 노드들 자체를 렌더링하지XX
   - 토글 비용이 높음
+    - 토글: 렌더링 했다 안했다 반복하는거
 - v-show (expensive initial load, cheap toggle)
   - 초기 조건에 관계 없이 항상 렌더링
   - 초기 렌더링 비용이 더 높음
@@ -937,5 +940,188 @@ form input 요소 또는 컴포넌트에서 양방향 바인딩을 만듦
 
     </style>
     ```
+    - 항상 화면을 보여줄 것인가? Nope
+    - 조건에 따라 보여주자!
 
-- 
+- ConditionalRendering.vue
+
+  ![alt text](image-126.png)
+  ```html
+  <template>
+    <div>
+      <!-- if else -->
+      <p v-if="isSeen">true일때 보여요</p>
+      <p v-else>false일때 보여요</p>
+      <button @click="isSeen = !isSeen">토글</button>
+
+      <!-- else if -->
+      <div v-if="name === 'Alice'">Alice입니다</div>
+      <div v-else-if="name === 'Bella'">Bella입니다</div>
+      <div v-else-if="name === 'Cathy'">Cathy입니다</div>
+      <div v-else>아무도 아닙니다.</div>
+
+      <!-- v-if on <template> -->
+      <template v-if="name === 'Cathy'">
+        <div>Cathy입니다</div>
+        <div>나이는 30살입니다</div>
+      </template>
+
+      <!-- v-show -->
+      <div v-show="isShow">v-show</div>
+    </div>
+  </template>
+
+  <script setup>
+    import { ref } from 'vue'
+
+    const isSeen = ref(true)
+
+    const name = ref('Cathy')
+    
+    const isShow = ref(false)
+  </script>
+
+  <style scoped>
+
+  </style>
+  ```
+  - `v-show`는 사용자에게만 렌더링하지 않았을 뿐, `display: none`로 요소 자체는 만들어져 있음
+
+    ![alt text](image-127.png)
+    - HEML로 화면을 구성한다는 것은 DOM(Document object model)을 구성한다는 것
+    - DOM을 구성한다는 것은 각각의 요소를 node로 보겠다는 것
+    - 각각의 노드를 최상단이 Window인 트리 형태로 보겠다
+      ```
+      Window
+       ㄴ doc
+          ㄴ head
+          ㄴ body
+               ㄴ div
+                   ㄴ div
+                   ㄴ p
+                   ㄴ li
+      ```
+    - 트리형태로 보는 노드(show)는 존재하는데, display가 none인 속성을 가진 노드로서 존재함
+  - `v-if`는 주석만 남아있음
+
+    ![alt text](image-128.png)
+    - DOM 트리 구조 상 노드 자체가 없어지는 것!!
+    - 즉, 렌더링 자체가 불가함
+
+- 리스트 렌더링
+  - ListRendering.vue
+    ```html
+    <template>
+      <div>
+        <div v-for="(item, index) in myArr">
+            <!-- 배열로부터 객체 가지고옴 -->
+            <!-- 배열 언패킹해서 쓸 때 item 먼저, 뒤에가 index -->
+            <!-- 개발자한테나 인덱스 중요하지 사용자는 인덱스 별로..? -->
+          {{ index }} / {{ item.name }}
+        </div>
+        <div v-for="(value, key, index) in myObj">
+             <!-- 언패킹 순서: value -> key -> index -->
+          {{ index }} / {{ key }} / {{ value }}
+        </div>
+
+        <!-- v-for on <template> -->
+        <ul>
+          <template v-for="item in myArr">
+            <li>{{ item.name }}</li>
+            <li>{{ item.age }}</li>
+            <hr>
+          </template>
+        </ul>
+
+        <!-- nested v-for -->
+        <ul v-for="item in myInfo">
+          <li v-for="friend in item.friends">
+            {{ item.name }} - {{ friend }}
+          </li>
+        </ul>
+      </div>
+    </template>
+
+    <script setup>
+      import { ref } from 'vue'
+
+      const myArr = ref([
+        { name: 'Alice', age: 20 },
+        { name: 'Bella', age: 21 }
+      ])
+      
+      const myObj = ref({
+        name: 'Cathy',
+        age: 30
+      })
+
+      // nested v-for
+      const myInfo = ref([
+        { name: 'Alice', age: 20, friends: ['Bella', 'Cathy', 'Dan'] },
+        { name: 'Bella', age: 21, friends: ['Alice', 'Cathy'] }
+      ])
+    </script>
+
+    <style scoped>
+
+    </style>
+    ```
+  - RenderingWithKey.vue
+    ```html
+    <template>
+      <div>
+        <!-- Maintaining State with key -->
+        <div v-for="item in items" :key="item.id">
+          <!-- 필수 사항 -->
+          <!-- for문 실행 시 key라는 특수 속성을 바인딩 해야함.
+            vue의 내부 동작 상 for문을 통해 '순서대로' 화면이 랜더링 되어야 하는데,
+            중간에 뭐가 빠지면 뒷 순서에 있는 애가 와서 새로 렌더링 해야함
+            이때 순서가 꼬이면 안되기 때문에 key들을 만들어 놓으면
+            vue가 동작할 때 key를 기준으로 없어진 애를 누군지 찾아서 렌더링에 반영함
+              -->
+            <!-- key에는 복잡한 참조형이나 객체XX, 인덱스XXXX
+              오로지 number, string이어야 하고, 고유한 값이어야 함 -->
+            <!-- 우리는 DB에서 데이터 받아와서 쓸거니 PK로 하면 됨 -->
+          <p>{{ item.id }}</p>
+          <p>{{ item.name }}</p>
+        </div>
+      </div>
+    </template>
+    ```
+  
+  - RenderingWithIf.vue
+    - for랑 if 같이 쓰고싶음
+    ```html
+    <template>
+      <div>
+        <!-- [Bad] v-for with v-if -->
+        <!-- <ul>
+          <li v-for="todo in todos" v-if="!todo.isComplete" :key="todo.id">
+            {{ todo.name }}
+          </li>
+        </ul> -->
+
+        <!-- [Good] v-for with v-if (computed)-->
+        <ul>
+          <li v-for="todo in completeTodos" :key="todo.id">
+            {{ todo.name }}
+          </li>
+        </ul>
+
+        <!-- [Good] v-for with v-if -->
+        <ul>
+          <template v-for="todo in todos" :key="todo.id">
+            <li v-if="!todo.isComplete">
+              {{ todo.name }}
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+    ```
+    - for랑 if를 같은 열에 적으려면 두 객체가 상관관계 없거나, 이미 계산 가능한 상황에서만 가능함
+      - v-if를 먼저 봄! 우선순위 높음!
+      - 그래서 todo.isComplete 조건을 먼저 보지만, todo가 누군지 모름
+      - 왜? todo는 for문 순회할 때 쓰는 임시 변수고, for문은 아직 보지 않았으니까
+    - v-if가 false면 for문 아예 돌지 않아도 됨 -> 최적화
+    
