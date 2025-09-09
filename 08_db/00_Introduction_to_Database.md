@@ -97,6 +97,14 @@
     - `PostgreSQL`
     - `Oracle Database`
 
+```
+※ 서비스를 구축한다 
+-> 서비스를 위한 DB를 만들어야 한다 
+-> DB에 데이터를 저장하려고 한다 
+-> DB Modeling을 먼저 해봐야지 RDBMS를 뭘 쓸지 결정할 수 있다 
+-> 그래서 상황에 따라 DB를 이원화하여 RDBMS와 noSQL 둘 다 쓸 수도 있음(특정 데이터들은 RDBMS에 맞춰서 저장하고, 어떤 데이터는 RDBMS가 비효율적이라 noSQL을 쓰는 등) 
+-> 그러기 위해선 모델링부터 잘 되어있어야 한다
+```
 
 ## Database Modeling
 데이터베이스 시스템을 구축하기 위한 과정으로 데이터의 구조, 관계, 특성을 결정하는 작업
@@ -132,7 +140,7 @@
             FOREIGN KEY (dept_id) REFERENCES Department(dept_id) -- 참조 무결성 적용
           )
           ```
-          - 외래 키 값은 참조하는 테이블의 기본 키 값을 참조하거나 NULL값을 가질 수 있다
+          - 외래 키 값은 참조하는 테이블의 기본 키 값을 참조하거나 **NULL값을 가질 수 있다**
           - 존재하지 않는 기본 키는 참조할 수 없다
     3. 도메인 무결성 (Domain Integrity)
         - 각 속성의 값이 정의된 도메인에 속하는 것을 보장하는 제약 조건
@@ -157,7 +165,7 @@
 ### Proceeding with Database modeling
 ※ 데이터베이스 모델링 진행
 
--> `요구사항 수집 및 분석 -> 개념적 설계 -> 논리적 설계 -> 물리적 설계`
+`요구사항 수집 및 분석 -> 개념적 설계 -> 논리적 설계 -> 물리적 설계`
 
 1. 요구사항 수집 및 분석
     - 어떤 종류의 데이터를 정리하는지 정보 수집하고 어떤 작업을 수행해야 하는지 파악하는 단계
@@ -186,6 +194,12 @@
 
   ![alt text](image-13.png)
 
+※ 표기방법 외우지XX
+
+-> Mermaid Live Editor 사용하면 ERD 그릴 수 있음 
+
+-> [Mermaid Live Editor](https://mermaid.live/edit#pako:eNqdUk2LwjAQ_SthzlXaaD_MVT3sQVxcvSyFJTRpDbRJN01g3ep_39RaUQoedk4zjzdvXh5pIVOMAwGuV4IWmlapRK6Wh4_9drPeofN5MlEt2u5WbiCoLmnGm57TYx3hfCN8ve3XG8fKlDRUyBvvfbddHZb7J6mBKWRWWjYo3q-2_dxVY7SQBRJsBEla8RHIKyrKHr082nytyKjhSGnmUnDdiNoYamzzpDo86h9O81JRg2otMj422gfzoCqkQd-WSiPM6ZUGeFBowYAYbbkHFdcuCTfCVSsFc-TOBBDXMp5TW5oUUtmt1VR-KlUNm1rZ4ggkp2XjJlt32dz-xp3CpYtqqaw0QHB4lQDSwg-QwA-m_iwKcDCfR1E4WwQenIDEwXThKsILP0kSfPHg93rSnyZx6LvCkR_HPg7x5Q8v2sEm)
+
 3. 논리적 설계
     - 개념적 설계를 기반으로 데이터베이스의 **논리적 구조**를 설계
     - 테이블, 속성, 제약 조건 등과 같은 구체적인 데이터베이스 개체를 정의
@@ -198,7 +212,7 @@
     - 보안, 백업 및 복구, 성능 최적화 등을 고려하여 데이터베이스를 설정
   
 
-## Database Normalization
+## Database Normalization ★★★
 - 정규화 (Normalization)
   - 중복을 최소화하고 데이터의 일관성과 효율성을 유지하기 위해 데이터를 구조화하는 과정
   - 정규화의 목적
@@ -254,6 +268,10 @@
     ![alt text](image-19.png)
 
     ![alt text](image-20.png)
+    - 복합키 일때만 알 수 있는 정보가 아닌게 있음!
+    - 사과, 바나나를 모르더라도 '박씨농가'만 알고있다면 생산지가 '대구'임을 알 수 있다
+    - 즉, 부분 함수적 종속 상태! (기본키 둘 다 몰라도, 생산자만 알고있으면 생산지를 알 수 있기 때문)
+    - 그대로 두면 안되는 이유? 박씨농가의 생산지가 바뀌면 2번 수정해야함 -> 갱신 이상 발생
   - 생산자와 생산지가 완전 함수적 종속이 되도록 테이블 분리
 
     ![alt text](image-21.png)
@@ -319,8 +337,8 @@
   ```SQL
   SELECT column_name FROM table_name;
   ```
-  - SQL 키워드는 대소문자 구분하지XX
-    - 하지만 대문자 작성 권장(명시적 구분)
+  - **SQL 키워드**는 대소문자 구분하지XX
+    - 하지만 **대문자** 작성 권장(명시적 구분)
   - 각 SQL Statements의 끝에는 세미콜론 `;` 필요
     - 세미콜론은 각 SQL Statements을 구분하는 방법(명령어 마침표)
 
@@ -395,14 +413,14 @@ CREATE TABLE table_name (
       FirstName VARCHAR(50) NOT NULL
     );
     ```
-  - 테이블 schema(구조) 확인 -> MySQL
+  - 테이블 schema(구조) 확인 -> MySQL에서만 쓸 수 있는 코드
     ```SQL
     -- 구조 보여주는거
     DESCRIBE examples;
     ```
     ![alt text](image-33.png)
     ```SQL
-    -- 롸?
+    -- 무슨 명령어 형식으로 만들었는지 보여주는거
     SHOW CREATE TABLE examples;
     ```
     ![alt text](image-34.png)
@@ -420,7 +438,6 @@ CREATE TABLE table_name (
       - 정수: `INT`, `BIGINT`
       - 실수 - 부동소수점: `FLOAT`, `DOUBLE`
       - 실수 - 고정소수점: `DECIMAL`
-      - 여기 뭐 설명 잘못 했다는듯?2일차 첫부분 보기
 
   4. 날짜와 시간 타입
       - `DATE`, `DATETIME`
@@ -442,6 +459,8 @@ CREATE TABLE table_name (
   - 제약조건 정의 방법
 
     ![alt text](image-37.png)
+    - user 테이블에 examid를 만들어서 그 컬럼이 외래 키가 되도록 설정할건데, 참조 대상을 examples 테이블에 있는 examid를 참조할 것이다
+    - `CONSTRAINT`를 통해 valid_email이라는 제약조건 만들기
 
 - CONSTRAINT 키워드
   - 제약 조건에 이름을 부여하여 정의할 때 사용하는 키워드
