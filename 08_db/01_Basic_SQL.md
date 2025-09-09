@@ -40,6 +40,12 @@
       ('hello', 'world', '2000-01-01');
     -- id 컬럼을 AUTO_INCREMENT로 설정했기 때문에
     -- id 적지 않아도 삽입됨
+    INSERT INTO 
+      articles
+    VALUES 
+      (3, 'hello', 'world', '2000-01-01');
+    -- 모든 컬럼 순서대로 값 잘 입력하면 INSERT INTO절 뒤에 필드 목록 생략 가능
+    -- 웬만하면 적기(지금은 간단한 코드지만 나중에 힘들어질지도?)
     ```
   - articles 테이블에 데이터 추가 입력
 
@@ -51,6 +57,8 @@
       ('title1', 'content1', '1900-01-01'),
       ('title2', 'content2', '1800-01-01'),
       ('title3', 'content3', '1700-01-01');
+    -- 세미콜론 적힌 줄까지가 한 줄로 취급되므로
+    -- 한번에 여러개 삽입 가능
     ```
   - NOW 함수 사용해서 articles 테이블에 데이터 추가 입력
 
@@ -68,7 +76,11 @@
 
 - UPDATE syntax
   ```SQL
-  
+  UPDATE table_name
+  SET column_name = expression,
+  [WHERE
+    condition];
+  -- 대괄호는 optionable한 애들. 넣어도되고 안넣어도 되고
   ```
   - SET 절에 다음 수정할 필드와 새 값을 지정
   - WHERE 절에서 수정할 레코드를 지정하는 조건 작성
@@ -105,7 +117,9 @@
 
 - DELETE syntax
   ```SQL
-  
+  DELETE FROM table_name
+  [WHERE
+    condition];
   ```
   - DELETE FROM절 다음에 테이블 이름 작성
   - WHERE 절에서 삭제할 레코드를 지정하는 조건 작성
@@ -125,8 +139,8 @@
 ### 참고
 - DDL의 Truncate와 DML의 Delete 비교
   - Truncate와 Delete 모두 테이블의 모든 데이터 삭제 가능
-  - Delete는 데이터를 삭제하기 때문에 PK값이 초기화되지 않음
-  - Truncate은 Table을 DROP 호 재생성하기 때문에 PK도 초기화 됨
+  - **Delete는 데이터만 삭제**하기 때문에 PK값이 초기화되지 않음
+  - **Truncate은 Table을 DROP 후 재생성**하기 때문에 **PK도 초기화** 됨
 
 - DDL 언어인 TRUNCATE과 DELETE 동작 차이
   - DELETE 동작
@@ -164,15 +178,16 @@
     USE world;
     ```
     - 앞으로 진행할 실습은 MySQL 설치시 제공되는 world DB 사용
-    - world DB를 삭제한 경우, 공용 노션 참고
-
 
 ### SELECT
 테이블에서 데이터 조회
 
 - SELECT syntax
   ```SQL
-
+  SELECT
+    select_list
+  FROM
+    table_name;
   ```
   - SELECT 키워드 이후 데이터를 선택하려는 필드를 하나 이상 지정
   - FROM 키워드 이후 데이터를 선택하려는 테이블의 이름을 지정
@@ -237,7 +252,10 @@
 
 - DISTINCT syntax
   ```SQL
-
+  SELECT DISTINCT
+    select_list
+  FROM
+    table_name;
   ```
   - SELECT 키워드 바로 뒤에 작성해야 함
   - SELECT DISTINCT 키워드 다음에 고유한 값을 선택하려는 하나 이상의 필드를 지정
@@ -259,7 +277,12 @@
 
 - WHERE syntax
   ```SQL
-
+  SELECT
+    select_list
+  FROM
+    table_name
+  WHERE
+    search_condition;
   ```
   - FROM clause 뒤에 위치
   - search_condition은 비교연산자 및 논리연산자(AND, OR, NOT 등)를 사용하는 구문이 사용됨
@@ -286,6 +309,9 @@
       country
     WHERE
       IndepYear IS NOT NULL;
+    -- NULL은 '=' 사용XX 'IS' 사용함
+    -- 왜 NULL은 특별취급?
+    -- NULL은 값이 아닌 '상태'이므로 0과 빈 문자열처럼 특정한 값이 아닌 NULL은 어떠한 값과도 비교대상이 되어서는 안됨
     ```
   
   - 테이블 country 에서 Population 필드 값이 천 만 이상이고 LifeExpectancy 필드가 78 이상인 데이터의 Name, Region, LifeExpectancy 조회
@@ -376,7 +402,7 @@
       FROM 
         country
       WHERE
-        Name LIKE 'South______';
+        Name LIKE 'South______'; -- 공백도 한자리 차지함
       ```
 
 - IS Operator
@@ -441,16 +467,19 @@
   - 인자로 들어오는 문자열을 하나로 연결해주는 함수
     ```SQL
     SELECT CONCAT('FirstName', '_', 'LastName');
+
+    SELECT CONCAT(Name, ': ', Code) AS 'Name: Code' 
+    FROM country;
     ```
 
 - `TRIM([[BOTH|LEADING|TRAILING] remove_str] target_str)`
   - 왼쪽 혹은 오른쪽의 특정 문자를 삭제하는 함수
   - remove_str을 생략한 경우 공백 문자를 삭제함
     ```SQL
-    SELECT TRIM('   PHONE   ');
-    SELECT TRIM('-' FROM '---TITLE---');
-    SELECT TRIM(LEADING '-' FROM '---TITLE---');
-    SELECT TRIM(TRAILING '-' FROM '---TITLE---');
+    SELECT TRIM('   PHONE   ');   -- 공백 제거 -> PHONE
+    SELECT TRIM('-' FROM '---TITLE---');   -- 없애려는 문자 다 제거 -> TITLE
+    SELECT TRIM(LEADING '-' FROM '---TITLE---');    -- 앞쪽 문자들만 제거 -> TITLE---
+    SELECT TRIM(TRAILING '-' FROM '---TITLE---');    -- 뒤쪽 문자들만 제거 -> ---TITLE
     ```
 
 - `REPLACE(target_str, from_str, to_str)`
@@ -593,9 +622,9 @@
   - 첫번째 인자 value1부터 순서대로 확인하여 NULL이 아닌 값을 반환
   - 모두 NULL인 경우 NULL 반환
     ```SQL
-    SELECT COALESCE('expr1', 'expr2', NULL);
-    SELECT COALESCE(NULL, 'expr2', NULL);
-    SELECT COALESCE(NULL, NULL, NULL);
+    SELECT COALESCE('expr1', 'expr2', NULL);  -- expr1
+    SELECT COALESCE(NULL, 'expr2', NULL);   -- expr2
+    SELECT COALESCE(NULL, NULL, NULL);    -- NULL
     ```
   - COALESCE 활용
     - Africa의 기대 수명이 70 미만인 국가의 GNP 정보를 조회
@@ -620,7 +649,14 @@
 
 - ORDER BY syntax
   ```SQL
-
+  SELECT
+    select_list
+  FROM
+    table_name
+  ORDER BY
+    column1 [ASC|DESC],
+    column2 [ASC|DESC],
+    ...;
   ```
   - FROM절 뒤에 위치
   - 하나 이상의 컬럼을 기준으로 결과를 오름차순(ASC, 기본값), 내림차순(DESC)으로 정렬
@@ -668,7 +704,8 @@
       ![alt text](image-77.png)
       ```SQL
       -- NULL 값이 존재할 경우 오름차순 정렬 시 결과에 NULL이 먼저 출력
-        -- NULL은 모든 값보다 작기 때문에
+        -- NULL은 알 수 없는 상태로, 크기 비교가 불가능 하므로
+        -- 모든 값보다 작다고 처리됨
       SELECT
         Name, IndepYear
       FROM
@@ -682,9 +719,9 @@
 
       ![alt text](image-78.png)
       ```SQL
-      -- NULL 데이터는 마지막에 위치하도록
-        -- IS NULL의 결과 NULL인 경우, -> TRUE
-        -- IS NULL의 결과 NULL이 아닌 경우, -> FALSE
+      -- NULL 데이터는 마지막에 위치하도록 하고싶다면?
+        -- IS NULL의 결과 NULL인 경우, -> TRUE -> 1
+        -- IS NULL의 결과 NULL이 아닌 경우, -> FALSE -> 0
           -- 1은 0보다 크므로, NULL이 아닌 데이터가 먼저 오게 됨
       SELECT
         Name, IndepYear
@@ -694,6 +731,8 @@
         Continent = 'Asia'
       ORDER BY 
         IndepYear IS NULL, IndepYear;
+      -- NULL을 먼저 뒤로 보낸 다음
+      -- 진짜 하고싶었던 IndepYear 정렬하기
       ```
 
 
@@ -702,7 +741,12 @@
 
 - LIMIT syntax
   ```SQL
-
+  SELECT
+    select_list
+  FROM
+    table_name
+  LIMIT [offset,] row_count;
+  -- LIMIT row_count OFFSET offset;
   ```
   - 하나 또는 두 개의 인자를 사용(0 또는 양의 정수)
   - row_count는 조회하는 최대 레코드 수를 지정
@@ -713,7 +757,7 @@
     ..
   FROM
     ..
-  LIMIT 2, 5;
+  LIMIT 2, 5;   -- offset, row_count
   ```
   ![alt text](image-79.png)
 
@@ -740,8 +784,8 @@
       country
     ORDER BY 
       Population DESC
-    LIMIT 4, 7;
-    -- LIMIT 7 OFFSET 4;
+    LIMIT 4, 7;   -- 앞에 4개 빼고 5번째부터 7개
+                  -- LIMIT 7 OFFSET 4;
     ```
 
 ※ SELECT statement 실행 순서
@@ -861,10 +905,14 @@
 
     ![alt text](image-88.png)
     ![alt text](image-89.png)
+    - 집계 항목에 대한 조건은 Having절 사용해야 함
+    - 집계항목이 아닌 원 컬럼에 대한 조건은 WHERE
 
 - **HAVING** 절
   - 집계 항목에 대한 세부 조건 지정
   - 주로 GROUP BY와 함께 사용되며 GROUP BY가 없다면 WHERE처럼 동작함
+    - 그렇게 쓸 수 있다는 거지, 쓰라는건 아님;;
+    - GROUP BY 없을 때 WHERE 대신 HAVING절 쓰는 파렴치한짓 하지말것
 
      ![alt text](image-90.png)
 
