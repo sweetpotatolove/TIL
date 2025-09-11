@@ -531,4 +531,147 @@ Pandas의 주요 구성 요소
   titanic.iloc[0:3, 3] = "anonymous"
   ```
 
-  
+## 추가 개념
+### 파일 경로
+![alt text](image-45.png)
+```python
+import pandas as pd  # Pandas 라이브러리 불러오기
+
+# 1. Titanic 데이터셋 불러오기
+df = pd.read_csv("../data/titanic.csv")
+```
+- 스켈레톤 파일이 csv와 동일한 경로에 있지 않으므로 경로 설정해야함
+  - 만약 스켈레톤 폴더 없이, data 폴더와 스켈레톤 파일이 같은 경로에 있었다면?
+    - `./data/titanic.csv`
+  - 스켈레톤 파일이 스켈레톤 폴더 안에 들어있으므로 한단계 상위 폴더인 data_analysis_ws..로 옮겨가야함
+    - `../data/titanic.csv`
+
+### 데이터셋 기본 탐색
+```python
+# 데이터프레임의 전체적인 정보를 확인 (컬럼, 데이터 타입, 결측치 개수 등)
+
+print(df.info())  # 데이터프레임의 전체 구조를 확인하는 함수 
+print(df.shape)  # 데이터의 행과 열 개수를 확인하는 속성 
+print(df.head())  # 데이터의 처음 몇 개 행을 미리 확인하는 함수
+```
+
+### 결측치
+```python
+# 결측치 확인
+print(df.isna().sum())  # 각 컬럼별 결측치 개수를 확인하는 함수
+
+# 결측치 처리
+# (1) Age 컬럼의 결측치를 중앙값(median)으로 대체
+age_median = df["Age"].median()  # 중앙값을 구하는 함수 
+df["Age"] = df["Age"].fillna(age_median)  # 결측치를 중앙값으로 채우는 함수 
+
+# (2) Embarked 컬럼의 결측치를 최빈값(mode)으로 대체
+embarked_mode = df["Embarked"].mode()[0]  # 최빈값을 구하는 함수
+df["Age"] = df["Embarked"].fillna(embarked_mode)  # 결측치를 최빈값으로 채우는 함수
+```
+
+### 범주형 데이터 값 분포 확인
+```python
+print("\n객실 등급(Pclass)별 승객 수:")
+print(df["Pclass"].value_counts())  # Pclass 값 개수를 세는 함수
+
+print("\n성별(Sex)별 승객 수:")
+print(df["Sex"].value_counts())  # Sex 값 개수를 세는 함수 
+
+print("\n탑승 항구(Embarked)별 승객 수:")
+print(df["Embarked"].value_counts())  # Embarked 값 개수를 세는 함수
+```
+
+### 특정 조건에 따른 필터링
+```python
+# (1) 1등석 승객만 필터링
+first_class_passengers = df[df['Pclass'] == 1]
+
+# (2) 3등석에 탑승한 20세 이하 여성 승객 필터링
+young_female_3rd_class = df[(df['Pclass'] == 3) & (df['Age'] <= 20) & (df['Sex'] == 'female')] 
+
+# (3) 2등석 또는 3등석에 탑승한 남성 승객 필터링
+second_or_third_class_male = df[(df["Pclass"].isin([2, 3])) & (df['Sex'] == 'male')]  
+```
+
+### 특정 분위수
+```python
+# 고액 요금 승객 필터링
+# 요금이 상위 10%에 해당하는 값 찾기
+fare_threshold = df["Fare"].quantile(0.9)  # 상위 10%의 기준값 설정
+
+# 고액 요금 승객 필터링 (요금이 fare_threshold 이상인 승객)
+high_fare_passengers = df[df['Fare'] >= fare_threshold]
+print(f"\n고액 요금 승객 데이터 (상위 5개) - 기준 요금: {fare_threshold:.2f}")
+high_fare_passengers.head()  # 고액 요금 승객 상위 5개 데이터 확인
+```
+- quantile() 함수
+  - 데이터에서 특정 분위수(퍼센트) 값을 구하는 데 사용
+  - ex. `quantile(0.90)`은 상위 10%에 해당하는 값의 기준을 의미합니다.
+  - 기본 문법:
+    - `df["컬럼명"].quantile(퍼센트)`
+
+### loc
+```python
+# Pclass(선실 등급)별 요금 비교
+# 각 Pclass별 승객 수 확인
+print("\n선실 등급(Pclass)별 승객 수:")
+print(df["Pclass"].value_counts())  # Pclass별 승객 수 출력
+
+# Pclass별 요금(Fare) 통계 분석
+# (1) 1등석 승객의 평균 및 중앙값 요금 확인
+first_class_fare = df.loc[df['Pclass'] == 1, 'Fare']
+first_class_fare_mean = first_class_fare.mean()  # 평균 요금 계산
+first_class_fare_median = first_class_fare.median()  # 중앙값 요금 계산
+print(f"\n1등석 평균 요금: {first_class_fare_mean:.2f}, 중앙값 요금: {first_class_fare_median:.2f}")
+
+# (2) 2등석 승객의 평균 및 중앙값 요금 확인
+second_class_fare = df.loc[df['Pclass'] == 2, 'Fare']
+second_class_fare_mean = second_class_fare.mean()  # 평균 요금 계산
+second_class_fare_median = second_class_fare.median()  # 중앙값 요금 계산
+print(f"\n2등석 평균 요금: {second_class_fare_mean:.2f}, 중앙값 요금: {second_class_fare_median:.2f}")
+
+# (3) 3등석 승객의 평균 및 중앙값 요금 확인
+third_class_fare = df.loc[df['Pclass'] == 3, 'Fare']
+third_class_fare_mean = third_class_fare.mean()  # 평균 요금 계산
+third_class_fare_median = third_class_fare.median()  # 중앙값 요금 계산
+print(f"\n3등석 평균 요금: {third_class_fare_mean:.2f}, 중앙값 요금: {third_class_fare_median:.2f}")
+```
+
+### 정렬
+```python
+# 승객 데이터를 요금(Fare) 기준으로 내림차순 정렬
+df_sorted_fare = df.sort_values(by="Fare", ascending=False)  # Fare 기준으로 내림차순 정렬
+print("\n요금(Fare) 기준 내림차순 정렬된 승객 데이터 (상위 5개):")
+df_sorted_fare.head()  # 정렬된 데이터 상위 5개 확인
+
+
+# 승객 데이터를 나이(Age) 기준으로 오름차순 정렬
+df_sorted_age = df.sort_values(by="Age", ascending=True)  # Age 기준으로 오름차순 정렬
+print("\n나이(Age) 기준 오름차순 정렬된 승객 데이터 (상위 5개):")
+df_sorted_age.head()  # 정렬된 데이터 상위 5개 확인
+```
+- sort_values() 함수
+  - 특정 컬럼을 기준으로 데이터프레임을 정렬하는 데 사용
+  - 오름차순(`ascending=True`) 또는 내림차순(`ascending=False`) 정렬이 가능
+  - 기본 문법:
+    - `df.sort_values(by="컬럼명", ascending=True or False)`
+
+### 가중 평균
+```python
+# 가중 평균 요금(Fare) 계산
+
+# 가중 평균을 사용하는 이유:
+# - 일반 평균(mean)은 모든 데이터를 동일한 가중치로 다룹니다.
+# - 하지만 Pclass(선실 등급)에 따라 요금이 다르고, 1등석 승객이 더 비싼 요금을 지불하는 경향이 있음.
+# - 따라서 선실 등급별 가중치를 고려하여 가중 평균을 계산하면, 보다 현실적인 요금의 중심 값을 얻을 수 있음.
+
+# Pclass의 역수를 가중치로 사용 (1등석은 가중치가 가장 큼, 3등석은 가장 작음)
+df["Pclass_weight"] = 1 / df["Pclass"]  
+
+# 가중 평균 공식:
+# Σ(Fare × 가중치) / Σ(가중치)
+weighted_fare_avg = (df['Fare'] * df["Pclass_weight"]).sum() / df["Pclass_weight"].sum()
+print(f"\n가중 평균 요금(Fare): {weighted_fare_avg:.2f}")
+```
+
