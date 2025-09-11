@@ -36,3 +36,4 @@ ex. C:/User/ssafy/Desktop
 현재 작업하고 있는 디렉토리 기준으로 계산된 상대적 위치를 작성한 것
 
 ex. 현재 작업 디렉토리가 C:/Users 일 때, 윈도우 바탕 화면으로의 상대 경로는 ssafy/Desktop
+
