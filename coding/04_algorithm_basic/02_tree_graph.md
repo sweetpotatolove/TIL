@@ -695,3 +695,4 @@ def postorder_traversal(root):
     ![삭제2](삭제2.jpg)
 
 - 삭제 코드: `99_3_binary_search_tree.py`의 delete 함수
+
