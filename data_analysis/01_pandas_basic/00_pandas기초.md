@@ -531,7 +531,7 @@ Pandas의 주요 구성 요소
   titanic.iloc[0:3, 3] = "anonymous"
   ```
 
-## 추가 개념
+## 추가 개념 및 정리
 ### 파일 경로
 ![alt text](image-45.png)
 ```python
