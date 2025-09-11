@@ -938,3 +938,4 @@ HTML의 각 요소가 기본적으로 가지고 있는 이벤트가 때로는 �
         formTag.addEventListener('submit', handleSubmit)
     </script>
     ```
+
