@@ -434,3 +434,4 @@ ex. 다른 요소 위에 올리기, 화면의 특정 위치에 고정시키기 �
 - align-self
 
     ![align-self](a-s.jpg)
+
