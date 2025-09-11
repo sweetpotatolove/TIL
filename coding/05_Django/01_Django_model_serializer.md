@@ -1139,3 +1139,4 @@ ORM에서 데이터를 검색, 필터링, 정렬 및 그룹화 하는 데 사용
     - 즉, 유효성 검사를 통과하지 못하면 ValidationError가 발생하고, DRF의 기본 예외 처리기에 의해 HTTP 400 Bad Request 응답과 함께 에러 메시지가 반환됨
 
     ![alt text](image-18.png)
+
