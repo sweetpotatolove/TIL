@@ -698,3 +698,4 @@ print_info(name='Eve', age=30)  # {'name': 'Eve', 'age': 30}
     squares = list(map(lambda x: x * x, numbers))
     print(squares)  # [1, 4, 9, 16, 25]
     ```
+
