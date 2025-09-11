@@ -56,3 +56,4 @@ Generative / Pre-tained / Transformer
 
 ※ APi 공식문서: Open ai 검색 -> API 플랫폼 -> 문서 -> API 공식문서 나옴
 
+
