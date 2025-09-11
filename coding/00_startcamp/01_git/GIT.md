@@ -286,3 +286,4 @@ settings -> general -> Advanced -> delete -> 파일 이름 그대로 입력
 6-1. 시도해서 성공하면? merge 완료했다고 알리고 하던일 마저한다.
 6-2. 시도해서 실패하면? MR 보낸 사람에게 conflict 해결하고 다시 MR 보내라고 한다 `git switch develop` `git pull` `git switch 내 브랜치` `git merge develop` (기왕이면 어디서 문제 발생했는지 알려주기)
 7. 팀원 1 혹은 2는 MR발생 후, 팀장이 merge 했다고 알리면, 본인은 브랜치에서 `git pull origin develop`해서, 추가 작업 진행하거나 develop 브랜치에서 pull 받은 뒤, 본인 브랜치에서 merge develop을 한다
+
