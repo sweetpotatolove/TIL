@@ -712,3 +712,4 @@ Django에서 Restful API 서버를 쉽게 구축할 수 있도록 도와주는 �
     3. Django는 **정해진 경로**에 있는 template 파일만 읽어올 수 있음
         - app폴더/templates/ 이후
 
+
