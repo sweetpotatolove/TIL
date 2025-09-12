@@ -32,7 +32,7 @@
       ```
       ![alt text](image-2.png)
   
-  - ndarray 생성 - `arrange()`
+  - ndarray 생성 - `arange()`
     - 0부터 9까지 숫자를 순차적으로 생성
       ```python
       sequence_array = np.arange(10)
@@ -59,8 +59,46 @@
       array1 = np.array(list1)
       print(type(array1))
       print(array1, array1.dtype)
+      # array1.astype(float)
       ```
       ![alt text](image-5.png)
+    
+    - ※ Series와 데이터 타입
+      - Pandas의 Series는 기본적으로 ndarray를 기반으로 함
+      - 배열은 각각 타입이 같을 수도 있고 다를 수도 있음
+      - 원칙적으로는 하나의 타입만 가지는 것이 이상적이지만, 실제로는 서로 다른 타입의 데이터가 섞여있을 수 있음
+      - 만약 배열에 다른 타입이 섞이면, 자동 형 변환(upcasting)이 일어나거나, 최종적으로 object 타입으로 통합됨
+        ```python
+        import numpy as np
+
+        # int와 float 혼합
+        arr = np.array([1, 2.5, 3])
+        print(arr, arr.dtype)
+        # 결과: [1.  2.5  3. ] float64
+        # int가 float으로 자동 변환(upcast)되어, 전체가 float64 타입으로 맞춰짐.
+
+        # int와 문자열 혼합
+        arr = np.array([1, "hello", 3])
+        print(arr, arr.dtype)
+        # 결과: ['1' 'hello' '3'] <U11
+        # 전부 문자열(str)로 바뀜.
+
+        # 타입이 완전히 제각각일 때
+        arr = np.array([1, 3.14, "hello", [1,2]])
+        print(arr, arr.dtype)
+        # 결과: [1 3.14 'hello' list([1, 2])] object
+        # 이 경우에는 더 이상 공통 타입으로 묶기 어렵기 때문에 object 타입으로 저장됨
+
+        # 결론
+        # 가능하다면 자동 형변환(upcasting) → int → float → complex → str 순서.
+        # 불가능하면 object → 파이썬 객체 그대로 담음.
+        ```
+  
+    - ※ Object 타입의 의미
+      - object 타입은 사실상 "파이썬 객체"를 담는 형태로, 여러 타입이 섞여 있을 때 이를 수용하기 위한 장치
+      - 그러나 object 타입은 NumPy의 고속 연산 최적화를 제대로 활용하지 못함
+      - 즉, 연산 성능이 떨어지므로 데이터 처리를 효율적으로 하기 위해서는 가급적 하나의 명확한 데이터 타입으로 변환해 두는 것이 좋음
+
 
   - 형태(shape)와 차원(ndim)
     - 형태 - `ndarray.shape` 속성
@@ -123,7 +161,8 @@
   - axis (축)
     - 행, 열, 높이 단위 XX
     - axis0, axis1, axis2와 같이 axis 단위로 부여
-      - axis0: 배열의 가장 바깥쪽..
+      - 차원 추가될 때마다 axis 늘어나고, axis0이 가장 바깥쪽 축이 됨
+      - 즉, 1차원일 땐 axis0이 x축, 2차원일 땐 axis1이 y축, 3차원일 땐 axis0이 z축
 
       ![alt text](image-8.png)
     
@@ -231,6 +270,7 @@
     ![alt text](image-18.png)
   
   - `Transpose` 연산
+    - 행과 열을 바꾸는 기능
     ```python
     print(df.T)
     ```
@@ -427,6 +467,7 @@
       ```
       ![alt text](image-42.png)
 
+  - 일반 함수를 통해 데이터 일괄적으로 가공
     - 나이에 따라 연령대 분류하는 함수
       ```python
       def categorize_age(age):
@@ -482,6 +523,8 @@
   ```
   ![alt text](image-44.png)
 
+
+※ Merge: 공통된 key(열)을 기준으로 데이터 병합
 - Inner Merge
   ```python
   import pandas as pd
@@ -494,7 +537,7 @@
                       'C': ['C0', 'C1', 'C2'],
                       'D': ['D0', 'D1', 'D2']})
 
-  df_merged = pd.merge(df1, df2, on='key', how='inner')
+  df_merged = pd.merge(df1, df2, on='key', how='inner') # 교집합
 
   print(df1)
   print('\n')
@@ -504,7 +547,7 @@
   ```
   ![alt text](image-45.png)
 
-- Outer Merge
+- Outer Merge 
   ```python
   import pandas as pd
 
@@ -516,7 +559,7 @@
                       'C': ['C0', 'C1', 'C2'],
                       'D': ['D0', 'D1', 'D2']})
 
-  df_merged = pd.merge(df1, df2, on='key', how='outer')
+  df_merged = pd.merge(df1, df2, on='key', how='outer')   # 합집합
 
   print(df1)
   print('\n')
@@ -636,6 +679,8 @@
   })
 
   df_merged = pd.merge(df1, df2, on='key', how='inner', suffixes=('_left', '_right'))
+  # 합칠껀데 열 이름 중복되므로
+  # suffixes 사용해서 _left, _right 접미사를 붙임
 
   print(df1)
   print('\n')
@@ -719,17 +764,128 @@
     ![alt text](image-55.png)
 
 
-## 추가
-```python
-df1 = df.reindex(index=dates[0:4], columns=list(df.columns) + ["E"])
-df1.loc[dates[0] : dates[1], "E"] = 1
-print(df1)
-```
+## 추가 개념 및 정리
+### 이상치 탐지 및 처리
+- 이상치 탐지
+  ```python
+  # IQR(Interquartile Range)을 사용하여 이상치 경계값 구하는 함수
+  def get_iqr_bounds(series):
+      """
+      IQR(사분위 범위) 방법을 이용하여 이상치 경계값 반환
+      - IQR = Q3(75%) - Q1(25%)
+      - 이상치 기준: Q1 - 1.5*IQR 이하 또는 Q3 + 1.5*IQR 이상
+      """
+      Q1 = series.quantile(0.25)
+      Q3 = series.quantile(0.75)
+      IQR = Q3 - Q1
+      lower_bound = Q1 - 1.5 * IQR  # 하한선
+      upper_bound = Q3 + 1.5 * IQR  # 상한선
+      return lower_bound, upper_bound
 
-```python
-# 결측치가 있는 모든 행 제거
-df1.dropna(how="any")
+  # 이상치 경계값 계산
+  age_low, age_high = get_iqr_bounds(df['Age'])
 
-# 결측치를 5로 채우기
-df1.fillna(value=5)
-```
+  # 이상치 개수 확인
+  outliers_age = df[(df['Age'] < age_low) | (df['Age'] > age_high)]
+
+  print(f"'Age' 이상치 개수: {len(outliers_age)}개")
+  ```
+
+- 이상치 처리
+  ```python
+  # 이상치를 평균값으로 대체 (단, 평균값은 정상 범위 내 값으로 계산)
+  # 이상치를 제외한 평균값 계산
+  age_mean = int(df[(df['Age'] >= age_low) & (df['Age'] <= age_high)]['Age'].mean())
+
+  # 이상치를 평균값으로 대체
+  df.loc[df['Age'] < age_low, 'Age']  = age_mean
+  df.loc[df['Age'] > age_high, 'Age'] = age_mean
+
+  # 이상치 처리 후 다시 확인
+  print(f"최소/최대 Age: {df['Age'].min()} ~ {df['Age'].max()}")
+  ```
+
+### groupby 함수
+- `groupby()`
+  - 예시
+    - "CustomerID"를 기준으로 데이터를 그룹화
+    - 각 고객별 'PurchaseAmount' 값을 합산하여 총 소비 금액(TotalSpent) 계산
+  - `reset_index()`: 그룹화된 데이터를 다시 일반 데이터프레임 형태로 변환
+    ```python
+    df_total_spent = df.groupby("CustomerID")["PurchaseAmount"].sum().reset_index()
+    ```
+
+### 데이터프레임 데이터 타입 확인 방법
+- `df.info()`
+
+  ![alt text](image-56.png)
+- `df.dtypes`
+
+  ![alt text](image-57.png)
+
+### 컬럼명 변경
+- `rename()`
+  ```python
+  df_total_spent.rename(columns={"PurchaseAmount": "TotalSpent"}, inplace=True)
+  ```
+  - "PurchaseAmount" -> "TotalSpent"로 변경
+
+### cut 함수
+- `cut()`
+  - 예시
+    - df["Age"]: 나이(Age) 데이터를 기반으로 연령대를 구분
+  - `bins`: 연령 구간 설정 (0-18, 19-30, 31-50, 51-100)
+  - `labels`: 각 구간에 할당할 라벨(Teen, Young Adult, Adult, Senior)
+  - `right=False`: 오른쪽 경계값(예: 18)은 포함하지 않도록 설정 (0 ≤ x < 18은 Teen)
+    ```python
+    df["AgeGroup"] = pd.cut(df["Age"], bins=bins, labels=labels, right=False)
+    ```
+  - 실제 적용
+    ```python
+    # 연령대별 평균 소비 금액 계산
+    # 연령대를 나누는 기준을 설정 (Pandas의 cut() 사용)
+    bins = [0, 18, 30, 50, 100]  # 연령대 구간 (0-18세, 19-30세, 31-50세, 51세 이상)
+    labels = ["Teen", "Young Adult", "Adult", "Senior"]  # 각 구간에 대한 라벨 지정
+    df["AgeGroup"] = pd.cut(df["Age"], bins=bins, labels=labels, right=False)  # 연령대 구분
+    ```
+
+### map 함수
+- `map()`
+  - 예시
+    - df["Gender"]: 기존 성별 데이터 (0 또는 1)
+  - `.map({0: "Female", 1: "Male"})`: 0 → "Female", 1 → "Male"로 변환
+    ```python
+    # Gender 값을 남/녀로 변환 (0: 여성, 1: 남성)
+    df_gender_spent["Gender"] = df_gender_spent["Gender"].map({0: "Female", 1: "Male"})  # 성별 변환
+    ```
+
+### 인덱스
+- 인덱스 재색인(reindex)
+  - `reindex()`
+  - 기존 DataFrame을 새로운 인덱스(index)나 컬럼(columns) 기준에 맞춰 재배치하는 것
+  - 지정한 인덱스나 컬럼이 원래 없으면 NaN이 들어감
+    ```python
+    df1 = df.reindex(index=dates[0:4], columns=list(df.columns) + ["E"])
+    df1.loc[dates[0] : dates[1], "E"] = 1
+    print(df1)
+    ```
+    - `index=dates[0:4]` → 기존 df에서 `dates[0:4]`까지만 인덱스를 가져옴 (없는 인덱스면 NaN 들어감)
+    - `columns=list(df.columns) + ["E"]` → 기존 컬럼들에 "E"라는 새 컬럼을 추가 (처음엔 NaN으로 채워짐)
+
+- 인덱스 재설정(reset)
+  - `reset_index()`
+  - 현재 인덱스를 일반 컬럼으로 옮기고, 새로 0,1,2… 형태의 기본 인덱스를 다시 부여하는 것
+
+
+### 결측치
+- 결측치 제거 - `dropna`
+  - `dropna()`: 결측치(NaN)가 있는 행을 제거하여 데이터 정제
+- 결측치 채우기 - `fillna`
+  ```python
+  # 결측치가 있는 모든 행 제거
+  df1.dropna(how="any")
+
+  # 결측치를 5로 채우기
+  df1.fillna(value=5)
+  ```
+
