@@ -243,7 +243,7 @@ Pandas의 주요 구성 요소
       ```
       ![alt text](image-13.png)
 
-- Sheap
+- Shape
   - 데이터프레임의 행과 열 크기를 가지고 있는 속성
     ```python
     print('dataframe 크기: ', titanic.shape)
