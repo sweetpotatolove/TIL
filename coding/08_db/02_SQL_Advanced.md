@@ -12,8 +12,22 @@
       SELECT * FROM 테이블 WHERE writer = '하석주';
       ```
     - 이 테이블을 그대로 두면 안될 '수도' 있는 이유
-    - 갱신이상?
-    - 웅앵
+    - 제 1 정규화 상으론 문제 없음
+      - 모든 칼럼이 원자값으로 구성되어 있음
+    - 제 2 정규화 상으로도 문제 없음
+      - 기본키가 id인데, 모든 속성이 id에 종속되어 있음(완전 함수 종속)
+    - 그렇다면 제 3 정규화는?
+      - role이 id에 직접 종속되는게 아니라, writer에 종속되고, writer는 id에 종속된 상태
+      - 즉, role은 id에 이행적으로 종속되어 있음
+      - `id -> writer -> role`
+    - id에 종속되어 있는 것은 게시글 정보이고, 게시글이 종속 되었을 때 작성자 또한 종속이 될 것임
+    - 작성자에 의해 role의 정보도 처리가 될 수 있어야 할 것 같은데, 현재 테이블 구조로는 문제가 생길 수 있는 구조
+    - 왜냐하면 동일 작성자가 여러 게시글을 쓸 경우, 매번 role 정보를 반복해서 저장해야 하기 때문
+    - 예: `id: 4, writer: 하석주, role: admin` 을 추가했는데, 누군가 실수로 role을 student로 잘못 입력하면
+      - -> 동일 인물임에도 불구하고 role 정보가 일관되지 않게 됨 (**갱신 이상** 발생)
+    - 즉, 작성자 기준으로 role 정보가 **일관되게 관리**되어야 함
+    - 이처럼 조회 시 혼란이 생기거나, 갱신 이상이 발생할 수 있음
+    - 딱히 갱신할 일이 없다면 불필요한 정규화 하지 않고 비정규화 상태로 둘 수도 있음
 
   - 동명이인이 있거나 특정 데이터가 수정된다면? => 테이블을 나누어서 분류하자
 
@@ -46,22 +60,25 @@
     
     USE db_adv;
     ```
+
   - users 테이블 생성
     ```SQL
     CREATE TABLE users (
       id INTEGER PRIMARY KEY AUTO_INCREMENT,
       name VARCHAR(50) NOT NULL,
       age INTEGER,
-      parent_id INTEGER,
+      parent_id INTEGER, -- 정수형 parent_id 만들고
       FOREIGN KEY (parent_id) REFERENCES users(id)
+      -- parent_id를 외래키로 지정하는데, 자기 자신과 동일한 테이블의 id를 참조
     );
     ```
+
   - 각 테이블에 데이터 입력
     ```SQL
     INSERT INTO 
       users (name, age, parent_id)
     VALUES 
-      ('하석주', 50, NULL),
+      ('하석주', 50, NULL), -- FK 값은 NULL일 수 있음
       ('정윤미', 48, NULL),
       ('유하선', 46, NULL),
       ('하민성', 24, 1),
@@ -69,6 +86,7 @@
       ('송민', 19, 1),
       ('정지민', 22, 2);
     ```
+
   - articles 테이블 생성
     ```SQL
     CREATE TABLE articles (
@@ -79,6 +97,7 @@
       FOREIGN KEY (userId) REFERENCES users(id)
     );
     ```
+
   - 각 테이블에 데이터 입력
     ```SQL
     INSERT INTO
@@ -108,7 +127,7 @@
     ON table_b.fk = table_a.pk;
   ```
   - FROM 절 이후 메인 테이블 지정 (table_a)
-  - INNER JOIN 절 이후 메인 테이블과 조인할 테이블 지정 (table_b)
+  - INNER JOIN 절 이후 메인 테이블(왼쪽 테이블, 즉 table_a)과 조인할 테이블 지정 (오른쪽 테이블, table_b)
   - ON 키워드 이후 조인 조건을 작성
   - 조인 조건은 table_a와 table_b간의 레코드를 일치시키는 규칙을 지정
 
@@ -126,6 +145,7 @@
     SELECT articles.*, users.id, users.name FROM users
     INNER JOIN articles 
       ON users.id = articles.userId;
+    -- 이제 SELECT할 때 어느 테이블의 컬럼인지 명시해야 함
     ```
     ![alt text](image-97.png)
 
@@ -136,6 +156,7 @@
     FROM articles
     INNER JOIN users 
       ON users.id = articles.userId
+    -- 순서 상관없이 FK, PK만 테이블 잘 맞춰서 적으면 됨
     WHERE users.id = 1;
     ```
     ![alt text](image-98.png)
@@ -157,7 +178,7 @@
   - FROM절 이후 왼쪽 테이블 지정 (table_a)
   - LEFT JOIN절 이후 오른쪽 테이블 지정 (table_b)
   - ON 키워드 이후 조인 조건을 작성
-    - 왼쪽 테이블의 각 레코드를 오른쪽 테이블의 모든 레코드와 일치시키킴
+    - 왼쪽 테이블의 각 레코드를 오른쪽 테이블의 모든 레코드와 일치시킴
 
 - LEFT JOIN 예시
 
@@ -167,6 +188,8 @@
     SELECT articles.*, users.id, users.name FROM articles
     LEFT JOIN users 
       ON users.id = articles.userId;
+      -- 정렬 명시하지 않으면 순서 보장할 수 없지만
+      -- 왼쪽 테이블의 기본키(현재 articles.id) 순서대로 나올 가능성이 높음
     ```
     ![alt text](image-100.png)
     - 왼쪽 테이블의 모든 레코드를 표기
@@ -179,6 +202,13 @@
     LEFT JOIN articles 
       ON articles.userId = users.id
     WHERE articles.userId IS NULL;
+    -- 왼쪽 테이블은 users로 보고있지만
+    -- 유저 테이블은 '역참조'되고 있는 테이블
+      -- users 입장에서, 자신을 참조하고 있는 테이블이 있다는 의미
+    -- 즉, 유저 테이블에는 게시글 정보가 일절 없음
+    -- 따라서 관계를 맺고있는 articles에 있는 FK정보를 가지고 필터링(조건) 진행 가능
+
+    -- 얘도 왼쪽 테이블이 users니까 users.id 순서대로 나올 가능성이 높음(보장XX)
     ```
     ![alt text](image-102.png)
     ![alt text](image-101.png)
@@ -209,10 +239,60 @@
     ```
     ![alt text](image-104.png)
 
+**※ RIGHT JOIN 언제씀?**
+
+-> 쿼리가 굉장히 복잡해졌을 때
+```markdown
+- articles: 게시글
+- users: 작성자
+- categories: 카테고리
+
+ex. 모든 게시글은 반드시 가져와야 하며, 작성자와 카테고리 정보를 함께 붙이되, 카테고리는 name = '공지사항' 인 경우만 보여주고 싶음
+```
+✅ LEFT JOIN 방식 (조건 위치 주의 필요)
+```SQL
+SELECT a.*, u.name AS user_name, c.name AS category_name
+FROM articles a
+LEFT JOIN users u ON a.userId = u.id
+LEFT JOIN categories c ON a.categoryId = c.id AND c.name = '공지사항';
+-- articles를 메인 테이블로 유지하면서,
+-- categories.name = '공지사항' 조건을 JOIN 안에 넣음
+-- 이렇게 해야 모든 게시글을 유지하면서 카테고리는 선택적으로 조인됨
+-- 즉, 모든 게시글을 유지하면서, 카테고리가 '공지사항'이면 c.name이 채워지고, 아니면 NULL이 됨
+```
+❌ 잘못된 LEFT JOIN 사용 (WHERE 절에서 필터링하면 안 됨)
+```SQL
+SELECT a.*, u.name AS user_name, c.name AS category_name
+FROM articles a
+LEFT JOIN users u ON a.userId = u.id
+LEFT JOIN categories c ON a.categoryId = c.id
+WHERE c.name = '공지사항';
+-- 이렇게 하면 결과가 INNER JOIN처럼 동작
+-- '공지사항' 카테고리를 가진 게시글만 조회됨
+```
+✅ RIGHT JOIN 방식 (구조를 뒤집어서 더 읽기 쉽게)
+```SQL
+SELECT a.*, u.name AS user_name, c.name AS category_name
+FROM categories c
+RIGHT JOIN articles a ON c.id = a.categoryId AND c.name = '공지사항'
+LEFT JOIN users u ON a.userId = u.id;
+-- articles를 오른쪽 테이블에 두고 기준으로 사용
+-- categories.name = '공지사항' 조건을 JOIN 안에 명확하게 표현 가능
+-- 복잡한 구조일수록 논리 흐름이 더 잘 보임
+```
+
+-> 즉, 복잡한 조인 쿼리에서
+
+-> 조건을 걸고 싶은 테이블이 **왼쪽**에 있어야 할 때
+
+-> 하지만 기준(메인)이 되는 테이블은 **오른쪽**일 때
+
+-> RIGHT JOIN을 쓰면 쿼리가 더 깔끔하고 읽기 쉬움
+
 ### SELF JOIN
 동일한 테이블의 컬럼을 비교하여 일치하는 데이터를 추가로 붙여 반환
 
--> 주로 계층적 데이터 구조를 표현하거나 동일 테이블 내에서 특정 관계를 찾을 때 사용
+-> 주로 **계층적** 데이터 구조를 표현하거나 동일 테이블 내에서 특정 관계를 찾을 때 사용
 
 - SELF JOIN syntax
   ```SQL
@@ -225,7 +305,7 @@
   ```
   - FROM 절 이후 본 테이블 지정 (table_a)
   - JOIN 절 이후 본 테이블 지정 (table_a)
-    - **이때 반드시 별칭 성정 (t_a)**
+    - **이때 반드시 별칭 설정 (t_a)**
   - ON 키워드 이후 조인 조건을 작성
     - 본 테이블의 컬럼과 별칭 테이블의 컬럼을 이용하여 비교
 
