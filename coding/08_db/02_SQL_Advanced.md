@@ -385,6 +385,7 @@ LEFT JOIN users u ON a.userId = u.id;
         SELECT AVG(Population) 
         FROM country
         WHERE Continent = 'North America'
+        -- 서브쿼리 결과: 13053864.86 -> 단일행
       );
 
     -- 단일행이 아닐 때 에러 발생
@@ -476,7 +477,7 @@ LEFT JOIN users u ON a.userId = u.id;
       JOIN (SELECT Code
             FROM country
             WHERE Population >= 10000000) co
-    ON c.CountryCode = co.Code;
+        ON c.CountryCode = co.Code;
     ```
     ![alt text](image-111.png)
   
@@ -660,6 +661,8 @@ LEFT JOIN users u ON a.userId = u.id;
 데이터베이스 내에서 저장된 쿼리의 결과를 가상으로 나타내는 객체로, 가상 테이블이라고도 함
 
 -> 실제 데이터를 가지고 있지 않고, 실행 시점에 쿼리를 실행하여 결과를 생성하여 보여줌
+
+-> 클라이언트들이 이 가상 테이블에 접근하는 것!
 
 - VIEW 장점
   - 편리성
