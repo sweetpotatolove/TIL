@@ -815,3 +815,4 @@ plt.show()
   - 동작 예시
 
     ![alt text](image-46.png)
+
