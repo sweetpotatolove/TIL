@@ -819,3 +819,4 @@ plt.show()
   | `.to_period('M')`   | 월 단위 Period 변환 | `2025-09` |
   | `.to_period('Q')`   | 분기 단위 Period 변환 | `2025Q3` |
   | `.to_period('A')`   | 연 단위 Period 변환 | `2025` |
+
