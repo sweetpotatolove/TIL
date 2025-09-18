@@ -5,6 +5,12 @@
 
 ![alt text](image.png)
 
+-> 어떤 문제를 해결하고자 하는지 명확하게 정의
+
+-> 문제 해결에 필요한 데이터 확보
+
+-> 이후 탐색적 데이터 분석 단계로 진입!
+
 - 고전적인 통계학 vs EDA
   - 고전적인 통계학
     - 적은 표본(샘플)을 가지고 더 큰 모집단에 대한 결론을 도출하기 위한 일련의 복잡한 과정
@@ -21,7 +27,8 @@
   - 데이터를 이해하고 특징을 찾아내는 과정
   - 데이터 종류, 사용 모델에 따라 EDA 방향성이 다양함
 
-  ![alt text](image-1.png)
+    ![alt text](image-1.png)
+    - 탐색을 확장시켜 나가자
 
 - EDA 과정에서 파악할 요소
   - 데이터 크기는 어느 정도인지
@@ -45,7 +52,9 @@
 - 위치 추정하는 다양한 방법
   - 평균 (mean)
   - 절사평균 (trimmed mean)
+    - 양 끝단을 제외한 평균(극단값의 영향을 줄인 평균)
   - 가중평균 (weighted mean)
+    - 데이터마다 중요도에 따라 기여도를 다르게하여 평균 계산
   - 중간값 (median)
   - 가중 중간값 (weighted median)
   - 백분위수 (percentile)
@@ -77,6 +86,9 @@
   - 상관계수
     - 수치적 변수들 간에 어떤 관계가 있는지 나타내기 위해 사용되는 특정량
     - 범위: `-1 <= x <= 1`
+      - `r = 1` : 완벽하게 양의 상관관계 따름
+      - `r = -1` : 완벽하게 음의 상관관계 따름
+      - `r = 0` : 관계XX
 
     ![alt text](image-4.png)
 
@@ -158,9 +170,12 @@
 ### 테이블 데이터가 아닌 데이터 구조
 - 시계열 데이터
   - 동일한 변수 안에 연속적인 측정값을 갖는 데이터
+  - 즉, 시간이 축이 되는 데이터
+  - 변수가 시간에 따라 기록되는 데이터로, 주기성, 변화, 흐름을 중점으로 봄
 
 - 공간 데이터
   - 지도 제작과 위치 정보 분석에 사용됨
+
   - 테이블 데이터보다 좀 더 복잡하고 다양함
     - 객체를 표현할 때는, 공간 좌표가 데이터의 중심이 됨
     - 필드 정보는 공간을 나타내는 작은 단위들과 적당한 측정 기준 값에 중점을 둠
@@ -204,14 +219,14 @@
       - seaborn 사용하여 피처에 대한 시각화 진행
       - 정보를 얻을 수 있는 데이터와 아닌 데이터를 구별
     
-    - 연속형 변수(`age`, `sibsp`, `parch`, `fare`)에 대한 분포 확인
+    - 수치형 변수(`age`, `sibsp`, `parch`, `fare`)에 대한 분포 확인
       ```python
-      # 연속형 변수 선택
+      # 수치형 변수 선택
       continuous_vars = ["Age", "SibSp", "Parch", "Fare"]
 
       # 그래프 스타일 설정
       plt.figure(figsize=(12, 4))
-      plt.suptitle("연속형 데이터 개별 변수 분포(Variation)", fontsize=14, fontweight="bold")
+      plt.suptitle("수치형 데이터 개별 변수 분포(Variation)", fontsize=14, fontweight="bold")
 
       # 각 변수에 대한 분포 플롯 생성
       for i, var in enumerate(continuous_vars):
@@ -227,6 +242,8 @@
       ![alt text](image-16.png)
       - Age를 제외한 나머지는 왼쪽에 치우친 포아송 형태
       - Age는 20 ~ 40 구간이 많음
+      - 이런 분포를 파악하는 이유는 '어떤 변수는 스케일링 필요할 수도 있고', '어떤 것은 범주형으로 변환하거나', '이상치 처리를 해주거나' 하는 등을 파악할 수 있기 때문
+      - 그래서 EDA 초반에 분포 확인해보는게 좋음
 
     - 범주형 변수(`Pclass`, `Sex`, `Embarked`)에 대한 분포 확인
       ```python
@@ -263,7 +280,6 @@
       train_dt_copy = train_dt.copy()
       # Survived 변수 매핑 (0: 사망, 1: 생존)
       train_dt_copy["Survived"] = train_dt_copy["Survived"].map({0: "사망", 1: "생존"})
-
 
       # 생존자 및 사망자 수 계산
       survived_counts = train_dt_copy["Survived"].value_counts()
@@ -383,6 +399,8 @@
         ![alt text](image-24.png)
         - 1, 2, 3클래스 순으로 생존율 높음
         - 사망한 탑승객 그래프에서 3 클래스의 비율이 67.8%
+        - "3등석이 생존에 불리해 보인다"는 등의 가설 설정 가능
+        - 3등석이 인원도 많고 사망자도 많다는 점에서 Pclass가 중요한 피처임을 알 수 있음
 
     - Feature Exploration - `Sex`
       - 성별을 나타내는 Feature
@@ -496,6 +514,8 @@
         ![alt text](image-29.png)
         - 20세 이하의 생존율이 높음
         - 이전 그래프에서 탑승객은 대부분 20~40대가 많았지만, 생존율은 매우 낮음
+        - 구조 원칙에서 20~40대가 우선순위에 들진 못했을 것이다는 추측 가능
+        - 나이 또한 생존율에 중요한 요소가 될 수 있을 것이라 추측 가능(어릴수록 생존율up)
     
     - Feature Exploration - `Sibsp`
       - 함께 탑승한 형제자매, 배우자의 총합을 나타내는 Feature
@@ -610,6 +630,8 @@
         ```
         ![alt text](image-36.png)
         - S항구에서 탄 탑승객 중 3클래스가 많은 것을 알 수 있음
+        - 또, 1등석 사람들은 주로 C항구에서 탑승한 것 확인 가능
+
         - S항구의 사망률이 높은 이유와 연관 지을 수 있음
 
     - 항구와 동승자와의 관계
@@ -641,7 +663,8 @@
       plt.show()
       ```
       ![alt text](image-38.png)
-      - S항구에서 나홀로 3클래스에 탄 탑승객의 사망률이 높음
+      - **S항구**에서 **나홀로** **3클래스**에 탄 탑승객의 사망률이 높음
+      - S항구에서는 3등석이 많이 탔고, 3등석에는 혼자 탄 사람들이 많았고, 혼자 탄 사람들은 구조 우선순위가 낮기 때문에, 특히 이들 중 남성 & 20~40대 승객들의 생존율은 매우 낮을 것이라는 간접적인 인사이트 도출 가능
     
     - Feature Exploration - `Fare`
       - 탑승 요금을 나타내는 Feature
@@ -654,10 +677,9 @@
         
         plt.show()
 
-        # ---
+        # -- 생존자, 사망자 분포
         fig, ax = plt.subplots(figsize=(8,6))
  
-        # 분포 확인
         sns.kdeplot(train_dt[train_dt['Survived']==1]['Fare'], ax=ax)
         sns.kdeplot(train_dt[train_dt['Survived']==0]['Fare'], ax=ax)
         
@@ -686,5 +708,122 @@
         ```
         ![alt text](image-42.png)
         - 총 891개의 데이터 중 204개의 데이터만 보유하고 있음
-        - 결측치가 많고 객첼 번호에 대한 패턴은 찾기 어려움
+        - 결측치가 많고 객실 번호에 대한 패턴은 찾기 어려움
       
+
+## 추가 내용 및 정리
+### 간단 EDA 실습
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+plt.rcParams['font.family'] = 'Malgun Gothic'
+
+# 1. 데이터 로드 및 기본 정보 확인
+# 주어진 주식 데이터 파일을 불러옴
+file_path = "../data/stock_data.csv"  # 실제 데이터 파일 경로
+df = pd.read_csv(file_path)  # 데이터 파일을 불러오는 코드 작성
+
+# 데이터의 첫 5행 출력 (EDA의 첫 단계)
+print("데이터 미리보기")
+df.head()
+
+# 데이터의 기본 정보 확인 (컬럼명, 데이터 타입, 결측값 확인)
+print("\n데이터 정보")
+df.info()
+
+# 2. 필요한 컬럼 선택 및 데이터 변환
+# 'Date' 컬럼을 날짜 형식으로 변환
+df['Date'] = pd.to_datetime(df['Date'])  # 날짜 데이터를 datetime 타입으로 변환
+
+# 'Close' 컬럼의 결측값 제거
+df = df[['Date', 'Close']].dropna()  # 종가 값이 없는 경우 제거()
+
+# 3. 월별 종가 평균 계산
+# Date 컬럼을 기준으로 연-월 형태의 새로운 컬럼 생성 (YYYY-MM 형식)
+df['YearMonth'] = df['Date'].dt.to_period('M')
+
+# 각 월별 종가의 평균 계산
+monthly_avg_close = df.groupby('YearMonth')['Close'].mean().reset_index()
+
+# 4. 데이터 시각화 (월별 평균 종가)
+plt.figure(figsize=(12, 6))  # 그래프 크기 설정
+plt.plot(monthly_avg_close['YearMonth'].astype(str), monthly_avg_close['Close'], marker='o', linestyle='-', color='b', label='월별 평균 종가')
+    # plot: 선 그래프
+    # 스트링 타입으로 해서 그래프 그릴 수 있게?
+# 그래프 제목 및 라벨 설정
+plt.title('주식 데이터 월별 평균 종가 분석')
+plt.xlabel('연-월')
+plt.ylabel('평균 종가')
+plt.xticks(rotation=45)  # X축 라벨 회전
+plt.legend()
+plt.grid(True)  # 격자 추가
+
+# 그래프 출력
+plt.show()
+```
+![alt text](image-43.png)
+```python
+# 5. 결과 해석
+
+# 1. 주어진 데이터를 활용하여 월별 평균 종가를 계산하였음
+# 2. 시각화를 통해 시간에 따른 평균 종가 변화를 파악할 수 있음
+# 3. 특정 월에 급격한 상승 또는 하락이 있다면, 외부 요인(예: 경제 이벤트, 시장 변동성 등)을 고려해야 함
+# 4. 평균 종가 변동이 일정하다면, 해당 주식은 안정적인 패턴을 보이는 것으로 해석 가능
+```
+
+### Pandas `.dt`
+`.dt` 는 Pandas의 datetime 속성 접근자로, `df['Date']`가 datetime64 타입일 때 날짜/시간 관련 속성이나 메서드(연, 월, 일, 요일 등)를 쉽게 꺼내 쓸 수 있도록 해주는 기능을 함
+
+- 특징
+  - 문자열에 쓰는 `.str` 과 비슷하게, datetime 전용 속성/메서드에 접근하는 용도
+  - `df['Date']`가 문자열(string) 타입이면 사용할 수 없고, 반드시 `datetime64[ns]` 또는 `timedelta64[ns]` 타입이어야 함
+  - 만약 문자열이라면 `pd.to_datetime(df['Date'])`로 변환 필요
+
+- Pandas `.dt` 속성 & 메서드 
+  ```markdown
+  #### 🗓️ 날짜 관련
+  | 속성/메서드        | 설명 | 예시 (`2025-09-18 14:35:20`) |
+  |--------------------|------|-----------------------------|
+  | `.year`            | 연도 | `2025` |
+  | `.month`           | 월(숫자) | `9` |
+  | `.month_name()`    | 월 이름 | `"September"` |
+  | `.day`             | 일(숫자) | `18` |
+  | `.day_name()`      | 요일 이름 | `"Thursday"` |
+  | `.weekday`         | 요일(월=0, 일=6) | `3` (목요일) |
+  | `.quarter`         | 분기 | `3` (7~9월) |
+
+  ---
+
+  #### ⏰ 시간 관련
+  | 속성/메서드 | 설명 | 예시 |
+  |-------------|------|------|
+  | `.hour`     | 시 | `14` |
+  | `.minute`   | 분 | `35` |
+  | `.second`   | 초 | `20` |
+
+  ---
+
+  #### 📅 기간/주차
+  | 속성/메서드            | 설명 | 예시 |
+  |------------------------|------|------|
+  | `.date`                | 날짜만 추출 (`datetime.date`) | `2025-09-18` |
+  | `.time`                | 시간만 추출 (`datetime.time`) | `14:35:20` |
+  | `.dayofyear`           | 연중 며칠째인지 | `261` |
+  | `.week` (구버전)       | 주차 번호 (이제는 비권장) | `38` |
+  | `.isocalendar().year`  | ISO 연도 | `2025` |
+  | `.isocalendar().week`  | ISO 주차 | `38` |
+  | `.isocalendar().day`   | ISO 요일(월=1) | `4` |
+
+  ---
+
+  #### 📊 변환 메서드
+  | 메서드              | 설명 | 예시 |
+  |---------------------|------|------|
+  | `.normalize()`      | 시각을 00:00:00으로 맞춤 | `2025-09-18 00:00:00` |
+  | `.floor('D')`       | 단위별 내림 | `2025-09-18` |
+  | `.ceil('H')`        | 단위별 올림 | `2025-09-18 15:00:00` |
+  | `.round('15min')`   | 단위별 반올림 | `2025-09-18 14:30:00` |
+  | `.to_period('M')`   | 월 단위 Period 변환 | `2025-09` |
+  | `.to_period('Q')`   | 분기 단위 Period 변환 | `2025Q3` |
+  | `.to_period('A')`   | 연 단위 Period 변환 | `2025` |
+  ```
