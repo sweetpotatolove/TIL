@@ -747,9 +747,13 @@ monthly_avg_close = df.groupby('YearMonth')['Close'].mean().reset_index()
 
 # 4. 데이터 시각화 (월별 평균 종가)
 plt.figure(figsize=(12, 6))  # 그래프 크기 설정
-plt.plot(monthly_avg_close['YearMonth'].astype(str), monthly_avg_close['Close'], marker='o', linestyle='-', color='b', label='월별 평균 종가')
-    # plot: 선 그래프
-    # 스트링 타입으로 해서 그래프 그릴 수 있게?
+plt.plot(monthly_avg_close['YearMonth'].astype(str), 
+          monthly_avg_close['Close'], 
+          marker='o', 
+          linestyle='-', 
+          color='b', 
+          label='월별 평균 종가')
+
 # 그래프 제목 및 라벨 설정
 plt.title('주식 데이터 월별 평균 종가 분석')
 plt.xlabel('연-월')
@@ -819,4 +823,33 @@ plt.show()
   | `.to_period('M')`   | 월 단위 Period 변환 | `2025-09` |
   | `.to_period('Q')`   | 분기 단위 Period 변환 | `2025Q3` |
   | `.to_period('A')`   | 연 단위 Period 변환 | `2025` |
+
+### `.astype()` 함수
+Pandas의 **형 변환 메서드**
+
+- 기본 구조
+  ```python
+  Series.astype(dtype, copy=True, errors='raise')
+  ```
+  - dtype
+    - 변환할 자료형 (예: str, int, float, 'category' 등)
+  - copy
+    - 기본값 True. 새 객체를 반환. False면 가능하다면 원본에 덮어씀.
+  - errors
+    - 변환할 수 없는 값이 있으면 기본은 raise(에러 발생)
+    - ignore로 하면 변환 실패해도 원본 유지
+
+- 예시
+  ```python
+  df['YearMonth'] = df['Date'].dt.to_period('M')
+
+  monthly_avg_close = df.groupby('YearMonth')['Close'].mean().reset_index()
+
+  plt.plot(monthly_avg_close['YearMonth'].astype(str), monthly_avg_close['Close'], marker='o', linestyle='-', color='b', label='월별 평균 종가')
+  ```
+  - `.astype(str)`가 필요한 이유
+    - `monthly_avg_close['YearMonth']`는 Period 타입(Period[M])이 됨
+    - `.dt.to_period('M')`로 만든 값이기 때문
+    - `matplotlib.pyplot.plot()`의 x축 레이블은 **문자열이나 숫자**일 때 더 직관적으로 표시됨
+    - 그래서 astype(str)로 바꿔서 "2025-09" 같은 문자열로 변환한 뒤 그리는 것
 
