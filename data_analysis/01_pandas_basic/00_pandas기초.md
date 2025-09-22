@@ -270,7 +270,7 @@ Pandas의 주요 구성 요소
 - `value_counts()`
   - 동일한 개별 데이터 값이 몇 건 있는지 확인
   - Null값을 무시하고 결과값 리턴
-    - 기본 인자값 `dripna = True`
+    - 기본 인자값 `dropna = True`
     ```python
     # 데이터프레임의 개별 데이터 값이 몇 건이 있는지에 대한 정보
     titanic.value_counts()
