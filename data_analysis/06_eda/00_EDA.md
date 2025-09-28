@@ -995,5 +995,3 @@ sns.histplot(data, bins=10, kde=True, color='blue', alpha=0.7)
     ```
     ![alt text](image-45.png)
 
-
-
