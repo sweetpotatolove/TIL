@@ -992,3 +992,4 @@
     - 여기서 apply는 `df_merged["PurchaseHistory"]`라는 Series에 대해 categorize_purchase_history 함수를 적용하고 있음
     - 해당 열의 모든 값에 함수를 반복적으로 적용해서 새로운 값을 만들어 냄
 
+
