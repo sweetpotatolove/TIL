@@ -810,10 +810,32 @@
   - 예시
     - "CustomerID"를 기준으로 데이터를 그룹화
     - 각 고객별 'PurchaseAmount' 값을 합산하여 총 소비 금액(TotalSpent) 계산
-  - `reset_index()`: 그룹화된 데이터를 다시 일반 데이터프레임 형태로 변환
-    ```python
-    df_total_spent = df.groupby("CustomerID")["PurchaseAmount"].sum().reset_index()
-    ```
+      ```python
+      df_total_spent = df.groupby("CustomerID")["PurchaseAmount"].sum().reset_index()
+      # `reset_index()`: 그룹화된 데이터를 다시 일반 데이터프레임 형태로 변환
+      ```
+  
+  - 예시2
+    - 각 캠페인별 평균 클릭 수 및 평균 매출 계산
+      ```python
+      df_campaign_clicks_revenue = df_campaign.groupby("CampaignID")[["Clicks", "Revenue"]].mean().reset_index()
+
+      # 컬럼명 변경 (캠페인별 평균 클릭 수 및 매출)
+      df_campaign_clicks_revenue.rename(columns={"Clicks": "AvgClicks", "Revenue": "AvgRevenue"}, inplace=True)
+      ```
+      ![alt text](image-58.png)
+  
+  - 예시3
+    - 구매 카테고리별 고객 만족도 분포 확인
+      ```python
+      df_category_relation = df_merged.groupby(["PurchaseCategory", "SatisfactionCategory"])["CustomerID"].count().reset_index()
+      df_category_relation.rename(columns={"CustomerID": "CustomerCount"}, inplace=True)
+
+      # 관계 분석 결과 출력
+      print("\n=== 구매 카테고리와 만족도 카테고리 간의 관계 분석 ===")
+      print(df_category_relation)
+      ```
+      ![alt text](image-62.png)
 
 ### 데이터프레임 데이터 타입 확인 방법
 - `df.info()`
@@ -880,6 +902,7 @@
 ### 결측치
 - 결측치 제거 - `dropna`
   - `dropna()`: 결측치(NaN)가 있는 행을 제거하여 데이터 정제
+
 - 결측치 채우기 - `fillna`
   ```python
   # 결측치가 있는 모든 행 제거
@@ -887,5 +910,85 @@
 
   # 결측치를 5로 채우기
   df1.fillna(value=5)
+
+  # 결측치가 없는 경우 그대로 사용, 결측치가 있다면 제거 또는 적절한 값으로 대체
+  df_merged = df_merged.fillna(df_merged.median(numeric_only=True))
   ```
+  - `df_merged.median(numeric_only=True)`
+    - 숫자형 데이터에 대해 각 열(column)의 중앙값 계산
+  
+
+### 상관관계
+두 변수 간의 관계가 얼마나 밀접한지를 나타내는 통계적 지표
+
+※ 상관계수(correlation coefficient): `-1 ~ 1` 사이의 값을 가짐
+
+- 상관계수 해석
+  - 예시: 가격과 판매량 간의 상관관계 계산
+    - `1.0`  : 완전한 양의 상관관계 -> 가격이 오르면 판매량도 반드시 오름
+    - `0.0`  : 상관관계 없음 -> 가격과 판매량은 무관함
+    - `-1.0` : 완전한 음의 상관관계 -> 가격이 오르면 판매량은 반드시 떨어짐
+    - `-0.85` : 가격이 오를수록 판매량이 확실히 줄어드는 패턴
+    - `+0.60` : 가격이 오르면 판매량도 어느 정도 함께 오르는 경향
+
+- 주의할 점
+  - 이 상관계수는 선형 관계(linear relationship)만 측정함
+  - 만약 두 변수 사이가 곡선(비선형) 관계라면, 상관계수가 0 근처라도 실제로는 관련이 있을 수 있음
+  - 따라서 상관계수만 보고 관계 유무를 단정하면 안 되고, 시각화(산점도) 등을 함께 보는 것이 좋음
+
+- 예시 코드
+  - 전체 데이터에서 가격과 판매량 간의 상관계수 계산
+    ```python
+    correlation = df_sales[["Price", "Quantity"]].corr()
+
+    # 상관계수 출력
+    print("\n=== 가격과 판매량 간의 상관관계 분석 ===")
+    print(correlation)
+    ```
+    ![alt text](image-59.png)
+  
+  - 제품별 가격과 판매량의 상관계수 계산
+    ```python
+    df_product_corr = df_sales.groupby("Product")[["Price", "Quantity"]].corr()
+
+    # Price와 Quantity 간의 상관계수만 추출
+    df_product_corr = df_product_corr.unstack().iloc[:, 1] 
+
+    # 제품별 가격과 판매량의 상관계수 출력
+    print("\n=== 제품별 가격과 판매량 간의 상관관계 분석 ===")
+    print(df_product_corr)
+    ```
+    ![alt text](image-60.png)
+    - 데이터 변환 과정 설명:
+      1. `groupby("Product")`로 제품별 데이터를 그룹화한 후 Price와 Quantity 간의 상관관계를 계산함
+      2. `corr()` 함수는 기본적으로 두 변수 간의 상관계수를 포함하는 **멀티 인덱스(multi-index) 형태**의 DataFrame을 반환함
+      3. `unstack()`을 사용하면 멀티 인덱스 형태에서 **행을 확장(flatten)하여 단순한 형태의 데이터프레임으로 변환** 가능
+      4. `unstack()` 후, 필요한 상관계수 값을 가져오기 위해 `iloc[:, 1]`을 사용하여 Price와 Quantity 간의 상관계수를 추출
+
+### apply 함수
+- `apply()`
+  - pandas의 Series나 DataFrame에 함수를 적용하는 메서드
+  - 예시 코드
+    ```python
+    # 구매 횟수(PurchaseHistory)를 기준으로 고객을 세 그룹으로 나누기
+    # 구매 횟수가 10 이하: 'Low'
+    # 구매 횟수가 11~30: 'Medium'
+    # 구매 횟수가 31 이상: 'High'
+    def categorize_purchase_history(purchase_count):
+        if purchase_count <= 10:
+            return 'Low'
+        elif purchase_count <= 30:
+            return 'Medium'
+        else:
+            return 'High'
+
+    df_merged["PurchaseCategory"] = df_merged["PurchaseHistory"].apply(categorize_purchase_history)
+
+    # 고객 세분화 결과 확인
+    print("\n=== 구매 횟수 기반 고객 세분화 결과 ===")
+    print(df_merged["PurchaseCategory"].value_counts())  # 각 그룹별 고객 수 확인
+    ```
+    ![alt text](image-61.png)
+    - 여기서 apply는 `df_merged["PurchaseHistory"]`라는 Series에 대해 categorize_purchase_history 함수를 적용하고 있음
+    - 해당 열의 모든 값에 함수를 반복적으로 적용해서 새로운 값을 만들어 냄
 
