@@ -766,14 +766,101 @@ plt.grid(True)  # 격자 추가
 plt.show()
 ```
 ![alt text](image-43.png)
-```python
-# 5. 결과 해석
+- 결과 해석
+  - 주어진 데이터를 활용하여 월별 평균 종가를 계산하였음
+  - 시각화를 통해 시간에 따른 평균 종가 변화를 파악할 수 있음
+  - 특정 월에 급격한 상승 또는 하락이 있다면, 외부 요인(예: 경제 이벤트, 시장 변동성 등)을 고려해야 함
+  - 평균 종가 변동이 일정하다면, 해당 주식은 안정적인 패턴을 보이는 것으로 해석 가능
 
-# 1. 주어진 데이터를 활용하여 월별 평균 종가를 계산하였음
-# 2. 시각화를 통해 시간에 따른 평균 종가 변화를 파악할 수 있음
-# 3. 특정 월에 급격한 상승 또는 하락이 있다면, 외부 요인(예: 경제 이벤트, 시장 변동성 등)을 고려해야 함
-# 4. 평균 종가 변동이 일정하다면, 해당 주식은 안정적인 패턴을 보이는 것으로 해석 가능
+### 간단 EDA 실습 2
+```python
+df = pd.read_csv(file_path)
+
+# 날짜 및 종가 데이터가 없는 경우 제거
+df = df[['Date', 'Close']].dropna() 
+
+# 날짜 데이터를 datetime 형식으로 변환
+df['Date'] = pd.to_datetime(df['Date']) 
+
+# 날짜 기준으로 정렬
+df = df.sort_values(by='Date')
+
+# 이동 평균선 계산 (새로운 컬럼 만들기)
+# 단기 이동 평균선 (5일)
+df['MA5'] = df['Close'].rolling(window=5).mean()  # 5일 이동 평균선 계산
+
+# 중기 이동 평균선 (20일)
+df['MA20'] = df['Close'].rolling(window=20).mean()  #20일 이동 평균선 계산
+
+# 장기 이동 평균선 (60일)
+df['MA60'] = df['Close'].rolling(window=60).mean()  # 60일 이동 평균선 계산
+
+# 특정 구간 강조 (이동 평균선이 교차하는 구간)
+# 이동 평균선이 교차하는 특정 구간을 찾기 위해, MA5와 MA20의 차이를 계산
+df['Crossover'] = df['MA5'] - df['MA20'] 
+
+# 교차점: MA5가 MA20을 상향 돌파하는 경우 (골든크로스)
+golden_cross = df[(df['Crossover'] > 0) & (df['Crossover'].shift(1) < 0)]
+
+# 교차점: MA5가 MA20을 하향 돌파하는 경우 (데드크로스)
+death_cross = df[(df['Crossover'] < 0) & (df['Crossover'].shift(1) > 0)]
+
+# 5. 데이터 시각화 (이동 평균선 및 특정 구간 강조)
+plt.figure(figsize=(12, 6))
+
+# 종가 그래프
+plt.plot(df['Date'], df['Close'], label='종가', color='black', linewidth=1, alpha=0.7)
+
+# 이동 평균선 그래프
+plt.plot(df['Date'], df['MA5'], label='5일 이동 평균선', color='blue', linewidth=1)
+plt.plot(df['Date'], df['MA20'], label='20일 이동 평균선', color='orange', linewidth=1)
+plt.plot(df['Date'], df['MA60'], label='60일 이동 평균선', color='green', linewidth=1)
+
+# 골든크로스 지점 강조
+plt.scatter(golden_cross['Date'], golden_cross['Close'], color='red', label='골든크로스', marker='^', s=100)
+
+# 데드크로스 지점 강조
+plt.scatter(death_cross['Date'], death_cross['Close'], color='purple', label='데드크로스', marker='v', s=100)
+
+# 그래프 제목 및 라벨 설정
+plt.title('주식 데이터의 이동 평균선 분석 및 특정 구간 강조')
+plt.xlabel('날짜')
+plt.ylabel('주가')
+plt.legend()
+plt.grid(True)
+
+# 그래프 출력
+plt.show()
 ```
+![alt text](image-46.png)
+- 결과 해석
+  - 이동 평균선을 통해 주가의 흐름을 파악할 수 있음
+  - 5일 이동 평균선이 20일 이동 평균선을 상향 돌파하는 경우(골든크로스)는 상승 신호로 해석됨
+  - 반대로, 5일 이동 평균선이 20일 이동 평균선을 하향 돌파하는 경우(데드크로스)는 하락 신호로 해석됨
+  - 장기 이동 평균선(60일)을 함께 분석하면 주가의 장기적인 방향성을 이해하는 데 도움을 줄 수 있음
+  - 특정 구간에서의 교차점(골든크로스, 데드크로스)을 강조하여 투자 의사 결정을 지원할 수 있음
+
+### histplot
+```python
+import seaborn as sns
+
+sns.histplot(data, bins=10, kde=True, color='blue', alpha=0.7)
+```
+![alt text](image-44.png)
+
+- 주요 파라미터
+  - `data` : 사용 데이터
+  - `bins=10` : 구간(막대기)을 10개로 나눠서 집계
+  - `kde=True` : 커널 밀도 추정(Kernel Density Estimation) 곡선을 함께 표시
+  - `color='blue'` : 막대와 곡선 색상을 파란색으로 지정
+  - `alpha=0.7` : 투명도(1=불투명, 0=완전 투명)
+
+- 결과 해석
+  - 특정 감독(예: 크리스토퍼 놀란)의 영화 평점 분포를 분석
+  - 그래프를 통해 해당 감독의 영화가 높은 평점을 많이 받았는지, 평점이 고르게 분포하는지 확인할 수 있음
+  - KDE(Kernel Density Estimate) 곡선을 통해 평점 분포의 밀도를 확인할 수 있음
+  - 특정 평점대(예: 8.0 이상)에 집중되어 있다면, 해당 감독이 대체로 좋은 평가를 받는다고 해석할 수 있음
+  - 반대로 평점이 다양하게 분포되어 있다면, 감독의 영화 스타일이 작품마다 평가가 다를 가능성이 있음
 
 ### Pandas `.dt`
 `.dt` 는 Pandas의 datetime 속성 접근자로, `df['Date']`가 datetime64 타입일 때 날짜/시간 관련 속성이나 메서드(연, 월, 일, 요일 등)를 쉽게 꺼내 쓸 수 있도록 해주는 기능을 함
@@ -824,8 +911,9 @@ plt.show()
   | `.to_period('Q')`   | 분기 단위 Period 변환 | `2025Q3` |
   | `.to_period('A')`   | 연 단위 Period 변환 | `2025` |
 
-### `.astype()` 함수
-Pandas의 **형 변환 메서드**
+### astype 함수
+- `.astype()`
+  - Pandas의 **형 변환 메서드**
 
 - 기본 구조
   ```python
@@ -852,4 +940,60 @@ Pandas의 **형 변환 메서드**
     - `.dt.to_period('M')`로 만든 값이기 때문
     - `matplotlib.pyplot.plot()`의 x축 레이블은 **문자열이나 숫자**일 때 더 직관적으로 표시됨
     - 그래서 astype(str)로 바꿔서 "2025-09" 같은 문자열로 변환한 뒤 그리는 것
+
+### pd.Categorical, idxmax 함수
+- pd.Categorical
+  - Pandas에서 범주형(Categorical) 데이터를 표현하기 위한 자료형
+  - 보통 데이터가 제한된 범주(category) 안에서 반복될 때 사용
+    - ex. 요일, 성별, 등급 등
+  - 기본 구조
+    ```python
+    pd.Categorical(values, categories=None, ordered=False)
+    ```
+    - `values` : 변환할 데이터(리스트, 시리즈 등)
+    - `categories` : 데이터가 가질 수 있는 범주 집합을 지정
+    - `ordered`
+      - True -> 순서가 있는 범주형 데이터 (ex. "Low < Medium < High")
+      - False -> 순서가 없는 범주형 데이터 (ex. "Red, Blue, Green")
+
+- `idxmax()`
+  - 특정 열에서 최댓값을 가지는 행의 인덱스를 반환
+  - `loc[idxmax()]`를 사용하면 최댓값을 가진 행 전체를 쉽게 가져올 수 있음
+
+- 예시코드
+  - 요일별 평균 승객 수 분석
+    ```python
+    import pandas as pd
+
+    # 가상 데이터 생성
+    data = {
+        'Weekday': ['Wednesday', 'Monday', 'Sunday', 'Friday', 'Tuesday'],
+        'Passengers': [120, 80, 200, 150, 100]
+    }
+    weekday_avg_passengers = pd.DataFrame(data)
+
+    # 1. 요일별 데이터 정렬 (월요일 ~ 일요일 순서)
+    weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    # Weekday 컬럼을 Categorical 타입으로 변환 (순서 지정)
+    weekday_avg_passengers['Weekday'] = pd.Categorical(
+                                                  weekday_avg_passengers['Weekday'],
+                                                  categories=weekday_order,
+                                                  ordered=True)
+
+    # 정렬 실행
+    weekday_avg_passengers = weekday_avg_passengers.sort_values('Weekday')
+
+    print("요일별 평균 승객 수 (정렬 후):")
+    print(weekday_avg_passengers)
+
+    # 2. 가장 평균 승객 수가 많은 요일 찾기
+    busiest_day = weekday_avg_passengers.loc[weekday_avg_passengers['Passengers'].idxmax()]
+
+    print("\n가장 평균 승객 수가 많은 요일:")
+    print(busiest_day)
+    ```
+    ![alt text](image-45.png)
+
+
 
