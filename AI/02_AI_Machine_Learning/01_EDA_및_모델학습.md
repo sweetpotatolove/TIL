@@ -341,4 +341,5 @@ EDA(Exploratory Data Analysis)는 모델링 전, 데이터를 깊이 이해하�
   test_mae  = mean_absolute_error(y_test, y_pred)
   test_r2   = r2_score(y_test, y_pred)
   ```
+
   
