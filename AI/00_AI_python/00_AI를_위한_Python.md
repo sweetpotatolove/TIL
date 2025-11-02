@@ -1073,4 +1073,3 @@ Pandas의 `pivot` 과 `melt` 는 데이터를 "넓게(Wide)" 혹은 "길게(Long
 | 주요 파라미터  | `index`, `columns`, `values` | `id_vars`, `value_vars`, `var_name`, `value_name` |
 | 중복 허용    | ❌ (→ pivot_table)            | ✅ 가능                                              |
 
-
