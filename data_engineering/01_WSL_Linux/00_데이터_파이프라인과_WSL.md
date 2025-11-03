@@ -443,351 +443,225 @@ Windows 환경에서 리눅스를 실행할 수 있도록 도와주는 도구
 - `data_engineering/01_WSL_Linux/01_Linux_WSL_가이드.md` 에 정리되어 있음
 
 
-
-
-
-
-
-
-
-- 필수 Windows 기능 활성화 (WSL1 핵심 구성요소 설치 / 가상화 기반 플랫폼 활성화하기)
-```
-dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-```
-
-- Microsoft Store를 통해 직접 설치 후 진행
-  - https://apps.microsoft.com/detail/9p9tqf7mrm4r?hl=ko-KR&gl=KR
-
-- (docker 사용 및 최신 호환을 위해) WSL2로 설정하기
-```
-wsl --set-default-version 2
-```
-
-- 현재 설치된 wsl 목록 확인하기
-```
-wsl --list --verbose
-```
-- 만약 다른 버전이 있을 경우 (예시 : Ubuntu-24.04)
-
-(bash)
-```
-wsl --terminate Ubuntu-24.04
-wsl --unregister Ubuntu-24.04
-```
-
-(powershell)
-```
-Get-AppxPackage *Ubuntu* | Remove-AppxPackage
-```
-
-- Microsoft Store를 통해 “Ubuntu 22.04.5 LTS” 다운로드
-
-- Ubuntu 최초 실행 후 설정
-```
-ID : ssafy
-PW : ssafy
-```
-
-- 전체 설치 완료 후 기본 배포판으로 설정
-```
-wsl --set-default Ubuntu-22.04
-```
-
-- VS Code 실행 후 extension 확인
-
-- WSL install 하기
-
-- Ctrl+Shift+P -> 'WSL'입력
-- WSL: Connect to WSL in New Window
-
-- 우분투 환경 다운로드 후 연결
-
-- 폴더 경로가 우분투 환경과 동기화 된 것을 확인 가능
-
-# 리눅스 기본 명령어
-
-## 시작과 종료
-- Ubuntu 22.04를 통해 실행 가능. (VS code를 통해서도 가능)
+## 리눅스 기본 명령어
+### 시작과 종료
+- Ubuntu 22.04를 통해 실행 가능
+  
+  ![alt text](image-29.png)
+- VS code를 통해서도 가능 (권장)
+  - `Ctrl + Shift + P` → `WSL` 입력
+  - **WSL: Connect to WSL in New Window** 선택 → 리눅스 환경에서 코드 편집 가능
 
 ### 사용 불가 명령어
-- poweroff  
-- reboot  
-- shutdown  
+`poweroff`, `reboot`, `shutdown`  
 
-> WSL 특성상 자체적 부팅 구조가 아니기 때문에 해당 명령어는 무시됨.
+-> WSL 특성상 자체적 부팅 구조가 아니기 때문에 해당 명령어는 무시됨
 
 ### WSL 종료
-- exit
+`exit`
 
-## root 사용자란?
-- 최고 권한(Superuser)을 가진 계정  
-  - 시스템의 모든 파일, 설정, 사용자 계정 등에 제약 없이 접근 가능  
-  - Windows의 Administrator에 대응되는 개념  
+### root 사용자
+최고 권한(Superuser)을 가진 계정  
 
-| 작업 | 일반 사용자 | root 사용자 |
-|------|--------------|--------------|
-| 시스템 파일 수정 | X | O |
-| 새로운 프로그램 설치 | X | O |
-| 다른 사용자 계정 관리 | X | O |
-| 커널 모듈 수정 | X | O |
+- 시스템의 모든 파일, 설정, 사용자 계정 등에 제약 없이 접근 가능  
 
-### root 권한 이용 시 주의점
-- 실수로 중요한 시스템 파일 삭제 가능  
-- 잘못된 명령어로 OS 자체를 망가뜨릴 위험  
-- 외부 공격자가 root 권한을 얻으면 시스템 전체를 장악 가능  
-- 보통은 sudo 명령어로 필요한 작업만 root 권한을 임시로 위임받아 실행
+- Windows의 Administrator(관리자)에 대응되는 개념  
+  | 작업 | 일반 사용자 | root 사용자 |
+  |------|--------------|--------------|
+  | 시스템 파일 수정 | X | O |
+  | 새로운 프로그램 설치 | X | O |
+  | 다른 사용자 계정 관리 | X | O |
+  | 커널 모듈 수정 | X | O |
 
-## root 사용자 권한 전환
-```
-sudo -i
-```
-- 현재 계정에서의 비밀번호 입력
+- root 권한 이용 시 주의점
+  - 실수로 중요한 시스템 파일 삭제 가능  
+  - 잘못된 명령어로 OS 자체를 망가뜨릴 위험 존재함
+  - 외부 공격자가 root 권한을 얻으면 시스템 전체를 장악 가능
+  - 보통은 sudo 명령어로 필요한 작업만 root 권한을 임시로 위임받아 실행함
 
-### 권한 확인 후 기존 계정으로 복귀
-```
-exit
-```
+- root 사용자 권한 전환
+  ```bash
+  sudo -i
+  ```
+  - 현재 계정에서의 비밀번호 입력
 
-## CLI 환경 관련 유용 명령
+- 권한 확인 후 기존 계정으로 복귀: `exit`
+
+  ![alt text](image-30.png)
+
+### 파일 및 디렉토리 관리
 | 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
 |--------|------|------|------|------------|
-| clear | 터미널 화면 초기화 | clear | 화면 정리용 | **Clear** |
-| man | 매뉴얼 보기 | man grep, q로 종료 | 대부분 명령어 지원 | **Manual** |
+| `pwd` | 현재 디렉토리 경로 확인 | `pwd` | 터미널 기준 작업 위치 파악 | Print Working Directory |
+| `ls` | 현재 디렉토리 목록 보기 | `ls -l`, `ls -a` | -l: 자세히, -a: 숨김 포함 | List |
+| `cd` | 디렉토리 이동 | `cd ~/Downloads`, `cd ..` | ..: 상위 디렉토리 | Change Directory |
+| `mkdir` | 새 폴더 생성 | `mkdir my_folder` | 여러 개도 가능: mkdir a b c | Make Directory |
+| `rmdir` | 빈 폴더 삭제 | `rmdir my_folder` | 폴더가 비어 있어야 함 | Remove Directory |
+| `rm -r` | 폴더 포함 삭제 | `rm -r my_folder` | **실수 방지 주의** 필요 | Remove (recursive) |
 
----
-
-## 파일 및 디렉토리 관리
+### 파일 생성, 편집, 복사, 삭제
 | 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
 |--------|------|------|------|------------|
-| pwd | 현재 디렉토리 경로 확인 | pwd | 터미널 기준 작업 위치 파악 | **Print Working Directory** |
-| ls | 현재 디렉토리 목록 보기 | ls -l, ls -a | -l: 자세히, -a: 숨김 포함 | **List** |
-| cd | 디렉토리 이동 | cd ~/Downloads, cd .. | ..: 상위 디렉토리 | **Change Directory** |
-| mkdir | 새 폴더 생성 | mkdir my_folder | 여러 개도 가능: mkdir a b c | **Make Directory** |
-| rmdir | 빈 폴더 삭제 | rmdir my_folder | 폴더가 비어 있어야 함 | **Remove Directory** |
-| rm -r | 폴더 포함 삭제 | rm -r my_folder | 실수 방지 주의 필요 | **Remove (recursive)** |
+| `touch` | 빈 파일 생성 | `touch test.txt` | 수정 시간 갱신용으로도 사용됨 | (접촉하다 - 변경 시각 "touch") |
+| `echo` | 문자열 출력/파일에 저장 | `echo "Hello" >> hi.txt` | >>: 이어쓰기 | (echo - 메아리처럼 출력) |
+| `cat` | 파일 내용 출력 | `cat file.txt` | 대용량 파일은 less, more 추천 | Concatenate |
+| `head`, `tail` | 처음/끝 일부 출력 | `head -n 3 file.txt` | 로그 확인에 유용 | Head/Tail (머리/꼬리) |
+| `cp` | 파일/폴더 복사 | `cp a.txt b.txt`, `cp -r dir1 dir2` | 디렉토리 전체 복사 | Copy |
+| `mv` | 이동 또는 이름 변경 | `mv a.txt new.txt` | 파일 위치 이동에도 사용 | Move |
+| `rm` | 파일 삭제 | `rm test.txt` | rm -rf: **위험!** | Remove |
 
----
-
-## 파일 생성, 편집, 복사, 삭제
+### 검색과 필터링
 | 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
 |--------|------|------|------|------------|
-| touch | 빈 파일 생성 | touch test.txt | 수정 시간 갱신용으로도 사용됨 | (접촉하다 - 변경 시각 "touch") |
-| echo | 문자열 출력/파일에 저장 | echo "Hello" >> hi.txt | >>: 이어쓰기 | (echo - 메아리처럼 출력) |
-| cat | 파일 내용 출력 | cat file.txt | 대용량 파일은 less, more 추천 | **Concatenate** |
-| head, tail | 처음/끝 일부 출력 | head -n 3 file.txt | 로그 확인에 유용 | **Head/Tail (머리/꼬리)** |
-| cp | 파일/폴더 복사 | cp a.txt b.txt, cp -r dir1 dir2 | 디렉토리 전체 복사 | **Copy** |
-| mv | 이동 또는 이름 변경 | mv a.txt new.txt | 파일 위치 이동에도 사용 | **Move** |
-| rm | 파일 삭제 | rm test.txt | rm -rf: 위험! | **Remove** |
+| `grep` | 특정 문자열 검색 | `grep "ERROR" log.txt` | 로그 분석에서 필수 | Global Regular Expression Print |
+| `find` | 파일 검색 | `find . -name "*.txt"` | 위치별 조건 검색 | Find |
+| `history` | 명령어 기록 확인 | `history` | 이전 명령 복기 | History |
 
----
-
-## 검색과 필터링
+### 시스템 정보 및 프로세스
 | 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
 |--------|------|------|------|------------|
-| grep | 특정 문자열 검색 | grep "ERROR" log.txt | 로그 분석에서 필수 | **Global Regular Expression Print** |
-| find | 파일 검색 | find . -name "*.txt" | 위치별 조건 검색 | **Find** |
-| history | 명령어 기록 확인 | history | 이전 명령 복기 | **History** |
+| `ps aux` | 전체 프로세스 확인 | `ps aux`, `ps aux grep python` | 자원 소비 확인 | PS - process status<br>A - All users<br>U - User-oriented format<br>X - No controlling terminal |
+| `kill` | 프로세스 종료 | kill 1234 | -9 옵션은 강제 종료 | Kill |
+| `top` | 실시간 자원 모니터링 | `top`, `q`로 종료 | htop은 GUI 버전 | Top of processes |
+| `uptime` | 시스템 가동 시간 | `uptime` | 부팅 이후 시간 확인 | Up Time |
+| `whoami` | 현재 사용자 확인 | `whoami` | 스크립트에서 유용 | Who am I |
+| `hostname` | 호스트명 확인 | `hostname` | 네트워크 확인에 사용 | Host Name |
 
----
-
-## 시스템 정보 및 프로세스
+### 사용자 권한 및 보안
 | 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
 |--------|------|------|------|------------|
-| ps aux | 전체 프로세스 확인 | ps aux, ps aux grep python | 자원 소비 확인 | PS - process status<br>A - All users<br>U - User-oriented format<br>X - No controlling terminal |
-| kill | 프로세스 종료 | kill 1234 | -9 옵션은 강제 종료 | **Kill** |
-| top | 실시간 자원 모니터링 | top, q로 종료 | htop은 GUI 버전 | **Top of processes** |
-| uptime | 시스템 가동 시간 | uptime | 부팅 이후 시간 확인 | **Up Time** |
-| whoami | 현재 사용자 확인 | whoami | 스크립트에서 유용 | **Who am I** |
-| hostname | 호스트명 확인 | hostname | 네트워크 확인에 사용 | **Host Name** |
+| `sudo` | 관리자 권한 명령 | `sudo apt update` | root 권한 필요 시 | Superuser Do |
+| `sudo -i` | root 전환 | `sudo -i`, `su - root` | 환경 유지하며 root 전환<br>su - root는 root pw 지정 후 이용 | Interactive shell |
+| `chmod` | 파일 권한 변경 | `chmod 755 run.sh` | 실행 권한 등 설정<br>조심해서 사용 | Change Mode |
+| `chown` | 파일 소유자 변경 | `sudo chown user file.txt` | 조심해서 사용 | Change Owner |
 
----
+### chmod (Change Mode)
+- 리눅스 권한 구조
+  - 리눅스에서는 각 파일/디렉토리에 대해 아래의 3가지 주체에 대한 권한을 따로 설정할 수 있음
 
-## 사용자 권한 및 보안
+- 주체
+  - u (user): 파일의 소유자  
+  - g (group): 파일이 속한 그룹  
+  - o (other): 그 외 사용자
+
+- 권한
+  - r (read): read (내용 보기 가능)  
+  - w (write): write (수정, 삭제 가능)  
+  - x (execute): execute (실행 가능, 디렉토리 접근 포함)
+
+### chmod (Change Mode) 실습
+- 샘플 sh 파일 만들고 간단하게 확인
+  ```
+  touch sample.sh
+  echo 'echo "Hello, Linux!"' > sample.sh
+  cat sample.sh
+  ```
+
+- chmod (Change Mode) 권한 확인
+  - `ls -al`
+
+    ![alt text](image-31.png)
+    - `sample.sh`는 **644**의 권한을 가지고 있음
+      - 사용자는 읽기 + 쓰기  
+      - 그룹은 읽기 전용  
+      - 기타 사용자도 읽기 전용
+
+- chmod (Change Mode) 권한 변경
+  - `chmod +x sample.sh`
+
+    ![alt text](image-32.png)
+    - 사용자는 `sample.sh`에 실행 권한을 추가해서 **755**의 권한을 주게 됨
+
+### CLI 환경 관련 유용 명령어
 | 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
 |--------|------|------|------|------------|
-| sudo | 관리자 권한 명령 | sudo apt update | root 권한 필요 시 | **Superuser Do** |
-| sudo -i | root 전환 | sudo -i, su - root | 환경 유지하며 root 전환<br>su - root는 root pw 지정 후 이용 | **Interactive shell** |
-| chmod | 파일 권한 변경 | chmod 755 run.sh | 실행 권한 등 설정<br>조심해서 사용 | **Change Mode** |
-| chown | 파일 소유자 변경 | sudo chown user file.txt | 조심해서 사용 | **Change Owner** |
+| `clear` | 터미널 화면 초기화 | `clear` | 화면 정리용 | Clear |
+| `man` | 매뉴얼 보기 | `man grep`, `q`로 종료 | 대부분 명령어 지원 | Manual |
 
----
 
-## chmod (Change Mode)
+### 리눅스 명령어 사용 실습
+- 간이 로그 확인 실습
+  - 작업 디렉토리 만들기
+    ```bash
+    ls                      # 현재 디렉토리 상태 확인
+    pwd                     # 현재 디렉토리 위치 확인
+    mkdir my_ssafy_project  # my_ssafy_project 폴더 생성
+    cd my_ssafy_project     # my_ssafy_project 디렉토리로 이동
+    # ※ tab키를 활용하면 디렉토리 전체 입력 안 해도 된다.
+    ```
 
-### 리눅스 권한 구조
-- 리눅스에서는 각 파일/디렉토리에 대해 다음 3가지 주체에 대한 권한을 따로 설정할 수 있다.
+  - 더미 로그 파일 생성
+    ```bash
+    touch system.log                                      # 빈 파일 생성
+    echo "INFO: 시스템 시작" >> system.log                 # echo 명령으로 로그 생성
+    echo "ERROR: 데이터베이스 연결 실패" >> system.log
+    echo "INFO: 유저 로그인" >> system.log
+    echo "WARNING: 디스크 공간 부족" >> system.log
+    echo "ERROR: 서비스 중단" >> system.log
+    ```
 
-#### 주체
-- u(user): 파일의 소유자  
-- g(group): 파일이 속한 그룹  
-- o(other): 그 외 사용자
+  - 로그 파일 내용 확인
+    ```bash
+    vi system.log   # 로그 파일 정상 생성 여부 확인 -> 파일 직접 수정 가능
+    Esc → :q        # vi 모드에서 나가기
+    ```
 
-#### 권한
-- r(read): read (내용 보기 가능)  
-- w(write): write (수정, 삭제 가능)  
-- x(execute): execute (실행 가능, 디렉토리 접근 포함)
+  - 로그 확인 및 분석
+    ```bash
+    cat system.log          # 전체 보기
+    head -n 3 system.log    # 처음 3줄
+    tail -n 2 system.log    # 마지막 2줄
+    grep ERROR system.log   # 에러만 추출
+    ```
 
----
+  - 백업 및 파일 복사
+    ```bash
+    cp system.log backup.log    # 백업 파일 생성(복사)
+    mv backup.log old.log       # 이름 변경
+    ls -l                       # 파일 목록 확인
+    ```
 
-## chmod (Change Mode) 실습
+  - 파일 & 디렉토리 삭제
+    ```bash
+    rm old.log                      # old.log 삭제
+    mkdir archive                   # 새 폴더 생성
+    mv system.log archive/          # 파일 이동
+    rmdir archive                   # 삭제 불가 (내용 있음)
+    rm archive/system.log           # 안의 파일 먼저 삭제
+    rmdir archive                   # 이제 삭제 가능
+    ```
 
-### 샘플 sh 파일 만들고 간단하게 확인
-```
-touch sample.sh
-echo 'echo "Hello, Linux!"' > sample.sh
-cat sample.sh
-```
+  - vi를 활용한 파일 만들기
+    ```bash
+    i   # 입력모드
 
----
+    [INFO] System initialized at 10:23:01   # LOG
+    [WARNING] Disk space low                # LOG
+    [ERROR] Failed to load configuration    # LOG
 
-## chmod (Change Mode) 권한 확인
+    :wq # 저장
+    ```
 
-| U | G | O |
-|---|---|---|
-| r w x | r w x | r w x |
-| r w - | r - - | r - - |
-| 4 2 0 | 4 0 0 | 4 0 0 |
+  - 파일 권한 & 프로세스 확인
+    ```bash
+    ls -l system.log             # 현재 system.log 권한 확인
+    chmod 700 system.log         # 권한 변경 (700)
+    ls -l system.log             # 변경 후 권한 확인
+    ```
+    ```bash
+    ps aux | grep bash           # bash 프로세스 확인
+    kill [PID]                   # (원한다면) PID로 프로세스 종료
+    # ※ 자기 셀 프로세스를 종료하면 로그아웃될 수 있음
+    ```
 
-- `sample.sh`는 **644**의 권한을 가지고 있다.  
-  - 사용자는 읽기 + 쓰기  
-  - 그룹은 읽기 전용  
-  - 기타 사용자도 읽기 전용
+  - 기타 유용한 명령어
+    ```bash
+    history             # 그동안 입력한 명령어 목록 확인
 
----
+    history | grep vi   # grep을 통해 필터링 가능
 
-## chmod (Change Mode) 권한 변경
+    clear               # bash 터미널 창 정리
 
-| U | G | O |
-|---|---|---|
-| r w x | r w x | r w x |
-| r w x | r - x | r - x |
-| 4 2 1 | 4 0 1 | 4 0 1 |
-
-```
-chmod +x sample.sh
-```
-
-- 사용자는 `sample.sh`에 실행 권한을 추가해서 **755**의 권한을 주게 됨.
-
-## CLI 환경 관련 유용 명령
-
-| 명령어 | 설명 | 예시 | 비고 | 약자 의미 |
-|--------|------|------|------|------------|
-| clear | 터미널 화면 초기화 | clear | 화면 정리용 | **Clear** |
-| man | 매뉴얼 보기 | man grep, q로 종료 | 대부분 명령어 지원 | **Manual** |
-
-# 리눅스 명령어 사용 실습
-
-## 간이 로그 확인 실습
-
-### 작업 디렉토리 만들기
-```bash
-ls                      # 현재 디렉토리 상태 확인
-pwd                     # 현재 디렉토리 위치 확인
-mkdir my_ssafy_project  # my_ssafy_project 폴더 생성
-cd my_ssafy_project     # my_ssafy_project 디렉토리로 이동
-# ※ tab키를 활용하면 디렉토리 전체 입력 안 해도 된다.
-```
-
----
-
-### 더미 로그 파일 생성
-```bash
-touch system.log                                      # 빈 파일 생성
-echo "INFO: 시스템 시작" >> system.log                 # echo 명령으로 로그 생성
-echo "ERROR: 데이터베이스 연결 실패" >> system.log
-echo "INFO: 유저 로그인" >> system.log
-echo "WARNING: 디스크 공간 부족" >> system.log
-echo "ERROR: 서비스 중단" >> system.log
-```
-
----
-
-### 로그 파일 내용 확인
-```bash
-vi system.log   # 로그 파일 정상 생성 여부 확인
-Esc → :q        # vi 모드에서 나가기
-```
-
----
-
-### 로그 확인 및 분석
-```bash
-cat system.log          # 전체 보기
-head -n 3 system.log    # 처음 3줄
-tail -n 2 system.log    # 마지막 2줄
-grep ERROR system.log   # 에러만 추출
-```
-
----
-
-### 백업 및 파일 복사
-```bash
-cp system.log backup.log    # 백업 파일 생성(복사)
-mv backup.log old.log       # 이름 변경
-ls -l                       # 파일 목록 확인
-```
-
----
-
-### 파일 & 디렉토리 삭제
-```bash
-rm old.log                      # old.log 삭제
-mkdir archive                   # 새 폴더 생성
-mv system.log archive/          # 파일 이동
-rmdir archive                   # 삭제 불가 (내용 있음)
-rm archive/system.log           # 안의 파일 먼저 삭제
-rmdir archive                   # 이제 삭제 가능
-```
-
----
-
-### vi를 활용한 파일 만들기
-```bash
-i   # 입력모드
-
-[INFO] System initialized at 10:23:01   # LOG
-[WARNING] Disk space low                # LOG
-[ERROR] Failed to load configuration    # LOG
-
-:wq # 저장
-```
-
----
-
-### 파일 권한 & 프로세스 확인
-```bash
-ls -l system.log             # 현재 system.log 권한 확인
-chmod 700 system.log         # 권한 변경 (700)
-ls -l system.log             # 변경 후 권한 확인
-```
-
-```bash
-ps aux | grep bash           # bash 프로세스 확인
-kill [PID]                   # (원한다면) PID로 프로세스 종료
-# ※ 자기 셀 프로세스를 종료하면 로그아웃될 수 있음
-```
-
-### 기타 유용한 명령어
-
-```bash
-history             # 그동안 입력한 명령어 목록 확인
-```
-
----
-
-```bash
-history | grep vi   # grep을 통해 필터링 가능
-```
-
----
-
-```bash
-clear               # bash 터미널 창 정리
-```
-
-```bash
-man [명령어]        # 매뉴얼 설명서 확인
-예시: man grep
-```
+    man [명령어]         # 매뉴얼 설명서 확인
+                        # 예시: man grep
+    ```
