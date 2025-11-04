@@ -464,3 +464,4 @@ services:
   - 두 개의 서로 다른 `docker-compose.yml`에서 동일한 미리 만든 외부 브리지 네트워크에  
     `external: true` 옵션을 사용하면 IP/서비스명 공유 가능
 
+
