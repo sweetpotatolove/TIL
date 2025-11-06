@@ -284,38 +284,68 @@
   - 주키퍼와 컨트롤러 브로커가 협력하여 리더 선출 수행함
 
     ![alt text](image-26.png)
-  - 선호 리더(Prefered Leader)
-    - 파티션별로 가장 선호하는 리더
-    - 기본적으로 Round Robin
-- 처음에는 선호 리더에 맞추어 리더가 결정됨
 
-40p
----
----
----
+- 선호 리더(Prefered Leader)
+  - 파티션별로 가장 선호하는 리더
+  - 기본적으로 각 파티션의 리더를 Round Robin 방식으로 분배함
 
-## Kafka의 리더 선출  
-- 리더 선출(Leader Election): 기존 리더 브로커가 사망했을 때 다음 리더를 뽑는 것  
-- ISR(In-Sync Replica): 리더와 완전히 같은 값을 가진 팔로워
+  - **처음에는 선호 리더에 맞추어 리더가 결정됨**
 
-## Kafka의 리더 선출  
-- 팔로워 중 ISR에 속한 것이 있는 경우 가장 빠른 순서가 리더가 됨
+    ![alt text](image-27.png)
+    ```
+    Partition A-1: [1,2,3]  
+    Partition A-2: [2,3,1]
+    Partition B-1: [3,1,2]
+    Partition B-2: [1,2,3]
+    ```
+    - 각 파티션의 replica Assignment (복제 배치 순서)
+    - 여기서 리스트의 첫 번째 값이 "선호 리더"가 됨
+    - 즉, Partition A-1의 선호 리더는 브로커 1, Partition A-2의 선호 리더는 브로커 2 ...
+    - 이렇게 리더 역할을 브로커들 간에 라운드 로빈 방식으로 고르게 분배하여, 특정 브로커만 리더가 몰리지 않도록 함
+  
+- **리더 선출(Leader Election)**
+  - 기존 리더 브로커가 사망했을 때 다음 리더를 뽑는 것
 
-## Kafka의 리더 선출  
-- 팔로워 중 ISR이 없는 경우 ISR이 나타날 때까지 기다림 (혹은 리더가 복구)
-- unclean.leader.election.enable = true 옵션 사용 시 그나마 가장 최신 데이터를 가진 팔로워가 리더가 됨
+    ![alt text](image-28.png)
+  - **ISR(In-Sync Replica)**
+    - 리더와 완전히 같은 값(데이터)을 가진 팔로워
 
-## Kafka의 리더 선출  
-- unclean.leader.election.enable = true 옵션 사용 시 원래 브로커가 복구된다해도 팔로워로 참여
-- 카프카는 리더의 데이터를 절대적으로 신뢰함
+  - 리더 선출 시 ISR에 속한 팔로워들 중에서 가장 최신 데이터를 가진 팔로워가 리더가 됨
 
-# Kafka 설치
+    ![alt text](image-29.png)
+    - 즉, 팔로워 중 ISR에 속한 것이 있는 경우 "가장 빠른 순서"가 리더가 됨
+  
+  - 예시
+    - `A-2’s ISR: [2,3,1]` -> 현재까지 리더와 동기화(in-sync)된 팔로워 리스트
+    - broker 2가 다운되면, Broker 2의 heartbeat을 받지 못함을 감지하고
+    - Controller(Broker 1)가 리더 선출 절차를 시작하여, Partition A-2의 ISR 리스트 `[3, 1]`를 확인함
+    - ISR 내에서 가장 앞 순거의 Replica인 Broker 3이 새로운 리더가 됨
+    - 원래 선호 리더: broker 2 -> 장애 후 리더: broker 3
 
-## Kafka 환경 설정  
-- 설치 전 필수 요소: 운영체제, Java, Zookeeper  
+- 팔로워 중 ISR이 없는 경우
+  - ISR이 나타날 때까지 기다림 (혹은 리더가 복구되기를 기다림)
+
+    ![alt text](image-30.png)
+    - 이런 경우에는 해당 파티션에 리더가 없는 상태이므로, 데이터 처리 자체가 중단될 수 있음
+    - 데이터 유실을 방지하기 위해 아래의 옵션 사용
+  
+  - `unclean.leader.election.enable = true` 옵션 사용 시 그나마 가장 최신 데이터를 가진 팔로워가 리더가 됨
+
+    ![alt text](image-31.png)
+    - 옵션 사용 시 원래 브로커가 복구된다해도 팔로워로 참여(굳이 리더로 다시 변경하지 않음!!)
+    - Why? 카프카는 리더의 데이터를 절대적으로 신뢰함
+
+
+## Kafka 설치
+### Kafka 환경 설정  
+- 설치 전 필수 요소
+  - 운영체제, Java, Zookeeper  
+
 - Kafka는 여러 개의 브로커(서버)와 토픽-파티션으로 이루어지고 Zookeeper가 이를 관리해줌
 
-## 운영체제 선택  
+  ![alt text](image-32.png)
+
+### 운영체제 선택  
 - Kafka를 실행할 운영체제  
   - JVM 기반이라 다양한 운영체제에서 실행 가능  
   - Linux 환경이 가장 안정적이며 추천됨  
