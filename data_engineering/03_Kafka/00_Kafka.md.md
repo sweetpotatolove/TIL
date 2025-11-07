@@ -146,7 +146,6 @@
       ![alt text](image-10.png)
     - 카프카는 파티션 단위로만 순서 유지되므로 순서가 중요한 시스템에는 적합하지 않음
 
-### Kafka의 데이터 저장방식
 
 ## Kafka의 저장방식
 - 토픽 / 파티션의 물리적인 위치는?
@@ -337,6 +336,8 @@
 
 
 ## Kafka 설치
+`data_engineering/03_Kafka/01_kafka_setup.md` 참고
+
 ### Kafka 환경 설정  
 - 설치 전 필수 요소
   - 운영체제, Java, Zookeeper  
@@ -351,85 +352,111 @@
   - Linux 환경이 가장 안정적이며 추천됨  
   - Windows는 WSL 환경 추천
 
-## Java 설치 -1 (공식 홈페이지를 통한 설치)  
-- Kafka 실행을 위한 Java 환경  
-  - Java 8 이상이 필요하며, 과정에서는 통일성을 위해 **Java 17** 사용  
-  - JRE(Java Runtime Environment)보다는 **JDK 설치** 추천  
-  - 아래 페이지에서 최신 버전 Java 다운로드 가능  
+### Java 설치
+- Java 설치 -1 (공식 홈페이지를 통한 설치)  
+  - Kafka 실행을 위한 Java 환경  
+    - Java 8 이상이 필요하며, 과정에서는 통일성을 위해 **Java 17** 사용  
+    - JRE(Java Runtime Environment)보다는 **JDK 설치** 추천  
+    - 아래 페이지에서 최신 버전 Java 다운로드 가능  
     - https://www.oracle.com/java/technologies/downloads/?er=221886
 
-## Java 설치 -2 (Linux 패키지를 통한 설치)  
-- Kafka 실행을 위한 Java 환경  
-  - Linux 환경에서 실행 필요  
-  - Windows의 경우 WSL을 이용해서 실행 가능  
+      ![alt text](image-33.png)
 
-1. 패키지 업데이트:  
-   `sudo apt update`  
-2. 자바 JDK 설치 (8 이상):  
-   `sudo apt install openjdk-17-jdk`  
-   - 중간에 물어보면 **Y 입력 후 엔터**  
-3. 아래와 유사하게 출력되면 설치 완료
+- Java 설치 -2 (Linux 패키지를 통한 설치)  
+  - Kafka 실행을 위한 Java 환경  
+    - Linux 환경에서 실행 필요  
+    - Windows의 경우 WSL을 이용해서 실행 가능  
 
-## Java 설치 확인  
-- Kafka 실행을 위한 Java 환경  
-- Java 설치 후 `java -version`을 입력하였을 때 정상적으로 출력되면 설치 성공  
-- 다음과 같이 출력되면 정상: `java -version`
+  1. 패키지 업데이트:  
+    `sudo apt update`  
+  2. 자바 JDK 설치 (8 이상):  
+    `sudo apt install openjdk-17-jdk`  
+    - 중간에 물어보면 **Y 입력 후 엔터**  
+  3. 아래와 유사하게 출력되면 설치 완료
 
-## Kafka 브로커 설치  
-- Kafka 브로커란?  
+      ![alt text](image-34.png)
+
+- Java 설치 확인  
+  - Kafka 실행을 위한 Java 환경  
+  - Java 설치 후 `java -version`을 입력하였을 때 정상적으로 출력되면 설치 성공  
+  - 다음과 같이 출력되면 정상: `java -version`
+
+    ![alt text](image-35.png)
+
+### Kafka 브로커 설치
+- Kafka 브로커
   - 브로커(Broker): 메시지를 저장하고 제공하는 Kafka 서버  
-  - 단일 Kafka 인스턴스를 브로커라고 부름  
-  - 다수의 브로커가 모이면 Kafka 클러스터 형성
+  - **단일 Kafka 인스턴스**를 브로커라고 부름  
+  - **다수의 브로커가 모이면 Kafka 클러스터** 형성
 
-## Kafka 설치 방법  
-- Kafka 다운로드  
+### Kafka 설치 방법  
+- Kafka 다운로드 (홈페이지 다운)
   1. 아래 홈페이지에 접속하여 다운로드 후 압축 해제  
      - https://kafka.apache.org/downloads
 
-## Kafka 설치 방법  
-- Kafka 다운로드  
+      ![alt text](image-36.png)
+
+- Kafka 다운로드 (명령어로 다운)
   1. 터미널에 아래 명령어를 입력하여 다운로드  
      `wget https://dlcdn.apache.org/kafka/3.9.0/kafka_2.12-3.9.0.tgz`  
-  2. 왼쪽과 같은 내용이 출력되면 다운로드 성공  
+  2. 아래와 같은 내용이 출력되면 다운로드 성공  
+
+      ![alt text](image-37.png)
   3. `ls` 명령어를 실행했을 때 압축이 풀린 폴더가 생성되면 성공
 
-## Kafka 설치 방법  
-- Kafka 다운로드  
-  2. 관리의 편의를 위해 다운로드한 Kafka 폴더를 `/home/ssafy` 로 이동시키기  
-     `sudo mv kafka_2.12-3.9.0 /home/ssafy/kafka`  
+- 관리의 편의를 위해 다운로드한 Kafka 폴더를 `/home/ssafy` 로 이동시키기
+  - `sudo mv kafka_2.12-3.9.0 /home/ssafy/kafka`  
   - `/usr/local` 에 kafka 폴더가 생성되면 성공
 
-## Zookeeper 실행하기  
-- Zookeeper의 역할  
-  - Kafka 클러스터의 메타데이터 관리  
-  - 브로커 간 리더 선출 및 상태 유지  
-  - 소비자(Consumer) 그룹 정보 저장
+      ![alt text](image-38.png)
 
-## Zookeeper 실행하기  
-- Zookeeper 실행하기  
-  1. Kafka 폴더로 이동하기  
-     `cd /home/ssafy/kafka`  
-  2. Zookeeper 실행  
-     `./bin/zookeeper-server-start.sh config/zookeeper.properties`  
-  - 왼쪽과 같은 내용이 출력되면 성공
+## Zookeeper 실행
+### Zookeeper의 역할  
+- Kafka 클러스터의 메타데이터 관리 
+  - 카프카를 실행하기 위해서는 주키퍼를 같이 띄워야 함!!
+- 브로커 간 리더 선출 및 상태 유지  
+- 소비자(Consumer) 그룹 정보 저장
+  
+  ![alt text](image-39.png)
 
-## Kafka 실행하기  
+### Zookeeper 실행하기  
+- Zookeeper 실행하기
+  1. Kafka 폴더로 이동하기
+      - `cd /home/ssafy/kafka`  
+  2. Zookeeper 실행
+      - `./bin/zookeeper-server-start.sh config/zookeeper.properties`  
+  - 아래와 같은 내용이 출력되면 성공
+
+    ![alt text](image-40.png)
+
 - Kafka 브로커 실행하기  
   1. 별도의 터미널 띄우기  
   2. Kafka 폴더로 이동하기  
      `cd /home/ssafy/kafka`  
   3. Kafka 브로커 실행하기  
      `./bin/kafka-server-start.sh config/server.properties`  
-  - 왼쪽과 같은 내용이 출력되면 성공
+  - 아래와 같은 내용이 출력되면 성공
 
-## Kafka 테스트  
-### | 토픽 생성 및 메시지 전송  
+    ![alt text](image-41.png)
 
+## Kafka 테스트 
+### 토픽 생성 및 메시지 전송 실습
 1. Kafka 폴더로 이동하기  
-   `cd /home/ssafy/kafka`  
+    - `cd /home/my/kafka`  
+
+2. Kafka 브로커 실행
+    - `./bin/kafka-server-start.sh config/server.properties`
 
 2. 토픽 생성  
-   `./bin/kafka-topics.sh --create --topic lecture-test-topic --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1`  
+    ```bash
+    cd /home/my/kafka
+
+    ./bin/kafka-topics.sh --create \    # kafka-topics.sh 스크립트를 사용하여 새로운 토픽 생성 명령 실행
+      --topic lecture-test-topic \  # 생성할 토픽 이름을 'lecture-test-topic'으로 지정
+      --bootstrap-server localhost:9092 \   # 카프카 브로커가 실행 중인 서버 주소 지정
+      --partitions 3 \   # 해당 토픽에 대해 3개의 파티션을 생성
+      --replication-factor 1  # 복제 개수를 1로 설정(즉, 복제본 없음)
+    ```
 
 3. 메시지 전송  
    `./bin/kafka-console-producer.sh --topic lecture-test-topic --bootstrap-server localhost:9092`  
