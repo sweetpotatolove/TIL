@@ -452,15 +452,27 @@
     cd /home/my/kafka
 
     ./bin/kafka-topics.sh --create \    # kafka-topics.sh 스크립트를 사용하여 새로운 토픽 생성 명령 실행
-      --topic lecture-test-topic \  # 생성할 토픽 이름을 'lecture-test-topic'으로 지정
+      --topic lecture-test-topic \      # 생성할 토픽 이름을 'lecture-test-topic'으로 지정
       --bootstrap-server localhost:9092 \   # 카프카 브로커가 실행 중인 서버 주소 지정
-      --partitions 3 \   # 해당 토픽에 대해 3개의 파티션을 생성
-      --replication-factor 1  # 복제 개수를 1로 설정(즉, 복제본 없음)
+      --partitions 3 \                  # 해당 토픽에 대해 3개의 파티션을 생성
+      --replication-factor 1            # 복제 개수를 1로 설정(즉, 복제본 없음)
     ```
 
 3. 메시지 전송  
-   `./bin/kafka-console-producer.sh --topic lecture-test-topic --bootstrap-server localhost:9092`  
-   `ssafy@6PC120:~/kafka$ ./bin/kafka-console-producer.sh --topic lecture-test-topic --bootstrap-server localhost:9092`  
+    ```bash
+    ./bin/kafka-console-producer.sh \     # kafka-console-producer.sh 스크립트를 통해 프로듀서(메시지 전송자)를 실행
+      --topic lecture-test-topic \        # 메시지를 보낼 대상 토픽 이름 지정
+      --bootstrap-server localhost:9092   # 카프카 브로커 주소 지정
+    ```
+    - 실행 후 메시지 입력하면 전송됨
 
 4. 메시지 수신  
-   `./bin/kafka-console-consumer.sh --topic lecture-test-topic --from-beginning --bootstrap-server localhost:9092`
+    - 새로운 터미널을 열어 실행
+    ```bash
+    ./bin/kafka-console-consumer.sh \     # kafka-console-consumer.sh 스크립트를 통해 컨슈머(메시지 수신자) 실행
+      --topic lecture-test-topic \        # 수신할 대상 토픽 이름 지정
+      --from-beginning \    # 토픽의 처음부터 모든 메시지를 수신 (과거 메시지도 포함하여 읽기)
+      --bootstrap-server localhost:9092   # 카프카 브로커 주소 지정
+    ```
+    - Producer에서 전송한 메시지가 Consumer 터미널에 출력되면 성공
+
