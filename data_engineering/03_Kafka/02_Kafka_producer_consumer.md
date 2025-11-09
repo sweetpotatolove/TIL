@@ -226,90 +226,350 @@
 
   
 ## Kafka Consumer
-## Kafka Consumer  
-- Kafka Consumer란?  
-  - 컨슈머(Consumer): Kafka Topic의 데이터를 읽는 역할을 수행하며, 이를 **구독(Subscribe)** 이라고도 함  
+### Kafka Consumer
+- 컨슈머(Consumer)
+  - Kafka Topic의 데이터를 읽는 역할을 수행하며, 이를 **구독(Subscribe)** 이라고도 함  
   - 배치하게 ETL 과정을 통해 적재하거나, 실시간으로 데이터를 가져와 처리
 
-## Kafka Consumer 기본 용어  
+    ![alt text](image-63.png)
+ 
 - Kafka Consumer 기본 용어  
-  - 컨슈머 랙(Consumer Lag): 프로듀서가 넣은 최신 메시지의 Offset과 컨슈머가 읽고 있는 Offset의 차이  
-  - record-lag-max: 가장 높은 파티션의 랙
+  - 컨슈머 랙(Consumer Lag)
+    - 프로듀서가 넣은 최신 메시지의 Offset과 컨슈머가 읽고 있는 Offset의 차이
+    - 즉, 아직 못읽은 메시지가 얼마나 쌓여있는지를 나타냄 -> 병목이 발생했는지 확인하는 지표가 됨
+    - 메시지가 너무 빨리 쌓여서 컨슈머가 읽는 속도를 따라가지 못할 때 발생함
+  - record-lag-max
+    - 가장 높은 파티션의 랙
 
-## Kafka Consumer의 용어  
-- Kafka Consumer 용어  
-  - 페치(Fetch): 컨슈머가 브로커로부터 레코드를 읽어오는 행위  
-  - 커밋(Commit): 특정 Offset까지 처리했다고 선언하는 행위
+  ![alt text](image-64.png)
 
-## Kafka Consumer의 Group Coordinator  
-- Kafka Consumer의 Group Coordinator  
-  - 코디네이터(Coordinator): Consumer 그룹을 관리하는 브로커, 컨슈머 그룹별로 지정됨  
-  - Heartbeat: 컨슈머 그룹들이 정상적으로 동작 중인지 확인 (Polling, Commit 때마다)  
-  - 리밸런싱(Rebalancing): 컨슈머 그룹의 변경이 있을 때 파티션을 다시 배정하는 것
+### Kafka Consumer 특징
+- Polling
+  - 데이터를 브로커가 보내는 것이 아닌 **컨슈머가 먼저 요청** 하는 구조
 
-## Consumer Rebalance란?  
-- Consumer Rebalance 종류  
+    ![alt text](image-65.png)
+    - 그래서 push 방식이 아닌 pull 방식
+  - 장점
+    - 컨슈머가 처리할 수 있는 속도에 맞춰 데이터를 가져올 수 있음
+    - 브로커의 부하를 줄일 수 있음
+      - 브로커가 push하는 방식은 컨슈머가 부하가 있든 말든 데이터를 보내는데,
+      - pull 방식은 컨슈머가 준비되었을 때만 데이터를 요청(컨슈머 본인이 처리 지연, 시스템 부하 등을 고려하여 조절 가능)
+    
+
+- 멀티 컨슈밍
+  - 하나의 토픽을 여러 컨슈머가 같이 소비할 수 있음
+
+    ![alt text](image-66.png)
+    - 여러 컨슈머가 동일한 데이터를 병렬로 가져가, 목적에 따라 독립적으로 데이터를 처리할 수 있음
+
+- 컨슈머 그룹(Consumer Group)
+  - 특정 토픽에 대해 접근 권한을 가진 컨슈머의 집단
+
+    ![alt text](image-67.png)
+    - 토픽과 마찬가지로 '논리적'으로 묶인 단위
+    - 컨슈머 그룹 내의 각 컨슈머는 토픽의 파티션을 나누어 가져감
+    - 할당된 파티션이 없는 컨슈머의 상태를 '유휴(Idle)' 상태라고 함 ex. 그림의 Consumer 2, 4
+  - 이러한 구조로 컨슈머가 늘어나거나 줄어들 때, 동적으로 대응할 수 있음
+    - 컨슈머가 늘어나면 파티션을 재할당하여 부하를 분산시키고(리밸런싱)
+    - 컨슈머가 줄어들면 남은 컨슈머가 기존 파티션을 담당함
+
+### Kafka Consumer의 용어 (추가) 
+- 페치(Fetch)
+  - 컨슈머가 브로커로부터 레코드를 읽어오는 행위
+
+    ![alt text](image-68.png)
+    - 100 ~ 109번 데이터를 요청하는 행위가 '페치(Fetch)'
+
+- 커밋(Commit)
+  - 특정 Offset까지 처리했다고 선언하는 행위
+
+    ![alt text](image-69.png)
+    - 109번 Offset까지 처리했다고 선언하는 행위가 '커밋(Commit)'
+
+### Kafka Consumer의 Group Coordinator  
+- 코디네이터(Coordinator)
+  - Consumer 그룹을 관리하는 '브로커'
+  - 컨슈머 그룹별로 지정됨 
+
+    ![alt text](image-70.png)
+    - 백그라운드에서 Coordinator process가 동작하여 그룹을 관리
+
+- Heartbeat
+  - 컨슈머 그룹들이 정상적으로 동작 중인지 확인 (Polling, Commit 때마다)  
+
+- 리밸런싱(Rebalancing)
+  - 컨슈머 그룹의 변경이 있을 때 파티션을 다시 배정하는 것
+
+    ![alt text](image-71.png)
+
+### Consumer Rebalance
+- Consumer Rebalance 종류
+
+  ![alt text](image-72.png)
   1. 새로운 Consumer 추가 → 기존 파티션을 일부 재할당  
   2. Consumer 제거 → 남은 Consumer가 기존 Consumer의 파티션을 담당  
   3. 파티션 개수 변경 → 전체 Consumer에 대한 Rebalance 발생
 
-## Consumer Rebalance 과정  
 - Consumer Rebalance의 과정  
   1. 그룹 코디네이터가 모든 컨슈머들의 소유권을 박탈하고 일시정지시킴
 
-## Consumer Rebalance 과정  
-- Consumer Rebalance의 과정  
-  1. 그룹 코디네이터가 모든 컨슈머들의 소유권을 박탈하고 일시정지시킴  
+      ![alt text](image-73.png)
+   
   2. JoinGroup 요청을 기다리고, 가장 빠르게 응답한 컨슈머를 리더로 선정  
   3. 리더는 재조정한 결과를 코디네이터에게 알리고 컨슈머들에게 전달
 
-## Consumer Rebalance 과정  
-- Consumer Partitioning  
-  1. RangeAssignor: 토픽별로 순서대로 나누어줌 (과거 기본값)  
-  2. RoundRobinAssignor: 모든 파티션을 보고 하나씩 고르게 나누어줌  
-  3. StickyAssignor: 이전 할당 정보를 활용하여 최대한 비슷하게 (현재 기본값)
+      ![alt text](image-74.png)
 
-## Kafka Transaction  
+- Consumer Partitioning
+  - 컨슈머 입장에서의 파티션 할당 방법
+
+    ![alt text](image-75.png)
+    - consumer 4가 사라진다고 가정
+
+  - RangeAssignor
+    - 토픽별로 순서대로 나누어줌 (과거 기본값)  
+  - RoundRobinAssignor
+    - 모든 파티션을 보고 하나씩 고르게 나누어줌  
+  - StickyAssignor
+    - 이전 할당 정보를 활용하여 최대한 비슷하게 (현재 기본값)
+
+    ![alt text](image-76.png)
+
+### Kafka Transaction  
 - 트랜잭션 프로듀서(Transaction Producer)  
   - 프로듀서와 컨슈머가 연계해서 **EOS(Exactly Once Semantics)** 를 지키는 방법  
   - 일정 단위의 메시지를 ‘커밋’으로 묶어 하나의 트랜잭션으로 설정  
   - 일정 시간 안에 트랜잭션 커밋이 오지 않으면 실패로 간주하고 처음부터 다시 메시지를 받음
 
-## Kafka에 메시지 전송하기  
-- 메시지 전송 기본 예제  
-  - kafka-python: 간단하게 Kafka를 조작할 수 있는 Python 프레임워크  
-  - kafka-python 설치  
-  - bootstrap_servers: Kafka Broker 주소  
-  - value_serializer: 인코딩 방식  
-  - 실제 메시지 전송 부분  
-  - 버퍼에 남아 있는 메시지를 완전히 보내고 프로듀서 종료
+  ![alt text](image-77.png)
+  - 일반적으로 Kafka Producer는 여러 파티션에 데이터를 보낼 수 있음
+    - 그러나 여러 파티션에 메시지를 보내다가 중간에 실패하면, 일부 파티션만 메시지가 남아서 데이터 불일치가 발생할 수 있음
+  - Kafka 트랜잭션을 사용하면:
+    - 여러 파티션에 메시지를 보내더라도, 모든 파티션에 메시지가 성공적으로 저장되었을 때만 커밋됨
+    - 만약 중간에 실패하면, 모든 파티션에 보낸 메시지를 롤백하여 데이터 불일치를 방지함
+  
+  - 즉, 여러 파티션 간에 일관성을 보장할 수 있음
 
-  - 토픽명
-  - bootstrap_servers: Kafka Broker 주소 
-  - auto_offset_rest: 컨슈머 초기 데이터 시작 설정
-  - enable_auto_commit: 자동 커밋 설정
-  - value_serializer: 디코딩 방식
-  - 실제 메시지 수신부분
+## Kafka 프로듀서 & 컨슈머 실습
+- setting
+  - 실습 코드 실행 전, `data_engineering/03_Kafka/producer&consumer/wsl_python_environment_setting.md` 문서를 참고하여 WSL2에 Python 환경을 세팅
+  - 이후 requirements.txt에 명시된 패키지들을 설치
 
-## Kafka의 메시지 받기  
-- 메시지 수신 기본 예제  
-  - 정상 출력 시 아래와 같은 모습
+### Kafka에 메시지 전송하기
+- kafka-python
+  - 간단하게 Kafka를 조작할 수 있는 Python 프레임워크  
+  - `pip install kafka-python` -> kafka-python 설치
 
-## Kafka에 메시지 전송하기  
-- 메시지 전송 기본 예제  
-  - confluent-kafka: Kafka를 조작할 수 있는 Python 프레임워크
+- Kafka에 메시지 전송하기 (Producer)
+  ```python
+  from kafka import KafkaProducer   # Kafka로 메시지를 전송(생산)하는 클래스
 
-## Kafka의 메시지 받기  
-- 메시지 수신 기본 예제  
-  - confluent-kafka: Kafka를 조작할 수 있는 Python 프레임워크  
-  - group.id가 필수
+  # KafkaProducer 생성
+  producer = KafkaProducer(
+      bootstrap_servers='localhost:9092',          # Kafka 브로커 주소 (기본 포트: 9092)
+      value_serializer=lambda v: v.encode('utf-8') # 메시지를 UTF-8로 직렬화(바이트 변환)
+  )
 
-## Kafka의 메시지 받기  
-- 메시지 수신 기본 예제  
-  - confluent-kafka: Kafka를 조작할 수 있는 Python 프레임워크  
-  - group.id가 필수 없으면 오류 발생
-  - Group을 없이 하는 방법도 있으나, Consumer가 하나뿐이어도 group.id를 지정해서 Consumer Group으로 구성
+  # 5개의 메시지를 순차적으로 전송
+  for i in range(5):
+      message = f"hello kafka {i}"                 # 전송할 메시지
+      producer.send('test-topic1', message)        # 'test-topic1' 토픽으로 메시지 전송
+      print(f"Sent: {message}")                    # 전송 로그 출력
 
-## Kafka의 메시지 받기  
-- 메시지 수신 기본 예제  
-  - 정상 출력 시 아래와 같은 모습
+  # 전송되지 않은 메시지를 모두 전송 후 리소스 정리
+  producer.flush()                                 # 버퍼에 남은 메시지를 즉시 전송
+  producer.close()                                 # Producer 종료
+  ```  
+  - `bootstrap_servers='localhost:9092'`
+    - Kafka 브로커가 실행 중인 주소와 포트
+    - localhost는 현재 컴퓨터, 포트 9092는 Kafka 기본 포트
+
+  - `value_serializer=lambda v: v.encode('utf-8')`
+    - 인코딩 방식 설정
+    - Kafka는 메시지를 바이트(Byte) 형식으로만 전송하므로
+    - 문자열을 UTF-8 바이트로 변환하는 함수 지정
+
+  - `producer.send('test-topic1', message)`
+    - 실제 메시지 전송 부분
+
+  - `producer.flush()`
+    - 버퍼에 쌓인 메시지를 Kafka로 즉시 전송
+    - Kafka는 기본적으로 비동기 전송이라, send() 후 실제로 바로 전송되지 않을 수 있음
+    - 따라서 flush()를 호출하여 버퍼에 남아 있는 메시지를 강제로 전송
+
+  - `producer.close()`
+    - KafkaProducer를 안전하게 종료
+
+### Kafka의 메시지 받기 
+- Kafka에서 메시지 받기 (Consumer)
+  ```python
+  from kafka import KafkaConsumer
+
+  # KafkaConsumer 생성
+  consumer = KafkaConsumer(
+      'test-topic1',                                 # 구독할 토픽 이름
+      bootstrap_servers='localhost:9092',           # Kafka 브로커 주소
+      auto_offset_reset='earliest',                 # 처음부터 메시지를 읽음(earliest) / 최신부터는 latest
+      enable_auto_commit=True,                      # 자동 오프셋 커밋 (소비한 위치 자동 저장)
+      value_deserializer=lambda v: v.decode('utf-8')# 메시지를 UTF-8로 역직렬화(문자열 변환)
+  )
+
+  print("Listening for messages...")
+
+  # 메시지 수신 루프
+  for message in consumer:
+      print(f"Received: {message.value}")           # 수신한 메시지 출력
+  ```
+  - `'test-topic1'`
+    - 소비할 Kafka 토픽 이름 (Producer가 메시지를 보낸 토픽과 같아야 함)
+  
+  - `bootstrap_servers='localhost:9092'`
+    - Kafka 브로커가 실행 중인 주소와 포트
+
+  - `auto_offset_reset='earliest'`
+    - 컨슈머가 처음 시작할 때, 가장 처음부터 메시지를 읽도록 설정
+    - 'latest'로 설정하면 최신 메시지부터 읽음
+  
+  - `enable_auto_commit=True`
+    - 컨슈머가 메시지를 읽은 후 자동으로 오프셋(읽은 위치)을 커밋하도록 설정
+    - False로 설정하면 수동으로 커밋해야 함
+  
+  - `value_deserializer=lambda v: v.decode('utf-8')`
+    - Kafka는 메시지를 바이트로 저장하므로, 이를 다시 문자열로 변환하는 함수 지정 (디코딩 방식 설정)
+ 
+- 결과
+
+  ![alt text](image-78.png)
+
+### 추가 라이브러리: confluent-kafka
+- confluent-kafka
+  - Kafka를 조작할 수 있는 또 다른 Python 프레임워크  
+  - `pip install confluent-kafka` -> confluent-kafka 설치
+
+- Kafka 메시지 보내기 (Producer)
+  ```python
+  from confluent_kafka import Producer
+
+  # 1. Kafka 클러스터 설정
+  conf = {
+      'bootstrap.servers': 'localhost:9092'  
+      # Kafka 브로커 주소 (여러 개일 경우 쉼표로 구분)
+  }
+
+  # 2. Producer 인스턴스 생성
+  producer = Producer(conf)
+
+  # 3. 메시지 전송 완료 콜백 함수
+  def delivery_report(err, msg):
+      """
+      메시지 전송 후 Kafka 브로커가 응답하면 자동 호출되는 콜백 함수
+      - err: 전송 실패 시 오류 정보
+      - msg: 성공 시 메시지의 토픽, 파티션 등의 메타정보
+      """
+      if err is not None:
+          print(f"Message delivery failed: {err}")
+      else:
+          print(f"Message delivered to {msg.topic()} [partition: {msg.partition()}]")
+
+  # 4. 메시지 전송
+  for i in range(5):
+      message = f"hello kafka {i}"  # 전송할 메시지 생성
+      
+      producer.produce(
+          topic='test-topic2',               # 전송할 토픽
+          value=message.encode('utf-8'),     # 메시지를 UTF-8로 인코딩
+          callback=delivery_report           # 전송 완료 후 콜백 함수 호출
+      )
+      
+      # 내부 전송 큐 처리 (콜백 함수가 실행되도록 이벤트 루프를 돌림)
+      producer.poll(0)
+
+  # 5. 모든 메시지 전송 완료 대기
+  producer.flush()  # 전송 큐에 남은 메시지를 모두 보낸 후 종료
+  ```
+  - `Producer(conf)`
+    - confluent-kafka의 Producer 인스턴스를 생성하는 부분
+    - 즉, Kafka Producer 객체 생성
+    - conf 딕셔너리에 설정된 옵션들
+      - `bootstrap.servers`: Kafka 브로커 주소 (여러 개일 경우 쉼표로 구분)
+  
+  - `delivery_report(err, msg)`
+    - 메시지 전송 후 Kafka 브로커가 응답하면 자동으로 호출되는 콜백 함수
+    - 전송 성공/실패 여부를 확인하는 용도로 사용됨
+  
+  - `producer.produce(...)`
+    - 실제 메시지를 Kafka 토픽으로 전송하는 부분
+  
+  - `producer.poll(0)`
+    - 콜백 함수가 실행되도록 이벤트 루프를 돌리는 역할
+  
+  - `producer.flush()`
+    - 전송 큐에 남은 메시지를 모두 보낸 후 종료
+
+- Kafka의 메시지 받기 (Consumer)
+  ```python
+  from confluent_kafka import Consumer
+
+  # 1. Kafka Consumer 설정
+  conf = {
+      'bootstrap.servers': 'localhost:9092',  # Kafka 브로커 주소
+      'group.id': 'my-group',                 # Consumer Group ID (같은 그룹은 파티션 분담 소비)
+      'auto.offset.reset': 'earliest',        # 처음부터 읽기(earliest) / 최신부터는 latest
+      'enable.auto.commit': True              # 자동 오프셋 커밋 여부 (True: 자동 저장)
+  }
+
+  # 2. Consumer 인스턴스 생성
+  consumer = Consumer(conf)
+
+  # 3. 구독할 토픽 지정
+  consumer.subscribe(['test-topic2'])
+
+  try:
+      while True:
+          # poll()은 브로커로부터 메시지를 가져오는 함수
+          # (1.0초 동안 기다린 후 메시지가 없으면 None 반환)
+          msg = consumer.poll(1.0)
+
+          if msg is None:
+              continue  # 메시지가 없으면 루프 계속
+
+          if msg.error():
+              print("Consumer error:", msg.error())  # 에러 발생 시 출력
+              continue
+
+          # 수신한 메시지 출력 (바이트 → 문자열 디코딩 필요)
+          print(f"Received: {msg.value().decode('utf-8')}")
+
+  except KeyboardInterrupt:
+      print("Stopping consumer...")
+
+  finally:
+      # 종료 시 커넥션 정리
+      consumer.close()
+  ```
+  - `Consumer(conf)`
+    - confluent-kafka의 Consumer 인스턴스를 생성하는 부분
+    - 즉, Kafka Consumer 객체 생성
+    - conf 딕셔너리에 설정된 옵션들
+      - `bootstrap.servers`: Kafka 브로커 주소
+      - `group.id`: Consumer Group ID (**★필수★**)
+      - `auto.offset.reset`: 처음부터 읽기(earliest) / 최신부터는 latest
+      - `enable.auto.commit`: 자동 오프셋 커밋 여부 (True: 자동 저장)
+  
+  - `consumer.subscribe(['test-topic2'])`
+    - 구독할 토픽을 지정하는 부분
+  
+  - `msg = consumer.poll(1.0)`
+    - 브로커로부터 메시지를 가져오는 함수
+    - 1.0초 동안 기다린 후 메시지가 없으면 None 반환
+  
+  - `consumer.close()`
+    - 종료 시 커넥션을 정리하는 부분
+
+  - 주의사항
+    - `group.id`가 필수 없으면 오류 발생
+    - Group을 없이 하는 방법도 있으나, Consumer가 하나뿐이어도 `group.id`를 지정해서 Consumer Group으로 구성
+
+- 결과
+
+  ![alt text](image-79.png)
