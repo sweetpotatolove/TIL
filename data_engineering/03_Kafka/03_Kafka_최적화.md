@@ -849,3 +849,4 @@ consumer = KafkaConsumer(
     - 동일한 key 값의 최신 데이터만 남게 하는 것이 목표  
 
         ![alt text](image-88.png)
+
