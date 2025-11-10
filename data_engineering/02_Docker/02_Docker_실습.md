@@ -390,4 +390,3 @@ echo "New log entry" >> app.log
 ```
 ![alt text](image-14.png)
 
-
