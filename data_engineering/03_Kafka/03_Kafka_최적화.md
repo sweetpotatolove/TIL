@@ -850,3 +850,4 @@ consumer = KafkaConsumer(
 
         ![alt text](image-88.png)
 
+
