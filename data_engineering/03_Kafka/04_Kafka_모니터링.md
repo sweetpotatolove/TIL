@@ -485,5 +485,13 @@ grafana:
 - Import
 
     ![alt text](image-131.png)
+
+- Grafana 사이트에서 기본적으로 모니터링할 수 있는 템플릿 활용
+
     ![alt text](image-129.png)
 
+    ![alt text](image-128.png)
+
+    ![alt text](image-130.png)
+
+    ![alt text](image-132.png)
