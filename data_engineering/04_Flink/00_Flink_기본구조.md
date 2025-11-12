@@ -345,7 +345,7 @@
   - `execute()`: 이 함수를 호출해야만 Flink 클러스터가 job을 제출받아 작업이 진행됨
   - "job name"은 Flink UI(웹 대시보드)에서 확인할 수 있는 작업 이름
 
-- Flink는 지연 실행(Lazy Execution) 을 사용함
+- Flink는 **지연 실행(Lazy Execution)** 을 사용함
   - 즉, 소스/변환/싱크를 코드에서 정의해도 즉시 실행되지 않고,
   - `env.execute()` 를 호출하는 순간 전체 파이프라인이 그래프로 만들어져 클러스터로 제출됨
 
@@ -354,8 +354,9 @@
 
 
 ## Flink 설치 및 실행 환경설정
+`data_engineering\04_Flink\01_Flink_setting_guide` 참고
 
-## Apache Flink 설치  
+### Apache Flink 설치  
 - WSI  
   - `cd ~`  
   - `wget https://archive.apache.org/dist/flink/flink-1.19.3/flink-1.19.3-bin-scala_2.12.tgz`  
