@@ -202,21 +202,26 @@
   - 각 슬롯에 메모리 할당 (1/n)
     - Task는 TaskManager 내 Task Slot에서 병렬 실행
     - 하나의 Task Slot에서 여러 개의 연산자(Source, map 등)를 실행할 수 있음
+    - 따라서, TaskManager를 하나의 서버로 생각해도 됨
+    - TaskManager 서버 내에서 실제로 일을 하는 역할이 Task Slot이고, Task Slot은 각각의 Threads 형태로 구분되어 처리됨
 
       ![alt text](image-9.png)
+  - 하나의 슬롯 내에서 여러 연산자들이 수행됨
+    - 즉, 여러 연산자들을 체인처럼 연결해서 하나의 슬롯으로 실행 (Operator chain)
+    - 독립된 연산자들이 각각의 슬롯을 차지하는 것이 아님!!XX
+  
+  - 작업 슬롯 공유
+    - 리소스를 완전히 활용가능
+    - 하위 작업이 TaskManager에 공정하게 분배
+
+      ![alt text](image-10.png)
+  
+  - Tesk slot
+    - TaskManager의 자원을 나눠갖는 단위
+
 - 데이터 버퍼링 및 전송
 - 메모리 관리
-- 하트비트 및 상태 모니터링
-
-
-
-  
-  
-
-### Flink Architecture
-- 작업 슬롯 공유
-  - 리소스를 완전히 활용가능
-  - 하위 작업이 TaskManager에 공정하게 분배
+- 하트비트 및 상태 모니터링    
 
 ### Flink 장점
 - 실시간 처리 능력
@@ -227,23 +232,30 @@
   - 복잡한 이벤트 집계, 윈도우 연산, 패턴 인식을 위해 내부 상태를 효율적으로 관리
 - 확장성 및 분산 처리
   - 클러스터 내 다수의 노드와 태스크 슬롯을 통해 애플리케이션을 수평적으로 확장 가능
-
-### Flink 장점
 - 유연한 API 제공
-  - SQL / Table API: Flink 애플리케이션 작성 시 Bounded 및 Unbounded Streams 모두에서 사용 가능한 선언적 고수준 API
-  - DataStream API: Flink 애플리케이션 작성 시 UnBounded Streams 에서 사용되는 고수준 API
-  - DataSet API: Flink 애플리케이션 작성시 Bounded Streams에서 사용되는 더 낮은 수준의 API
+  - SQL / Table API
+    - Flink 애플리케이션 작성 시 Bounded 및 Unbounded Streams 모두에서 사용 가능한 선언적 고수준 API
+  - DataStream API
+    - Flink 애플리케이션 작성 시 UnBounded Streams 에서 사용되는 고수준 API
+  - DataSet API
+    - Flink 애플리케이션 작성시 Bounded Streams에서 사용되는 더 낮은 수준의 API
 
 ### Flink 사례 : Netflix
 - 데이터를 빠르게 처리하고 분석하기 위해 Apache Flink를 사용하여 스트림 데이터를 실시간으로 처리
-- 데이터 처리 과정에서 발생할 수 있는 장애 상황에 대비하여, Flink의 체크포인팅(checkpointing) 및 백프레셔(backpressure) 관리 기능을 적극 활용
+- 데이터 처리 과정에서 발생할 수 있는 장애 상황에 대비하여, **Flink의 체크포인팅(checkpointing) 및 백프레셔(backpressure) 관리 기능**을 적극 활용
+
+  ![alt text](image-11.png)
 
 ### Flink 사례 : SmartThings
 - 데이터 플랫폼을 실시간으로 데이터를 처리하는 것이 중요
-- Apache Spark의 마이크로 비트 처리보다 Apache Flink의 실시간 데이터 처리 모델이 더 적합
+- Apache Spark의 마이크로 비트 처리보다 **Apache Flink의 실시간 데이터 처리 모델이 더 적합**
+  - IoT 기기에서 센서 데이터를 빠르게 수집, 처리해야하기 때문
 - 서버리스, 완전 관리형 솔루션 등을 제공하여 독립적 작동, 주기적 저장 지점 생성 가능
+  - 클라우드 서비스 기반의 Flink 사용
 
-### Flink 코드 구조
+  ![alt text](image-12.png)
+
+## Flink 코드 구조
 - Datastream API 기준
   - 실행 환경 생성 (StreamExecutionEnvironment)
   - 데이터 소스(Source) 정의
@@ -251,56 +263,97 @@
   - 데이터 싱크(Sink) 적용
   - 작업 실행 env.execute()
 
-### Flink 코드 구조
-- 실행 환경 생성 (StreamExecutionEnvironment)
-  - Flink 작업을 구성하고 실행하는 중심 객체
-  - 데이터 소스, 변환, 싱크 등을 생성하는 메서드를 제공
+### 실행 환경 생성 (StreamExecutionEnvironment)
+- Flink 작업을 구성하고 실행하는 중심 객체
 
-```py
-from pyflink.datastream import StreamExecutionEnvironment
+  ```py
+  from pyflink.datastream import StreamExecutionEnvironment
 
-# 1. 실행 환경 설정
-env = StreamExecutionEnvironment.get_execution_environment()
-```
+  # 1. 실행 환경 설정
+  env = StreamExecutionEnvironment.get_execution_environment()
+  ```
+  - `get_execution_environment()`: 실행되는 환경(IDE, 로컬, 클러스터)에 따라 자동으로 적절한 실행 환경을 선택함(실행 환경 생성)
 
-### Flink 코드 구조
-- 데이터 소스(Source) 정의
-  - 외부 데이터를 PyFlink 내부로 불러오는 역할 (파일, 소켓, 컬렉션 등)
+- 생성된 환경에서 데이터 소스, 변환, 싱크 등을 생성하는 메서드를 제공함
 
-```py
+### 데이터 소스(Source) 정의
+- 외부 데이터를 PyFlink 내부로 불러오는 역할
+  - Flink에서는 다양한 Source 유형을 제공함
+    - 정적 데이터(리스트, 파일 등)
+    - 동적/실시간 데이터(Kafka, 소켓, DB CDC 등)
 
-# 2. 데이터 소스(Source) 정의 (리스트 데이터를 스트림으로 변환)
-data_stream = env.from_collection([1, 2, 3, 4, 5])
-```
+  ```py
+  # 2. 데이터 소스(Source) 정의 (리스트 데이터를 스트림으로 변환)
+  data_stream = env.from_collection([1, 2, 3, 4, 5])
+  ```
+  - `from_collection()`: python 리스트를 Flink stream 형태로 변환
 
-### Flink 코드 구조
-- 데이터 변환(Transformation) 적용
-  - 입력 데이터를 원하는 형태로 가공(예: 매핑, 필터링, 집계 등)
+- Source 예시
+  | Source 종류           | 설명                                        |
+  | ------------------- | ----------------------------------------- |
+  | `from_collection()` | 리스트, 튜플 등 **파이썬 컬렉션을 스트림으로 변환**           |
+  | `read_text_file()`  | 파일을 라인 단위로 읽어서 스트림 생성                     |
+  | `add_source()`      | Kafka·Socket 등 **실시간 Source 연결** (커넥터 기반) |
 
-```py
-# 3. 데이터 변환(Transformation) 적용 (각 숫자에 * 2 연산 수행)
-transformed_stream = data_stream.map(lambda x: x * 2)
-```
+### 데이터 변환(Transformation) 적용
+- 입력 데이터를 원하는 형태로 가공
+  - ex. map, filter, flatMap, keyBy, reduce, window 등
+- Flink에서는 transformation 체이닝이 가능하며, 여러 연산을 연결해 데이터 처리 파이프라인을 구성함
 
-### Flink 코드 구조
-- 데이터 싱크(Sink) 설정
-  - 처리된 데이터를 외부 시스템으로 출력(콘솔, 파일, 데이터베이스 등)
+  ```py
+  # 3. 데이터 변환(Transformation) 적용 (각 숫자에 * 2 연산 수행)
+  transformed_stream = data_stream.map(lambda x: x * 2)
+  ```
+  - 위 코드는 map transformation 을 사용하여 스트림의 각 요소에 연산을 적용함
+  - map 연산은 stateless transformation 의 예시이며, 상태를 사용하지 않고 단순히 각 요소를 변환하는 방식임
 
-```py
-# 4. 데이터 싱크(Sink) 설정 (결과를 콘솔에 출력)
-transformed_stream.print()
-```
+- Transformation 예시
+  | Transformation 예시       | 설명                             |
+  | ----------------------- | ------------------------------ |
+  | `map()`                 | 입력 → 출력 **1:1 매핑**             |
+  | `filter()`              | 조건에 맞는 요소만 **선택**              |
+  | `flatMap()`             | 요소를 0~N개로 **확장**               |
+  | `keyBy()`               | 특정 키 기준으로 데이터 **그룹핑 (파티셔닝)**   |
+  | `reduce()` / `window()` | 그룹/시간 단위로 **집계** (aggregation) |
 
-### Flink 코드 구조
-- 작업 실행 env.execute()
-  - 지금까지 구성한 소스, 변환, 싱크를 기반으로 실행
+### 데이터 싱크(Sink) 설정
+- 처리된 데이터를 외부 시스템으로 출력함
+  - 콘솔 출력, 파일 저장, 데이터베이스 저장, 메시지 큐(Kafka 등) 전송 등 다양한 형태가 가능함
 
-```py
-# 5. 작업 실행
-env.execute("Simple Flink Job")
-```
+  ```py
+  # 4. 데이터 싱크(Sink) 설정 (결과를 콘솔에 출력)
+  transformed_stream.print()
+  ```
+  - `print()`: 가장 기본적인 Sink로, 처리 결과를 표준 출력(콘솔) 에 표시함
 
-# Flink 설치 및 실행 환경설정
+- Sink 예시
+  | Sink 유형      | 사용 예시                                   |
+  | ------------ | --------------------------------------- |
+  | Console Sink | `print()` — 결과 확인용                      |
+  | File Sink    | `write_as_text("output.txt")`           |
+  | Kafka Sink   | `add_sink(kafka_producer)` — 실시간 데이터 전달 |
+  | DB Sink      | Flink Connector를 사용하여 DB로 저장            |
+
+### 작업 실행 `env.execute()`
+- 지금까지 구성한 소스, 변환, 싱크를 기반으로 실행
+  - 즉, 지금까지 정의한 Source → Transformation → Sink 흐름을 실제로 실행하는 명령
+
+  ```py
+  # 5. 작업 실행
+  env.execute("Simple Flink Job")
+  ```
+  - `execute()`: 이 함수를 호출해야만 Flink 클러스터가 job을 제출받아 작업이 진행됨
+  - "job name"은 Flink UI(웹 대시보드)에서 확인할 수 있는 작업 이름
+
+- Flink는 지연 실행(Lazy Execution) 을 사용함
+  - 즉, 소스/변환/싱크를 코드에서 정의해도 즉시 실행되지 않고,
+  - `env.execute()` 를 호출하는 순간 전체 파이프라인이 그래프로 만들어져 클러스터로 제출됨
+
+※ 전체 흐름
+> (코드 작성) Source 설정 → Transformation 적용 → Sink 설정 → execute() 호출 → Flink에서 작업 실행
+
+
+## Flink 설치 및 실행 환경설정
 
 ## Apache Flink 설치  
 - WSI  
