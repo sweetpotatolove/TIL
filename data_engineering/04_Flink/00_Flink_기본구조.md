@@ -357,140 +357,177 @@
 `data_engineering\04_Flink\01_Flink_setting_guide` 참고
 
 ### Apache Flink 설치  
-- WSI  
-  - `cd ~`  
-  - `wget https://archive.apache.org/dist/flink/flink-1.19.3/flink-1.19.3-bin-scala_2.12.tgz`  
-  - `tar -xvzf flink-1.19.3-bin-scala_2.12.tgz`  
-  - `mv flink-1.19.3 flink`  
-  - `rm flink-1.19.3-bin-scala_2.12.tgz`
+- Apache Flink 설치 (WSL 기준)
+  ```sh
+  # 홈 디렉토리로 이동
+  cd ~
 
-## Apache Flink 설치  
-- WSI에서 설치  
-  - `cd flink/conf`  
-  - 편집기 사용하여 3가지 파일 확인 후 설정 변경  
-  - `vi flink-conf.yaml`: `jobmanager.rpc.address: localhost`
+  # Apache Flink 설치 파일 다운로드
+  wget https://archive.apache.org/dist/flink/flink-1.19.3/flink-1.19.3-bin-scala_2.12.tgz
 
-## Apache Flink 설치  
-- WSI  
-  - `cd flink/conf`  
-  - 편집기 사용하여 3가지 파일 확인 후 설정 변경  
-  - `vi masters`: `localhost:8081`
+  # 압축 해제
+  tar -xvzf flink-1.19.3-bin-scala_2.12.tgz
 
-## Apache Flink 설치  
-- WSI  
-  - `cd flink/conf`  
-  - 편집기 사용하여 3가지 파일 확인 후 설정 변경  
-  - `vi workers`: `localhost`
+  # 디렉토리 이름을 간단하게 변경
+  mv flink-1.19.3 flink
 
-## Apache Flink 설치  
-- WSI  
-  - `cd flink/bin/`  
-  - `./start-cluster.sh`  
-  - 브라우저에서 `http://localhost:8081` 로 접속하여 웹 UI에서 상태 확인 가능
+  # 설치 파일 삭제 (선택)
+  rm flink-1.19.3-bin-scala_2.12.tgz
 
-## Flink WordCount  
-- WSI (터미널 1)  
-  - `nc -l 9000`  
-  - 원하는 텍스트 입력
+  # Flink conf 디렉토리로 이동
+  cd ~/flink/conf
 
-## Flink WordCount  
-- WSI (터미널 2)  
-  - `./bin/flink run examples/streaming/SocketWindowWordCount.jar --hostname localhost --port 9000`  
-  - 워드카운트 예제 실행 (포트번호 9000으로 연결)
+  # flink-conf.yaml 수정 — JobManager 주소 설정
+  vi flink-conf.yaml
 
-## Flink WordCount
+  # 아래 내용이 있는지 확인하고 없다면 추가 또는 수정:
+  jobmanager.rpc.address: localhost   # JobManager가 실행되는 호스트 주소 지정
+
+  # masters 수정 — JobManager Web UI 포트 설정
+  vi masters
+
+  # 파일 내용 확인 / 수정:
+  localhost:8081   # JobManager 웹 UI에서 사용할 포트 번호
+
+  # workers 수정 — TaskManager 실행 위치 설정
+  vi workers
+
+  # 파일 내용 확인 / 수정:
+  localhost   # TaskManager가 실행될 노드 명시
+  ```
+
+- Flink 클러스터 실행
+  ```sh
+  cd flink/bin/
+  ./start-cluster.sh     # JobManager + TaskManager 실행
+  ```
+
+- 웹 UI 접속
+  - 브라우저에서 `http://localhost:8081` 로 접속하면 웹 UI에서 상태 확인 가능
+    - 실행 중인 Job, TaskManager 상태, 로그 등을 확인할 수 있는 Flink Dashboard
+
+### Flink WordCount  
+- WSL (터미널 1)
+  ```sh
+  nc -l 9000    # 포트 9000으로 소켓 오픈 (netcat)
+  ``` 
+  - 이 터미널에 입력하는 텍스트가 Flink로 스트림 데이터처럼 전달됨
+  - 엔터를 누를 때마다 한 줄씩 Flink로 전송됨
+
+    ![alt text](image-13.png)
+
+- WSL (터미널 2)  
+  ```sh
+  ./bin/flink run examples/streaming/SocketWindowWordCount.jar --hostname localhost --port 9000
+  ```
+  - Flink 기본 제공 예제 실행 (포트번호 9000으로 연결)
+  - `hostname`과 `port`는 터미널 1에서 열어둔 소켓 주소와 연결
+
+    ![alt text](image-14.png)
+
 - WSI (터미널 3)
-  - 데이터 처리 로그 확인: cd flink tail -f log/flink-*.out
+  - 데이터 처리 로그 확인
+    ```sh
+    cd flink tail -f log/flink-*.out
+    ```
+    ![alt text](image-15.png)
 
-## PyFlink 설치
-- pyflink 설치
-  - 가상환경에 `pip install apache-flink==1.19.3`  
-- 단순히 라이브러리만 설치해도 간단한 Flink 코드는 동작함  
-- 로컬 MiniCluster 자동 실행  
-- PyFlink는 Flink 클러스터가 없어도 내부적으로 MiniCluster를 자동으로 띄워서 실행  
-- 따라서 단일 노드 환경에서 테스트하는 경우 별도의 JobManager, TaskManager가 필요 X
-- 로컬 데이터 소스 사용하기 때문에 `env.from_collection()`처럼 로컬 컬렉션 기반의 소스는 외부 Kafka, FileSystem 등의 의존성이 없기 때문에 즉시 처리 가능
+### PyFlink 설치
+- 가상환경에서 PyFlink 설치:
+```bash
+pip install apache-flink==1.19.3
+```
+- PyFlink는 파이썬 API로 Flink DataStream / Table API를 사용할 수 있게 해주는 라이브러리
+- 라이브러리만 설치하면 기본적인 Flink 스트리밍 코드 실행이 가능
 
-## Pyflink 로컬 사용  
+- 특징
+  - 로컬 MiniCluster 자동 실행  
+    - PyFlink는 코드 실행 시 내부적으로 MiniCluster(내장 Flink 클러스터) 를 자동으로 띄워서 실행함
+  - 클러스터 필요XX
+    - 단일 노드 환경에서 테스트하는 경우, JobManager / TaskManager를 따로 실행할 필요 없이 단일 프로세스로 실행됨
+  - 로컬 테스트에 최적
+    - 로컬 데이터 소스 사용하기 때문에 `env.from_collection()` 처럼 로컬 컬렉션 기반의 소스는 외부 Kafka, FileSystem 등의 의존성이 없기 때문에 즉시 처리 가능
+
+### Pyflink 로컬 사용  
 - 별도의 클러스터에서 사용하기 위해서는 내, 외부에 띄운 Jobmanager와 연결해줘야 함  
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common import Configuration
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common import Configuration
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-#클러스터 주소와 포트 지정 (JobManager REST 포트: 8081)
-config = Configuration()
-config.set_string("execution.target", "remote")
-config.set_string("rest.address", "localhost")  # JobManager 주소
-config.set_integer("rest.port", 8081)           # JobManager REST 포트
+  #클러스터 주소와 포트 지정 (JobManager REST 포트: 8081)
+  config = Configuration()
+  config.set_string("execution.target", "remote")
+  config.set_string("rest.address", "localhost")  # JobManager 주소
+  config.set_integer("rest.port", 8081)           # JobManager REST 포트
 
-env = StreamExecutionEnvironment.get_execution_environment (config)
-env.set_parallelism(1)
+  env = StreamExecutionEnvironment.get_execution_environment (config)
+  env.set_parallelism(1)
 
-data = env.from_collection ([("apple", 1), ("banana", 1), ("apple", 1)])
-data.print()
+  data = env.from_collection ([("apple", 1), ("banana", 1), ("apple", 1)])
+  data.print()
 
-env.execute("Submit PyFlink Job to Existing Cluster")
-```
+  env.execute("Submit PyFlink Job to Existing Cluster")
+  ```
 
-## Docker를 활용한 사용  
+### Docker를 활용한 사용  
 - Docker 이미지 생성  
 
-```dockerfile
-FROM flink:1.19-scala_2.12-java17
+  ```dockerfile
+  FROM flink:1.19-scala_2.12-java17
 
-# 2. Python & pip + PyFlink 설치
-RUN apt-get update && \
-    apt-get install -y python3 python3-pip && \
-    pip install --no-cache-dir apache-flink==1.19.3 && \
-    pip install pandas
+  # 2. Python & pip + PyFlink 설치
+  RUN apt-get update && \
+      apt-get install -y python3 python3-pip && \
+      pip install --no-cache-dir apache-flink==1.19.3 && \
+      pip install pandas
 
-# 3. 기본 Python3 링크 설정
-RUN ln -s /usr/bin/python3 /usr/bin/python
+  # 3. 기본 Python3 링크 설정
+  RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# 4. 작업 디렉토리 설정
-WORKDIR /opt/flink
-```
-
-## Docker를 활용한 사용  
+  # 4. 작업 디렉토리 설정
+  WORKDIR /opt/flink
+  ```
+ 
 ### Docker-compose 활용 및 실행  
-
 ```bash
-docker build -t pyflink .
+docker build -t pyflink .   # Docker 이미지 빌드
 
-docker compose up -d
+docker compose up -d    # docker-compose.yml 기반으로 컨테이너 실행
 
+# 로컬에 있는 pyflink_job.py 파일을 JobManager 컨테이너 내부의 /opt/flink/ 위치에 복사
 docker cp pyflink_job.py flink_jobmanager:/opt/flink/pyflink_job.py
 
+# JobManager 컨테이너에서 PyFlink 코드 실행
 docker exec -it flink_jobmanager python /opt/flink/pyflink_job.py
 ```
-
 ```yaml
+# docker-compose.yml
+
 services:
   jobmanager:
-    image: pyflink
+    image: pyflink                            # 빌드한 PyFlink 이미지 사용
     container_name: flink_jobmanager
     ports:
-      - "8081:8081"
-    command: jobmanager
+      - "8081:8081"                           # Flink Web UI 접근 포트 (localhost:8081)
+    command: jobmanager                       # 컨테이너를 JobManager 모드로 실행
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
 
   taskmanager:
-    image: pyflink
+    image: pyflink                            # 동일한 PyFlink 이미지 사용
     container_name: flink_taskmanager
     depends_on:
-      - jobmanager
-    command: taskmanager
+      - jobmanager                            # JobManager 실행 후 시작 
+    command: taskmanager                      # 컨테이너를 TaskManager 모드로 실행
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-    scale: 1
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager    # TaskManager가 JobManager에 연결할 때 사용
+    scale: 1                                  # TaskManager 개수 (병렬 처리 증가 시 수치 늘릴 수 있음)
 ```
 
-## Pyflink 예시 코드  
-
+### Pyflink 예시 코드  
 ```python
 from pyflink.datastream import StreamExecutionEnvironment  
 
@@ -510,22 +547,13 @@ transformed_stream.print()
 env.execute("Simple Flink Job")
 ```
 
-## PyFlink 예제  
 - pyflink 예시 코드 실행 결과  
   - 예상 결과: 2 → 4 → 6 → 8 → 10  
   - 여러 개의 TaskManager와 Task Slot이 동시에 실행  
   - 데이터가 순차적으로 출력되지 않고, 병렬로 처리된 결과가 출력  
 
-```bash
-user@devwhistle:/tmp$ python example.py
-4> 6
-5> 8
-2> 2
-6> 10
-3> 4
-```
+    ![alt text](image-16.png)
 
-## PyFlink 예제  
 - DAG 시각화 예제  
 
 ```python
@@ -533,80 +561,59 @@ from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.common.typeinfo import Types
 
 # 실행 환경 생성
+# PyFlink에서는 MiniCluster(내장 플링크 클러스터)가 자동으로 실행됨
 env = StreamExecutionEnvironment.get_execution_environment()
 
 # 병렬도 설정 (선택 사항)
+# 병렬도가 1이면 단일 task로 처리되며 실행 순서 확인에 용이
 env.set_parallelism(1)
 
 # 예시 데이터 소스 생성
+# from_collection()은 리스트 기반의 로컬 데이터를 스트림으로 변환
 data = env.from_collection(
     collection=[("apple", 1), ("banana", 1), ("apple", 1)],
     type_info=Types.TUPLE([Types.STRING(), Types.INT()])
 )
 
-# transformation 8: keyBy + sum
+# 4. Transformation: keyBy + sum
+# key_by(): 특정 key 기준으로 그룹핑
+# lambda x: x[0] → tuple의 첫 번째 값 기준으로 그룹화 ("apple", "banana")
+# sum(1) → tuple의 두 번째 요소(index=1)에 대해 합산
 result = data.key_by(lambda x: x[0]).sum(1)
 
 # DAG 실행 계획 출력 (JSON 문자열 형식)
+# Flink가 내부적으로 구성한 DAG(실행 그래프)를 JSON 형태로 출력
 execution_plan = env.get_execution_plan()
 print("DAG Execution Plan: \n", execution_plan)
 
 # 출력: 콘솔에 출력
+# 처리된 결과를 콘솔로 출력하는 가장 간단한 Sink
 result.print()
 
 # 실행
+# 이제 Flink가 정의된 Source → Transformation → Sink 파이프라인을 실행함
 env.execute("Basic PyFlink Job")
 ```
 
 ## PyFlink 예제  
 - DAG 시각화 예제 실행 결과  
   - 총 3개의 노드로 구성 (Source, KeyBy 연산자, Reduce 연산자)  
-    - Node 1: from_collection()  
-    - Node 2: key_by(lambda x: x[0])  
-      - 입력 : Node 1에서 받아옴 (ship_strategy: "FORWARD" 로컬 전달)  
-    - Node 4: Reduce 연산자, sum(1) 연산에 해당    
-      - 입력 : Node 2 (ship_strategy: "HASH" → 키 해시 기반 분산)  
+
+    ![alt text](image-18.png)
+    - Job Graph
+  - Node 1 - Source
+    - `from_collection()`을 통해 생성된 데이터 스트림
+  - Node 2 - KeyBy(파티셔닝) Operator
+    - `key_by(lambda x: x[0])`  
+    - 입력: Node 1에서 받아옴 (ship_strategy: "FORWARD" 로컬 전달) 
+    - `ship_strategy: "FORWARD"`
+      - 같은 Task(slot) 내에서 데이터가 로컬로 전달됨 (네트워크 전달 없음)
+  - Node 4 - Reduce(sum) Operator
+    - `.sum(1)` 연산으로 Reduce 기능 수행  
+    - 입력: Node 2 (ship_strategy: "HASH" → 키 해시 기반 분산)
+      - `ship_strategy: "HASH"`
+      - key 값을 해싱하여 해당 key를 담당하는 TaskManager로 데이터를 전달 
+      - 즉, "apple" 이면 apple이 담당되는 slot으로 라우팅되는 구조
   - 연산 결과 출력:  
-    - (apple, 1)  
-    - (banana, 1)  
-    - (apple, 2)  
 
-```json
-DAG Execution Plan:
-{
-  "nodes": [ {
-      "id": 1,
-      "type": "Source: Collection Source",
-      "pact": "Data Source",
-      "contents": "Source: Collection Source",
-      "parallelism": 1
-    },{
-      "id": 2,
-      "type": "_stream_key_by_map_operator",
-      "pact": "Operator",
-      "contents": "_stream_key_by_map_operator",
-      "parallelism": 1,
-      "predecessors": [
-        {
-          "id": 1,
-          "ship_strategy": "FORWARD",
-          "side": "second"
-        } ]
-    }, {
-      "id": 4,
-      "type": "Reduce",
-      "pact": "Operator",
-      "contents": "Reduce",
-      "parallelism": 1,
-      "predecessors": [ {
-          "id": 2,
-          "ship_strategy": "HASH",
-          "side": "second"
-        } ]
-    } ]
-}
-
-(apple,1)
-(banana,1)
-(apple,2)
-```
+    ![alt text](image-17.png)
