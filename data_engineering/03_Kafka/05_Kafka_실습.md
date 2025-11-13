@@ -677,8 +677,6 @@ python3 consumer_group_test.py
 python3 consumer_group_test.py
 ```
 
-
-
 - Kafka는 파티션 단위로 메시지를 분배
 - 동일한 컨슈머 그룹에 속한 컨슈머끼리는 메시지를 나눠 가져감 (중복 X)
 ```sh
@@ -687,3 +685,425 @@ python3 consumer_group_test.py
 ```
 
 
+## 실습5
+### 학습목표
+기존의 test-topic이 존재하면 삭제하고, 파티션 1개짜리 새 토픽을 생성해 15개의 메시지를 미리 전송한 뒤, kafka-python으로 Kafka 컨슈머를 생성하고 자동 오프셋 커밋 기능(enable_auto_commit=False)을 비활성화합니다. 이후 5개씩 나누어 세 번 메시지를 소비하며, 세 번째 실행에서는 커밋하지 않고 종료한 뒤 다시 메시지를 소비하여 마지막으로 커밋된 위치부터 읽히는 것을 확인합니다.
+
+- test-topic이 존재하면 삭제한 후, 파티션 개수가 1개인 새 토픽을 생성하고 미리 15개의 메시지를 전송합니다.
+- kafka-python을 사용하여 Kafka 컨슈머를 생성합니다.
+- 컨슈머의 자동 오프셋 커밋 기능을 비활성화(enable_auto_commit=False)합니다.
+- 5개씩 끊어서 총 3번 메시지를 소비하는데, 세 번째 실행에서는 커밋하지 않고 종료합니다.
+- 다시 메시지를 소비하여 마지막 커밋된 위치부터 읽는 것을 확인합니다.
+
+### Step1: kafka-python을 사용하여 test-topic이 존재하면 삭제한 후, 파티션 개수가 1개인 새 토픽 생성하기
+```python
+# topic_reset.py
+
+import time
+from kafka.admin import KafkaAdminClient, NewTopic
+
+# KafkaAdminClient를 생성
+admin_client = KafkaAdminClient(
+    bootstrap_servers="localhost:9092",  # Kafka 브로커 주소
+    client_id="producer-admin"
+)
+
+topic_name = "test-topic"
+
+# 기존 test-topic을 삭제한 후, 2초 대기 후 새로 생성
+existing_topics = admin_client.list_topics()  # 기존 토픽 목록을 가져오는 함수
+if topic_name in existing_topics:
+    admin_client.delete_topics([topic_name])  # 특정 토픽을 삭제하는 함수
+    print(f"기존 토픽 '{topic_name}' 삭제 완료")
+    time.sleep(2)  # 삭제 후 2초 대기
+
+new_topic = NewTopic(name=topic_name, num_partitions=1, replication_factor=1)
+admin_client.create_topics([new_topic])  # 새로운 토픽을 생성하는 함수
+print(f"새로운 토픽 '{topic_name}' 생성 완료")
+
+admin_client.close()  # AdminClient 연결을 닫는 함수
+```
+
+### Step2: Kafka 프로듀서를 사용하여 test-topic에 15개의 메시지 전송하기
+```python
+# producer_send_15.py
+
+from kafka import KafkaProducer
+
+producer = KafkaProducer(
+    bootstrap_servers="localhost:9092",
+    value_serializer=str.encode
+)
+
+for i in range(15):
+    producer.send("test-topic", value=f"message-{i}")
+    print(f"Sent: message-{i}")
+
+producer.flush()
+print("✅ 15개 메시지 전송 완료")
+```
+![alt text](image-143.png)
+
+### Step3: Kafka 컨슈머를 생성하고 자동 오프셋 커밋 비활성화
+```python
+# manual_commit_consumer.py
+
+from kafka import KafkaConsumer
+
+def consume_messages(iteration, commit=True):
+    """ 특정 배치만큼(5개) 메시지를 소비하고, commit 여부를 선택하는 함수 """
+
+    consumer = KafkaConsumer(
+        "test-topic",                    # 구독할 토픽
+        bootstrap_servers="localhost:9092",
+        auto_offset_reset="earliest",    # 가장 처음부터 읽기
+        enable_auto_commit=False,        # 자동 오프셋 커밋 비활성화
+        group_id="manual-commit-group"   # 동일 그룹 ID 사용
+    )
+
+    print(f"\n=== Batch {iteration} ===")
+    messages = []
+
+    for _ in range(5):
+        message = next(consumer)  # 한 개씩 가져오기
+        messages.append(message.value.decode("utf-8"))
+
+    print("Received Messages:", messages)
+
+    if commit:
+        consumer.commit()  # 수동 오프셋 커밋
+        print("오프셋 커밋 완료")
+
+    consumer.close()
+```
+
+### Step4: 5개씩 끊어서 메시지를 소비하며, 세 번째 실행에서는 커밋하지 않고 종료하기
+```python
+# manual_commit_consumer.py
+
+# 5개씩 3번 메시지를 소비하되, 앞의 2번은 커밋, 3번째는 커밋하지 않음
+for i in range(2):
+    consume_messages(i + 1, commit=True)
+
+consume_messages(3, commit=False)  # 세 번째 실행에서는 커밋하지 않음
+```
+- Batch 1 → 0~4번 메시지 읽고 커밋
+- Batch 2 → 5~9번 메시지 읽고 커밋
+- Batch 3 → 10~14번 메시지 읽지만 커밋 안 함
+
+### Step5: 다시 메시지를 소비하여 마지막 커밋된 위치부터 읽히는 것을 확인하기
+```python
+# manual_commit_consumer.py
+
+# 마지막 커밋된 위치부터 다시 읽기
+consume_messages(4, commit=True)
+```
+![alt text](image-144.png)
+- Batch 3에서 10~14를 읽었지만 커밋을 안 했으므로
+- Batch 4 실행 시 다시 10~14가 한 번 더 출력됨
+
+### 전체 실행 순서
+- 토픽 초기화 (파티션 1개로 생성): `python3 topic_reset.py`
+- 메시지 15개 전송: `python3 producer_send_15.py`
+    - topic_reset.py 파일과 producer_send_15.py 합쳐서 한 파일로 실행해도 됨!
+- 수동 오프셋 실습 실행: `python3 manual_commit_consumer.py`
+
+
+## 과제1
+### 학습목표
+기존의 test-topic이 존재하면 삭제하고, 파티션 3개짜리 새 토픽을 생성한 뒤, kafka-python을 사용해 Kafka 프로듀서를 구현합니다. 이후 특정 키 값을 가진 메시지를 여러 번 전송하여 동일한 파티션으로 들어가는지 확인하고, Kafka 컨슈머를 통해 해당 키로 전송된 메시지를 조회하여 동일한 파티션에 저장되었는지를 검증합니다.
+
+- test-topic이 존재하면 삭제한 후, 파티션 개수가 3개인 새 토픽을 생성합니다.
+- kafka-python을 사용하여 Kafka 프로듀서를 구현합니다.
+- 특정 키 값을 가진 메시지를 여러 번 전송하여 동일한 파티션으로 들어가는지 확인합니다.
+- 특정 키를 사용하여 전송된 메시지를 Kafka 컨슈머를 통해 조회하여, 동일한 파티션에 들어갔는지 검증합니다.
+
+### Step1: kafka-python을 사용하여 test-topic이 존재하면 삭제한 후, 파티션 개수가 3개인 새 토픽 생성하기
+- KafkaAdminClient 생성
+- 기존 test-topic 있으면 삭제
+- 2초 대기
+- 파티션 3개로 새 토픽 생성
+```python
+# producer.py
+
+"""
+Kafka 프로듀서를 활용하여 특정 키 값을 가진 메시지가 동일한 파티션으로 전송되는지 확인하는 실습입니다.
+
+TODO:
+1. kafka-python 라이브러리를 사용하여 KafkaAdminClient를 생성합니다.
+2. 기존 test-topic이 존재하면 삭제한 후, 파티션 개수가 3개인 새 토픽을 생성합니다.
+3. KafkaProducer를 사용하여 특정 키 값을 가진 메시지를 여러 번 전송합니다.
+4. 특정 키를 가진 메시지가 항상 같은 파티션으로 들어가는지 확인합니다.
+"""
+
+import time
+from kafka import KafkaProducer
+from kafka.admin import KafkaAdminClient, NewTopic
+
+# AdminClient 생성
+admin_client = KafkaAdminClient(
+    bootstrap_servers="localhost:9092",
+    client_id="partition-test-admin"
+)
+
+topic_name = "test-topic"
+
+# test-topic 삭제
+existing_topics = admin_client.list_topics()
+if topic_name in existing_topics:
+    admin_client.delete_topics([topic_name])
+    print(f"기존 토픽 '{topic_name}' 삭제 완료")
+    time.sleep(2)
+
+# test-topic 생성 (파티션 3개)
+new_topic = NewTopic(name=topic_name, num_partitions=3, replication_factor=1)
+admin_client.create_topics([new_topic])
+print(f"새로운 토픽 '{topic_name}' 생성 완료")
+
+admin_client.close()
+
+# Producer 생성
+producer = KafkaProducer(
+    bootstrap_servers="localhost:9092",
+    key_serializer=str.encode,
+    value_serializer=str.encode
+)
+
+# 동일한 key로 메시지 10개 전송
+for i in range(10):
+    key = "fixed-key"
+    value = f"message-{i}"
+    producer.send(topic_name, key=key, value=value)
+    print(f"Sent: {value} with key={key}")
+
+producer.flush()
+print("전송 완료!")
+```
+
+### Step2: Kafka 프로듀서를 사용하여 특정 키 값을 가진 메시지를 여러 개 전송하기
+- 두 소비자 모두 동일한 `group_id = "partition-test-group"` 사용하도록 작성
+
+### Step3: 동일한 키를 가진 메시지가 항상 같은 파티션으로 들어가는지 확인하기
+```python
+# consumer1.py
+
+"""
+Kafka 컨슈머를 활용하여 특정 키 값을 가진 메시지가 동일한 파티션에서 소비되는지 확인하는 실습입니다.
+"""
+
+from kafka import KafkaConsumer
+
+consumer = KafkaConsumer(
+    "test-topic",
+    bootstrap_servers="localhost:9092",
+    auto_offset_reset="earliest",
+    enable_auto_commit=True,
+    group_id="partition-test-group",
+)
+
+for message in consumer:
+    print(
+        f"[Consumer1] Received: {message.value.decode('utf-8')}, "
+        f"Key: {message.key.decode('utf-8')}, Partition: {message.partition}"
+    )
+```
+```python
+# consumer2.py
+
+"""
+Kafka 컨슈머를 활용하여 특정 키 값을 가진 메시지가 동일한 파티션에서 소비되는지 확인하는 실습입니다.
+"""
+
+from kafka import KafkaConsumer
+
+consumer = KafkaConsumer(
+    "test-topic",
+    bootstrap_servers="localhost:9092",
+    auto_offset_reset="earliest",
+    enable_auto_commit=True,
+    group_id="partition-test-group",
+)
+
+for message in consumer:
+    print(
+        f"[Consumer2] Received: {message.value.decode('utf-8')}, "
+        f"Key: {message.key.decode('utf-8')}, Partition: {message.partition}"
+    )
+```
+
+### Step4: Kafka 컨슈머를 사용하여 특정 키 값을 가진 메시지가 같은 파티션에서 소비되는지 검증하기
+- 실행 순서
+```sh
+# 1) 토픽 삭제 + 생성 + 메시지 전송
+python3 producer.py
+
+# 2) 터미널 2개에서 각각 실행
+python3 consumer1.py
+python3 consumer2.py
+```
+![alt text](image-145.png)
+
+![alt text](image-146.png)
+- 동일한 키 = 동일한 파티션으로 들어가는지? → 성공
+
+![alt text](image-147.png)
+- Consumer1에서 모든 메시지를 정상 소비했는지? → 성공
+    - Consumer1에서 모든 메시지 소비 했으므로 Consumer2에서는 아무것도 안뜸
+
+- 결과 정리
+    | 조건                         | 소비 결과                                 |
+    | -------------------------- | ------------------------------------- |
+    | 같은 group_id (test-group 등) | consumer1만 메시지를 받고, consumer2는 메시지 없음 |
+    | 다른 group_id                | consumer1, consumer2 모두 같은 메시지를 각각 읽음 |
+
+
+## 과제2
+### 학습목표
+input-topic과 output-topic이 존재하면 삭제하고 새로 생성한 뒤, input-topic에 테스트 메시지를 미리 전송합니다. 이후 kafka-python을 사용해 Kafka 컨슈머를 구현하여 input-topic의 메시지를 소비하고, 해당 메시지를 변환(예: 대문자로 변환)한 후 output-topic으로 다시 전송하는 Kafka 프로듀서를 구현합니다. 마지막으로 output-topic을 구독하는 새로운 Kafka 컨슈머를 만들어 변환된 메시지가 정상적으로 소비되는지를 확인합니다.
+
+- input-topic과 output-topic이 존재하면 삭제한 후 새로 생성하고, input-topic에 테스트 메시지를 미리 전송합니다.
+- kafka-python을 사용하여 Kafka 컨슈머를 구현하고 input-topic의 메시지를 소비합니다.
+- 소비한 메시지를 변환(예: 대문자로 변환)한 후 output-topic으로 다시 전송하는 Kafka 프로듀서를 구현합니다.
+- output-topic을 구독하는 새로운 Kafka 컨슈머를 구현하여 변환된 메시지를 정상적으로 소비할 수 있는지 확인합니다.
+
+### Step1: kafka-python을 사용하여 input-topic과 output-topic이 존재하면 삭제한 후 새로 생성
+- AdminClient를 통해 기존 토픽이 있으면 삭제
+- 2초 대기 후 input-topic / output-topic 재생성
+- 실습 환경 초기화를 위한 중요한 과정
+```python
+# input_producer.py
+
+"""
+Kafka 프로듀서를 활용하여 `input-topic`에 테스트 메시지를 전송하는 실습입니다.
+"""
+
+import time
+from kafka import KafkaProducer
+from kafka.admin import KafkaAdminClient, NewTopic
+
+# Step1: AdminClient 생성
+admin_client = KafkaAdminClient(
+    bootstrap_servers="localhost:9092",  
+    client_id="input-admin"  
+)
+
+input_topic = "input-topic"
+output_topic = "output-topic"
+
+# 기존 토픽 삭제
+existing_topics = admin_client.list_topics()
+for topic in [input_topic, output_topic]:
+    if topic in existing_topics:
+        admin_client.delete_topics([topic])
+        print(f"기존 토픽 '{topic}' 삭제 완료")
+        time.sleep(2)
+
+# 새 토픽 생성
+admin_client.create_topics([
+    NewTopic(name=input_topic, num_partitions=1, replication_factor=1),
+    NewTopic(name=output_topic, num_partitions=1, replication_factor=1)
+])
+print(f"새로운 토픽 '{input_topic}' 및 '{output_topic}' 생성 완료")
+
+admin_client.close()
+```
+
+### Step2: Kafka 프로듀서를 사용하여 input-topic에 테스트 메시지를 미리 전송
+- 테스트 메시지 5개를 input-topic으로 전송
+- 이후 Processor에서 이 메시지를 변환할 것
+```python
+# input_producer.py
+
+# Step2: input-topic에 테스트 메시지 전송
+producer = KafkaProducer(
+    bootstrap_servers="localhost:9092",
+    value_serializer=str.encode
+)
+
+for i in range(5):
+    producer.send(input_topic, value=f"hello-kafka-{i}")
+    print(f"Sent to input-topic: hello-kafka-{i}")
+
+producer.flush()
+print("초기 메시지 전송 완료!")
+```
+
+### Step3: Kafka 컨슈머를 생성하여 input-topic의 메시지를 소비한 후 특정 변환 로직(예: 대문자로 변환)을 적용
+- Processor 역할 수행
+- input-topic의 메시지를 읽고
+- 대문자로 변환하여 output-topic으로 다시 전송
+```python
+# output_processor.py
+
+"""
+Kafka 컨슈머가 input-topic의 메시지를 읽고, 변환 후 output-topic으로 보내는 역할
+"""
+
+from kafka import KafkaConsumer, KafkaProducer
+
+# Step3: input-topic 컨슈머 생성
+consumer = KafkaConsumer(
+    "input-topic",
+    bootstrap_servers="localhost:9092",
+    auto_offset_reset="earliest",
+    enable_auto_commit=True,
+    group_id="processor-group"
+)
+
+# output-topic 프로듀서 생성
+producer = KafkaProducer(
+    bootstrap_servers="localhost:9092",
+    value_serializer=str.encode
+)
+
+# 메시지 변환 후 output-topic으로 전송
+for message in consumer:
+    transformed_message = message.value.decode("utf-8").upper()  # 대문자 변환
+    producer.send("output-topic", value=transformed_message)
+    print(f"Transformed and Sent: {transformed_message}")
+```
+
+### Step4: 변환된 메시지를 output-topic으로 전송하는 Kafka 프로듀서를 구현
+- 최종 단계
+- Processor가 보낸 변환 메시지를 확인
+- 데이터가 정상 처리되었는지 검증하는 단계
+```python
+# output_consumer.py
+
+"""
+Kafka 컨슈머를 사용하여 output-topic의 메시지가 정상 변환되어 수신되는지 확인
+"""
+
+from kafka import KafkaConsumer
+
+consumer = KafkaConsumer(
+    "output-topic",
+    bootstrap_servers="localhost:9092",
+    auto_offset_reset="earliest",
+    enable_auto_commit=True,
+    group_id="output-group"
+)
+
+for message in consumer:
+    print(f"Consumed from output-topic: {message.value.decode('utf-8')}")
+```
+
+### Step5:  output-topic을 구독하는 새로운 Kafka 컨슈머를 생성하여 변환된 메시지가 정상적으로 소비되는지 확인
+- 실행 순서
+1. 터미널 1 — input-topic & output-topic 초기화 & 초기 메시지 전송
+```sh
+python3 input_producer.py
+```
+
+2. 터미널 2 — Processor 실행 (input → transform → output)
+```sh
+python3 output_processor.py
+```
+
+3. 터미널 3 — 변환된 결과 소비
+```sh
+python3 output_consumer.py
+```
+
+
+실행하고 결과 사진..
