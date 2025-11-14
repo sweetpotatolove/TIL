@@ -113,4 +113,3 @@ source ~/venvs/data-pjt/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
----
