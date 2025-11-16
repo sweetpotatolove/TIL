@@ -662,24 +662,23 @@ env.execute("File Source Example")
 -> 고급 스트림 처리 기능들은 대부분 ProcessFunction + State 기반으로 커스터마이징하여 구현하는 것이 일반적임
 
 
----
----
 ## Flink Table API
-### Flink Table API란?  
-- Flink에서 제공하는 고수준 선언형 API  
-- 배치 모드와 스트리밍 모드 모두 지원  
-### 특징  
-- Java / Scala / Python 언어 지원  
-- SQL과 유사한 방식으로 데이터 스트림/배치 처리 가능  
-- Kafka, CSV, JDBC 등 다양한 입출력 커넥터 사용 가능  
-- 내부적으로 TableEnvironment로 쿼리 실행  
-### Flink Table API를 이용하는 이유  
-- SQL의 선언적인 형태에 유연함을 더한 구조  
-- Flink의 거의 모든 기능과 잘 연결됨  
-- 실시간과 배치 모두 지원  
+Flink에서 제공하는 고수준 선언형 API
 
-## Flink Table API vs Datastream API
+- 배치 모드와 스트리밍 모드 모두 지원함
 
+- 특징  
+  - Java / Scala / Python 언어 지원  
+  - **SQL과 유사**한 방식으로 데이터 스트림/배치 처리 가능  
+  - Kafka, CSV, JDBC 등 다양한 입출력 커넥터 사용 가능  
+  - 내부적으로 TableEnvironment로 쿼리 실행  
+
+- Flink Table API를 이용하는 이유  
+  - SQL의 선언적인 형태에 유연함을 더한 구조  
+  - Flink의 거의 모든 기능과 잘 연결됨  
+  - 실시간과 배치 모두 지원  
+
+### Flink Table API vs Datastream API
 | 구분 | DataStream API | Table API / SQL |
 |------|----------------|----------------|
 | 추상화 수준 | 낮음 (연산자 직접 구성) | 높음 (SQL/선언적 질의) |
@@ -689,307 +688,371 @@ env.execute("File Source Example")
 | 대표 연산 | map, flatMap, keyBy, window | SELECT, GROUP BY, JOIN, WHERE |
 | 사용자 대상 | 개발자 (제어 중심) | 분석가/엔지니어 (분석 중심) |
 
-## Table API 사용법 예제
-### 데이터
-- online_sales_dataset.csv
-- 온라인 판매량을 나타내는 지표
-### 실습
-- 입력 파일 구조 확인  
-- 소스 테이블을 통해 내부 데이터 집계
-### 디렉토리 구조
-```
-(프로젝트명)/
-├── sales_summary_batch.py
-├── preprocess_sales_data.py
-├── input/
-│   ├── online_sales_dataset.csv
-│   └── online_sales_clean.csv
-└── output/
-    └── sales_summary.csv
-```
+### Table API 사용법 예제
+- 데이터
+  - `online_sales_dataset.csv`
+  - 온라인 판매량을 나타내는 지표
 
-## Table API 사용법 예제
-### 순서  
-- 데이터 구조 확인  
-- 데이터의 결측치 등의 특징을 파악하여 정제하는 `preprocess_sales_data.py` 실행  
-- Flink Table API를 통해 집계를 진행하는 `sales_summary_batch.py` 실행  
-- 집계 결과를 확인  
+- 실습
+  - 입력 파일 구조 확인  
+  - 소스 테이블을 통해 내부 데이터 집계
 
-## 데이터 구조 확인
-- Column명과 어떤 데이터를 다루는지 간단하게 파악
-
-## 데이터 정제 진행
-
-```python
-import pandas as pd
-
-# 1. CSV 읽기
-df = pd.read_csv("input/online_sales_dataset.csv")
-
-# 2. 숫자형 컬럼 강제 변환 및 결측값 채우기
-numeric_cols = ["Quantity", "UnitPrice", "ShippingCost", "CustomerID", "Discount"]
-for col in numeric_cols:
-    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
-
-# 3. 필터링 (양수 & 카테고리 존재)
-df = df[
-    (df["Quantity"] > 0)
-    & (df["UnitPrice"] > 0)
-    & (df["ShippingCost"].notna())
-    & (df["CustomerID"].notna())
-    & (df["Discount"].notna())
-    & (df["Category"].notna())
-]
-```
-> CSV 파일을 읽고 전처리하는 과정을 간단히 진행
-
-## 데이터 정제 진행 (2)
-
-```python
-# 4. 문자열 정리
-df["Category"] = df["Category"].astype(str).str.strip()
-df[numeric_cols] = df[numeric_cols].astype(float)
-
-# 5. 순서 고정 (Flink 스키마와 일치)
-final_cols = [
-    "InvoiceNo", "StockCode", "Description", "Quantity", "InvoiceDate",
-    "UnitPrice", "CustomerID", "Country", "Discount", "PaymentMethod",
-    "ShippingCost", "Category", "SalesChannel", "ReturnStatus",
-    "ShipmentProvider", "WarehouseLocation", "OrderPriority"
-]
-df = df[final_cols]
-
-# 6. 저장
-os.makedirs("input", exist_ok=True)
-df.to_csv("input/online_sales_clean_final.csv", index=False, encoding="utf-8", float_format="%.2f")
-print("정제된 CSV 저장 완료")
-```
-> Flink Table API는 엄격한 타입 검사 기반
-> 데이터를 정적 스키마 기반으로 읽기 때문에 정제가 매우 중요함
-
-## 데이터 집계 진행 (1)
-
-```python
-import pandas as pd
-import os
-from pyflink.table import EnvironmentSettings, TableEnvironment
-
-# 1. 환경 설정
-env_settings = EnvironmentSettings.in_batch_mode()
-t_env = TableEnvironment.create(environment_settings=env_settings)
-
-# 2. 경로 설정
-input_path = "input/online_sales_clean_final.csv"
-output_path = "output/sales_summary.csv"
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-# 기존 테이블 제거
-t_env.execute_sql("DROP TABLE IF EXISTS sales")
-t_env.execute_sql("DROP TABLE IF EXISTS sales_summary")
-```
-> 경로에 맞춰 파일을 배치 후 반복 실행에 대비해 테이블을 제거
-
-## 데이터 집계 진행 (2) — 소스 테이블 생성
-
-```py
-t_env.execute_sql(f"""
-  CREATE TABLE sales (
-      InvoiceNo STRING,
-      StockCode STRING,
-      Description STRING,
-      Quantity DOUBLE,
-      InvoiceDate STRING,
-      UnitPrice DOUBLE,
-      CustomerID DOUBLE,
-      Country STRING,
-      Discount DOUBLE,
-      PaymentMethod STRING,
-      ShippingCost DOUBLE,
-      Category STRING,
-      SalesChannel STRING,
-      ReturnStatus STRING,
-      ShipmentProvider STRING,
-      WarehouseLocation STRING,
-      OrderPriority STRING
-  ) WITH (
-      'connector' = 'filesystem',
-      'path' = '{input_path}',
-      'format' = 'csv',
-      'csv.ignore-parse-errors' = 'true'
-  )
-""")
-```
-> 소스 테이블 생성
-
-## 데이터 집계 진행 (3) — 집계 쿼리 및 결과 테이블 생성
-
-```py
-# 4. 집계 쿼리 실행
-result = t_env.sql_query("""
-  SELECT
-      Category,
-      ROUND(COALESCE(SUM(Quantity * UnitPrice), 0.0), 2) AS TotalSales
-  FROM sales
-  GROUP BY Category;
-""")
-
-# 5. 결과 테이블 생성
-t_env.execute_sql(f"""
-  CREATE TABLE sales_summary (
-      Category STRING,
-      TotalSales DOUBLE
-  ) WITH (
-      'connector' = 'filesystem',
-      'path' = '{output_path}',
-      'format' = 'csv',
-      'sink.parallelism' = '1'
-  )
-""")
-```
-> 집계 쿼리와 결과 테이블을 세팅
-
-## 데이터 집계 결과 확인
-
-- 결과 파일 경로:  
-  `output/sales_summary.csv`
-
-- Flink는 병렬처리를 하기 때문에 파티션단위로 생성
-
-- 결과 예시:
+- 디렉토리 구조
   ```
-  Apparel,1.185942626E7
-  Accessories,1.192189366E7
-  Stationery,1.182879267E7
-  Furniture,1.205745941E7
-  Electronics,1.183422182E7
-  Category,0.0
-  ```
-> 쿼리에 맞는 집계 결과를 확인
+  # data_engineering\04_Flink\FlinkCode\02_table\table_example
 
-## 개요 및 목적  
+  (프로젝트명)/
+  ├── sales_summary_batch.py
+  ├── preprocess_sales_data.py
+  ├── input/
+  │   ├── online_sales_dataset.csv
+  │   └── online_sales_clean.csv
+  └── output/
+      └── sales_summary.csv
+  ```
+
+- 순서  
+  - 데이터 구조 확인  
+  - 데이터의 결측치 등의 특징을 파악하여 정제하는 `preprocess_sales_data.py` 실행
+    - `preprocess_sales_data.py` -> 정제하는 파일
+  - Flink Table API를 통해 집계를 진행하는 `sales_summary_batch.py` 실행
+    - `sales_summary_batch.py` -> 배치 형태로 처리하는 예시
+  - 집계 결과를 확인  
+
+1. 데이터 구조 확인
+    - Column명과 어떤 데이터를 다루는지 간단하게 파악
+
+      ![alt text](image-25.png)
+
+2. 데이터 정제 진행
+    - CSV 파일을 읽고 전처리하는 과정을 간단히 진행
+    ```python
+    # 1_preprocess_sales_data.py
+
+    import pandas as pd
+
+    # 1. CSV 읽기
+    df = pd.read_csv("input/online_sales_dataset.csv")
+
+    # 2. 숫자형 컬럼 강제 변환 및 결측값 채우기
+    numeric_cols = ["Quantity", "UnitPrice", "ShippingCost", "CustomerID", "Discount"]
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+    # 3. 필터링 (양수 & 카테고리 존재)
+    df = df[
+        (df["Quantity"] > 0)
+        & (df["UnitPrice"] > 0)
+        & (df["ShippingCost"].notna())
+        & (df["CustomerID"].notna())
+        & (df["Discount"].notna())
+        & (df["Category"].notna())
+    ]
+
+    # 4. 문자열 정리
+    df["Category"] = df["Category"].astype(str).str.strip()
+    df[numeric_cols] = df[numeric_cols].astype(float)
+
+    # 5. 순서 고정 (Flink 스키마와 일치)
+    final_cols = [
+        "InvoiceNo", "StockCode", "Description", "Quantity", "InvoiceDate",
+        "UnitPrice", "CustomerID", "Country", "Discount", "PaymentMethod",
+        "ShippingCost", "Category", "SalesChannel", "ReturnStatus",
+        "ShipmentProvider", "WarehouseLocation", "OrderPriority"
+    ]
+    df = df[final_cols]
+
+    # 6. 저장
+    os.makedirs("input", exist_ok=True)
+    df.to_csv("input/online_sales_clean_final.csv", index=False, encoding="utf-8", float_format="%.2f")
+    print("정제된 CSV 저장 완료")
+    ```
+    - Flink Table API는 엄격한 타입 검사 기반
+    - 데이터를 정적 스키마 기반으로 읽기 때문에 정제가 매우 중요함
+      - 정적 스키마(static schema): 데이터를 읽기 전에 컬럼 이름과 데이터 타입(스키마)이 고정된 형태로 정의되어 있어야 함
+      - 정적 스키마 = 실행 시점에 변하지 않는 고정된 데이터 구조
+    - 즉, Flink Table API는 “파일을 읽어보면서 타입을 추론한다” 같은 방식을 쓰지 않고, 사용자가 미리 정의한 스키마에 데이터가 정확히 맞아야만 실행됨
+
+3. 데이터 집계 진행 
+    - 경로에 맞춰 파일을 배치 후 반복 실행에 대비해 테이블을 제거
+    ```python
+    # 1_sales_summary_batch.py
+
+    import pandas as pd
+    import os
+    from pyflink.table import EnvironmentSettings, TableEnvironment
+
+    # 1. 환경 설정
+    env_settings = EnvironmentSettings.in_batch_mode()
+    t_env = TableEnvironment.create(environment_settings=env_settings)
+
+    # 2. 경로 설정
+    input_path = "input/online_sales_clean_final.csv"
+    output_path = "output/sales_summary.csv"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    # 기존 테이블 제거
+    t_env.execute_sql("DROP TABLE IF EXISTS sales")
+    t_env.execute_sql("DROP TABLE IF EXISTS sales_summary")
+
+    # 소스 테이블 생성
+    t_env.execute_sql(f"""
+      CREATE TABLE sales (
+          InvoiceNo STRING,
+          StockCode STRING,
+          Description STRING,
+          Quantity DOUBLE,
+          InvoiceDate STRING,
+          UnitPrice DOUBLE,
+          CustomerID DOUBLE,
+          Country STRING,
+          Discount DOUBLE,
+          PaymentMethod STRING,
+          ShippingCost DOUBLE,
+          Category STRING,
+          SalesChannel STRING,
+          ReturnStatus STRING,
+          ShipmentProvider STRING,
+          WarehouseLocation STRING,
+          OrderPriority STRING
+      ) WITH (    
+          'connector' = 'filesystem',
+          'path' = '{input_path}',
+          'format' = 'csv',
+          'csv.ignore-parse-errors' = 'true'
+      )
+    """)
+    # WITH : 테이블이 어떤 소스/싱크와 연결될지 설정하는 부분
+    #   source, sink에서 어디서 읽을건지(어디서 받아올건지)
+    #   → 즉, 테이블의 실제 데이터 입출력 설정(source/sink 설정)
+
+    # 4. 집계 쿼리 실행
+    result = t_env.sql_query("""
+      SELECT
+          Category,
+          ROUND(COALESCE(SUM(Quantity * UnitPrice), 0.0), 2) AS TotalSales
+      FROM sales
+      GROUP BY Category;
+    """)
+
+    # 5. 결과 테이블 생성
+    t_env.execute_sql(f"""
+      CREATE TABLE sales_summary (
+          Category STRING,
+          TotalSales DOUBLE
+      ) WITH (
+          'connector' = 'filesystem',
+          'path' = '{output_path}',
+          'format' = 'csv',
+          'sink.parallelism' = '1'
+      )
+    """)
+    ```
+    - DataStream API
+      - 변환 연산(map, filter, keyBy 등)을 연속적으로 연결하여 연산 체인(Transformation Graph) 을 구성하는 방식
+      - 스트림이 흐르는 과정에서 연산이 적용되는 파이프라인 형태
+      - 별도의 “등록” 개념 없이, 스트림 객체 자체가 처리의 단위가 됨
+    - **Table API**
+      - SQL 엔진처럼 동작하기 위해 테이블 환경(TableEnvironment) 안에서 테이블을 **등록(Register)** 해야 함
+      - 등록된 테이블을 기반으로 `INSERT`, `SELECT`, `GROUP BY` 등 SQL/테이블 연산을 수행
+
+
+4. 데이터 집계 결과 확인
+    - 결과 파일 경로:  
+      `output/sales_summary.csv`
+
+    - Flink는 병렬처리를 하기 때문에 파티션단위로 생성
+
+    - 결과 예시:
+      ```
+      Apparel,1.185942626E7
+      Accessories,1.192189366E7
+      Stationery,1.182879267E7
+      Furniture,1.205745941E7
+      Electronics,1.183422182E7
+      Category,0.0
+      ```
+      - 쿼리에 맞는 집계 결과를 확인
+
+
+## Kafka & Flink 연계 
+![alt text](image-26.png)
 ### 왜 실시간 처리가 필요한가?  
 - 전통적인 배치 처리 방식은 시간 지연이 발생 → 사용자 행동에 즉각 대응 불가  
 - 실시간 처리는 즉각적인 반응 및 자동화 조치를 가능하게 함  
-  - 예) 실시간 상품 클릭 감지 후 추천 영역 갱신  
+  - ex. 실시간 상품 클릭 감지 후 추천 영역 갱신  
 - 빠른 의사 결정과 고객 경험 향상에 필수  
-  - 예) 실시간 이탈 예측 후 쿠폰 발급  
+  - ex. 실시간 이탈 예측 후 쿠폰 발급  
 
-## 실습
-### 실습 프로젝트 구조
+### 실습
+- 실습 프로젝트 구조
 
-## 실습
-### Topic 2개 생성
-- # kafka 가 만든 Raw 소스데이터를 담을 topic : user_behaviors
-- bin/kafka-topics.sh --create --topic user_behaviors --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+  ![alt text](image-27.png)
+  - source와 sink가 둘 다 kafka인 경우의 예시
+    - Python Streaming Data Generator → Python 코드에서 실시간 데이터를 생성해 Kafka로 전송
+    - Kafka (Source) → Flink가 데이터를 읽어가는 입력 스트림 역할
+    - Flink → Kafka에서 들어온 데이터를 처리(필터링, 변환, 집계 등)
+    - Kafka (Sink) → Flink가 처리한 결과 데이터를 다시 Kafka로 출력
 
-- # Flink 가 streaming 처리한 데이터를 담을 topic : behavior_stats
-- bin/kafka-topics.sh --create --topic behavior_stats --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+- Topic 2개 생성
+  - kafka 가 만든 Raw 소스데이터를 담을 topic : `user_behaviors`
 
-## 실습
-### Flink-Kafka 커넥터 다운로드
-- Flink와 Kafka를 연결하기 위해서는 커넥터가 필요
-- wget https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.3.0-1.19/flink-sql-connector-kafka-3.3.0-1.19.jar
+    ```sh
+    bin/kafka-topics.sh --create --topic user_behaviors --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+    ```
+    - flink 기준 input
+  - Flink 가 streaming 처리한 데이터를 담을 topic : `behavior_stats`
 
-- 경로 설정 간편화를 위해 파이썬 스크립트( *.py 파일들)와 같은 디렉터리에서 다운로드
+    ```sh
+    bin/kafka-topics.sh --create --topic behavior_stats --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+    ```
+    - flink 기준 output
 
-## 실습
-### Kafka 프로듀서 (flink_producer.py)
-```python
-# Kafka 프로듀서 설정
-producer = KafkaProducer(
-    bootstrap_servers=['localhost:9092'],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+- Flink-Kafka 커넥터 다운로드
+  - Flink와 Kafka를 연결하기 위해서는 커넥터가 필요함
+  ```sh
+  wget https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.3.0-1.19/flink-sql-connector-kafka-3.3.0-1.19.jar
+  ```
+  - 경로 설정 간편화를 위해 파이썬 스크립트( *.py 파일들)와 같은 디렉터리에서 다운로드
 
-# 샘플 데이터 속성
-user_ids = [f"user_{i}" for i in range(1, 100)]
-item_ids = [f"item_{i}" for i in range(1, 200)]
-categories = ["electronics", "books", "clothing", "home", "sports"]
-behaviors = ["click", "view", "add_to_cart", "purchase"]
+    ![alt text](image-28.png)
 
-# 데이터 생성 및 전송
-for _ in range(1000):  # 1000개의 이벤트 생성
-    event = {
-        "user_id": random.choice(user_ids),
-        "item_id": random.choice(item_ids),
-        "category": random.choice(categories),
-        "behavior": random.choice(behaviors),
-        "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    }
-```
+- Kafka 프로듀서 (`flink_producer.py`)
+  - 당연히 주키퍼, 카프카 띄운 상태에서 실행
+  - 역할
+    - 실시간 스트리밍 데이터를 생성하고 Kafka 토픽에 적재하는 역할
+    - Flink는 이 데이터를 source로 가져감
+  - 설명
+    - KafkaProducer로 Kafka에 JSON 형태의 메시지를 지속적으로 전송
+    - `user_id`, `item_id`, `category`, `behavior`, `timestamp` 등 랜덤 이벤트 생성
+    - 1000개의 이벤트를 생성하며, 필요하면 무한루프 형태로도 가능
+    ```python
+    # Kafka 프로듀서 설정
+    producer = KafkaProducer(
+        bootstrap_servers=['localhost:9092'],   # Kafka 브로커 위치
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')  # Python dict → JSON 문자열 → byte 변환
+    )
 
-### Flink 스트리밍 작업 파일 (kafka_flink_example.py)
-- flink-kafka connector JAR 파일 경로 설정
-```python
-def main():
-    logger.info("Flink 작업 시작...")
+    # 샘플 데이터 속성
+    user_ids = [f"user_{i}" for i in range(1, 100)]
+    item_ids = [f"item_{i}" for i in range(1, 200)]
+    categories = ["electronics", "books", "clothing", "home", "sports"]
+    behaviors = ["click", "view", "add_to_cart", "purchase"]
 
-    # 스트림 실행 환경 설정
-    env = StreamExecutionEnvironment.get_execution_environment()
-    env_settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
-    table_env = StreamTableEnvironment.create(env, environment_settings=env_settings)
+    # 데이터 생성 및 전송
+    for _ in range(1000):  # 1000개의 이벤트 생성
+        event = {
+            "user_id": random.choice(user_ids),
+            "item_id": random.choice(item_ids),
+            "category": random.choice(categories),
+            "behavior": random.choice(behaviors),
+            "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        }
+    ```
+    - "user_behaviors" 토픽으로 전송 → Flink에서 source로 읽게 됨
 
-    # 로깅 레벨 설정
-    table_env.get_config().get_configuration().set_string("pipeline.global-job-parameters.log.level", "INFO")
+- Flink 스트리밍 작업 파일 (`kafka_flink_example.py`)
+  - flink-kafka connector JAR 파일 경로 설정
+  - 역할
+    - Flink 실행 환경 생성
+    - Table API를 사용하기 위해 TableEnvironment 생성
+    - Kafka connector JAR 파일을 classpath에 추가
+  - 왜 JAR이 필요한가?
+    - PyFlink는 Kafka와 직접 통신할 수 없기 때문에 Java 기반 Kafka connector JAR을 반드시 추가해야 함
+    - Flink가 Kafka를 Source/Sink로 인식하기 위해 필요
 
-    # JAR 파일 추가 (전체 경로로 수정하세요)
-    kafka_jar = os.path.join(os.path.abspath('.'), 'flink-sql-connector-kafka-1.17.1.jar')
-    logger.info(f"사용하는 JAR 파일 경로: {kafka_jar}")
-    if not os.path.exists(kafka_jar):
-        logger.error(f"JAR 파일이 존재하지 않습니다: {kafka_jar}")
-        return
-```
+    ```python
+    def main():
+        logger.info("Flink 작업 시작...")
 
-### Flink 스트리밍 작업 파일 (kafka_flink_example.py)
-- kafka 프로듀서가 생성하는 소스 데이터 가져오는 코드의 일부
-```python
-def main():
-    # 소스 테이블 정의
-    try:
-        logger.info("Kafka 소스 테이블 생성 시도...")
-        table_env.execute_sql("""
-        CREATE TABLE kafka_source (
-            user_id STRING,
-            item_id STRING,
-            category STRING,
-            behavior STRING,
-            ts TIMESTAMP(3),
-            proctime AS PROCTIME()
-        ) WITH (
-            'connector' = 'kafka',
-            'topic' = 'user_behaviors',
-            'properties.bootstrap.servers' = 'localhost:9092',
-            'properties.group.id' = 'flink-consumer-group',
-            'scan.startup.mode' = 'earliest-offset',
-            'format' = 'json',
-            'json.fail-on-missing-field' = 'false',
-            'json.ignore-parse-errors' = 'true'
-        )
-        """)
-```
+        # 스트림 실행 환경 설정
+        env = StreamExecutionEnvironment.get_execution_environment()
+        env_settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
+        table_env = StreamTableEnvironment.create(env, environment_settings=env_settings)
 
-### Flink 스트리밍 작업 파일 (kafka_flink_example.py)
-- Flink로 스트리밍 데이터 처리하고 ‘behavior_stats’ 토픽(Kafka)으로 보내는 코드
-```python
-def main():
-    # 싱크 테이블 정의
-    try:
-        logger.info("Kafka 싱크 테이블 생성 시도...")
-        table_env.execute_sql("""
-        CREATE TABLE kafka_sink (
-            category STRING,
-            behavior STRING,
-            behavior_count BIGINT,
-            update_time TIMESTAMP(3),
-            PRIMARY KEY (category, behavior) NOT ENFORCED
-        ) WITH (
-            'connector' = 'upsert-kafka',
-            'topic' = 'behavior_stats',
-            'properties.bootstrap.servers' = 'localhost:9092',
-            'key.format' = 'json',
-            'value.format' = 'json',
-            'properties.group.id' = 'flink-sink-group'
-        )
-        """)
-        logger.info("Kafka 싱크 테이블 생성 성공")
-```
+        # 로깅 레벨 설정
+        table_env.get_config().get_configuration().set_string("pipeline.global-job-parameters.log.level", "INFO")
+
+        # JAR 파일 추가 (전체 경로로 수정하세요)
+        kafka_jar = os.path.join(os.path.abspath('.'), 'flink-sql-connector-kafka-3.3.0-1.19.jar')
+        logger.info(f"사용하는 JAR 파일 경로: {kafka_jar}")
+        if not os.path.exists(kafka_jar):
+            logger.error(f"JAR 파일이 존재하지 않습니다: {kafka_jar}")
+            return
+    ```
+
+  - kafka 프로듀서가 생성하는 소스 데이터 가져오는 코드의 일부
+    ```python
+    def main():
+        # 소스 테이블 정의
+        # Kafka Producer가 넣은 데이터를 Flink에서 읽을 수 있도록 
+        # Source 테이블 등록
+        try:
+            logger.info("Kafka 소스 테이블 생성 시도...")
+            table_env.execute_sql("""
+            CREATE TABLE kafka_source (
+                user_id STRING,
+                item_id STRING,
+                category STRING,
+                behavior STRING,
+                ts TIMESTAMP(3),
+                proctime AS PROCTIME()
+            ) WITH (
+                'connector' = 'kafka',
+                'topic' = 'user_behaviors',
+                'properties.bootstrap.servers' = 'localhost:9092',
+                'properties.group.id' = 'flink-consumer-group',
+                'scan.startup.mode' = 'earliest-offset',
+                'format' = 'json',
+                'json.fail-on-missing-field' = 'false',
+                'json.ignore-parse-errors' = 'true'
+            )
+            """)
+    ```
+    - 정적 스키마 기반
+      - Kafka에서 들어오는 JSON 구조가 이 스키마와 정확히 일치해야 함
+    - WITH 옵션:
+      - `connector = kafka` → Kafka에서 데이터를 읽겠다는 의미
+      - `earliest-offset` → 가능한 가장 오래된 데이터부터 읽기 시작
+      - `json.ignore-parse-errors = true` → JSON 파싱 실패시 해당 메시지는 무시하고 계속 진행
+      - `format = json` → Kafka 메시지를 JSON으로 파싱
+
+  - Flink로 스트리밍 데이터 처리하고 ‘behavior_stats’ 토픽(Kafka)으로 보내는 코드
+    ```python
+    def main():
+        # Kafka Sink Table 정의 (Flink → Kafka)
+        try:
+            logger.info("Kafka 싱크 테이블 생성 시도...")
+            table_env.execute_sql("""
+            CREATE TABLE kafka_sink (
+                category STRING,
+                behavior STRING,
+                behavior_count BIGINT,
+                update_time TIMESTAMP(3),
+                PRIMARY KEY (category, behavior) NOT ENFORCED
+            ) WITH (
+                'connector' = 'upsert-kafka',
+                'topic' = 'behavior_stats',
+                'properties.bootstrap.servers' = 'localhost:9092',
+                'key.format' = 'json',
+                'value.format' = 'json',
+                'properties.group.id' = 'flink-sink-group'
+            )
+            """)
+            logger.info("Kafka 싱크 테이블 생성 성공")
+    ```
+    - Flink에서 처리한 결과를 다시 Kafka 토픽으로 내보내기 위해 Sink 테이블 등록
+    - 왜 upsert-kafka인가?
+      - 집계 결과는 동일 category/behavior 조합이 계속 업데이트되는 형태
+      - 기존 레코드를 업데이트해야 하므로 upsert-kafka 커넥터 사용 (키를 기준으로 기존 데이터 업데이트 가능)
+    - WITH 옵션:
+      ```sql
+      WITH (
+          'connector' = 'upsert-kafka',
+          'topic' = 'behavior_stats',
+          'key.format' = 'json',
+          'value.format' = 'json'
+      )
+      ```
+      - upsert-kafka는 key/value 포맷을 별도 정의해야 함
+      - Flink가 PK(category, behavior)를 key로 Kafka에 upsert 메시지를 보냄
