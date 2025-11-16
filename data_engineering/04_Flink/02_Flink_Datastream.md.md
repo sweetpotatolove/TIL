@@ -1,59 +1,142 @@
 # Flink DataStream
+## DataStream API
+### Stream Processing
+- 동전 분류기, 줄서기 예시
+
+  ![alt text](image-19.png)
+  - 모든 구성 요소는 **직렬**로 연결
+  - 지속적으로 시스템에 입력되어 향후 사용을 위해 다양한 대기열로 출력(분류됨)
+  - 일반적으로 스트림 처리 시스템은 무한 데이터셋 처리를 지원하기 위해 데이터 기반 처리 방법을 사용
+
+### Batch vs Streaming 처리 방식
+![alt text](image-20.png)
+
+- Batch Analytics (배치 분석)
+  - 이미 저장된 과거 데이터(Recorded Events) 를 일정 주기마다 읽어와 분석하는 방식
+  - 흐름
+    1. Recorded Events
+        - 로그 파일이나 DB 등에 누적 저장된 과거 이벤트 데이터
+    2. Periodic Query / Application
+        - 일정 시간 간격(예: 매시간, 매일)으로 트리거되어 데이터를 읽고 분석함
+        - 한 번 실행될 때마다 많은 양의 데이터를 처리하는 구조
+    3. 결과 저장 & 리포트 생성
+        - 분석된 결과는 Database/HDFS에 저장되거나
+        - Report(정적 보고서) 형태로 만들어짐
+
+- Streaming Analytics (스트리밍 분석)
+  - 실시간으로 들어오는 이벤트(Real-time Events) 를 즉시 처리하고, 계속해서 상태를 유지하면서 업데이트하는 방식
+  - 흐름
+    1. Real-time Events
+        - 센서 데이터, 사용자 활동 로그 등 실시간으로 발생하는 데이터
+    2. Continuous Query / Application
+        - 데이터가 들어오는 즉시 처리되는 연속 실행(continuous) 애플리케이션
+        - 내부적으로 **State(상태)** 를 유지하며 이전 계산 결과를 누적하거나 갱신함
+    3. Database / K-V Store 업데이트
+        - 처리된 결과는 실시간으로 Key-Value Store나 데이터베이스에 업데이트됨
+    4. Live Report / Dashboard 출력
+        - 사용자는 거의 실시간에 가까운 최신 분석 결과를 대시보드에서 확인할 수 있음
+    
+- 정리
+  | 항목 | Batch | Streaming |
+  |------|--------|------------|
+  | 처리 방식 | 일정기간 단위로 수집하여 한 번에 처리 | 연속된 데이터를 하나씩 처리 |
+  | 처리량 | 대규모 데이터 단위 | 주로 소량의 레코드 단위 |
+  | 속도 | 수분~시간의 지연시간 | (준)실시간 |
+  | 사용환경 | 복잡한 분석이 요구되는 환경<br>데이터 처리량이 많은 환경 | 실시간 처리 및 분석 정보가 요구되는 환경 |
+
+### DataStream API
+스트림 데이터를 처리하기 위한 API  
+
+- 데이터 스트림(DataStream)
+  - 기본적으로 유한 또는 무한의 **불변(immutable)** 데이터 집합
+    - Flink의 DataStream은 한 번 생성된 후 내부 데이터를 직접 변경할 수 없기 때문
+    - 원본은 그대로 두고, 변환된 '새로운' 스트림을 생성하는 구조
+  - 변환(transformation)을 통해 처리함 
+
+- 특징
+  - 실시간 이벤트 처리
+    - 들어오는 데이터를 즉시 처리하는 저지연 스트리밍 처리에 최적화됨
+  - CEP(Complex Event Processing)
+    - 여러 이벤트의 패턴을 인식하여 복잡한 조건을 감지하는 기능 제공
+  - 사용자 정의 로직
+    - 기본 연산(map, filter 등) 외에도 UDF로 다양한 비즈니스 로직을 구현 가능
+  - 복잡한 상태 관리  
+    - 이전 이벤트 정보를 기억하며 연속적인 계산을 수행할 수 있고, 체크포인트 기반으로 장애 복구가 가능
+
 - DataStream API
-- 데이터 변환 및 연산
-- 데이터 스트림의 분할 및 반복
-- Flink Table API
+  - 저수준(Low-level) API로, 데이터의 흐름과 처리를 세밀하게 제어함
 
-# DataStream API
-## Stream Processing?
-### 동전 분류기, 줄서기 예시
-- 모든 구성 요소는 직렬로 연결
-- 지속적으로 시스템에 입력되어 향후 사용을 위해 다양한 대기열로 출력(분류됨)
-- 일반적으로 스트림 처리 시스템은 무한 데이터셋 처리를 지원하기 위해 데이터 기반 처리 방법을 사용
+- Flink 프로그램 기본 구조
+  1. 실행 환경 생성 (Execution Environment)
+  2. Source에서 데이터 읽기
+  3. Transformation 적용
+  4. Sink로 외부 시스템에 결과 출력
+  5. `execute()`로 실행 시작
+      - 실제 데이터 처리는 execute() 호출 시점에 실행 계획(Data Flow Graph)으로 실행됨
+  
+  - DataStream API도 구조 동일함
+    - `환경 → 소스 → 변환 → 싱크 → 실행`
+      ```java
+      StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-## Batch vs Streaming 처리 방식
+      DataStream<String> stream = env.addSource(...);
 
-## Batch vs Streaming 처리 방식
+      DataStream<String> transformed = stream
+          .map(...)
+          .filter(...)
+          .keyBy(...)
+          .window(...)
+          .reduce(...);
 
-| 항목 | Batch | Streaming |
-|------|--------|------------|
-| 처리 방식 | 일정기간 단위로 수집하여 한 번에 처리 | 연속된 데이터를 하나씩 처리 |
-| 처리량 | 대규모 데이터 단위 | 주로 소량의 레코드 단위 |
-| 속도 | 수분~시간의 지연시간 | (준)실시간 |
-| 사용환경 | 복잡한 분석이 요구되는 환경<br>데이터 처리량이 많은 환경 | 실시간 처리 및 분석 정보가 요구되는 환경 |
+      transformed.addSink(...);
 
-## DataStream API 개요  
-### 스트림 데이터를 처리하기 위한 API  
-- 데이터 스트림(DataStream): 기본적으로 유한 또는 무한의 불변(immutable) 데이터 집합으로, 변환(transformation)을 통해 처리  
-- 실시간 이벤트 처리, CEP(Complex Event Processing), 사용자 정의 로직, 복잡한 상태 관리  
-- 저수준(Low-level) API로, 데이터의 흐름과 처리를 세밀하게 제어  
-- 프로그램은 데이터 소스(source)로부터 데이터를 읽고, 여러 변환(transformations)을 적용한 후, 결과를 싱크(sink)를 통해 외부 시스템에 출력  
-- 실제 데이터 처리는 execute() 호출 시점에 실행 계획(Data Flow Graph)으로 실행  
+      env.execute("my job");
+      ```
 
-## Directed Acyclic Graph  
-### 논리 모델 (DAG)  
-- DAG(Directed Acyclic Graph): 방향성이 있는 비순환 그래프로, 전체 계산 로직을 노드(연산자)와 간선(데이터 흐름)으로 표현  
-- 사용자가 작성한 스트림 처리 프로그램에서 “어떤 연산을 순서대로 수행할 것인지”를 추상적으로 표현  
-- “연산자가 어떻게 연결되는지, 어떤 순서로 실행되는지”만을 정의  
+### Directed Acyclic Graph  
+- 논리 모델 (DAG)  
+  - DAG(Directed Acyclic Graph)
+    - **방향성이 있는 비순환 그래프**
+    - 전체 계산 로직을 노드(연산자)와 간선(데이터 흐름)으로 표현  
 
-## Directed Acyclic Graph  
-### 왜 DAG를 사용하는가?  
+      ![alt text](image-21.png)
+      - 즉, 전체적인 계산 과정을 추상화
+  - 사용자가 작성한 스트림 처리 프로그램에서 “어떤 연산을 순서대로 수행할 것인지”를 추상적으로 표현  
+  - “연산자가 어떻게 연결되는지, 어떤 **순서**로 실행되는지”만을 정의  
 
-- 스트림 처리에서 여러 연산자가 순차 혹은 병렬적으로 데이터를 처리하는 과정을 직관적으로 표현  
-- DAG 형태로 나누어 두면, 각 노드를 여러 태스크로 확장하여 대규모 데이터를 병렬로 처리할 수 있음  
-- DAG 구조를 분석해 노드 간 데이터 교환, 파티셔닝, 스케줄링 등을 최적화 가능  
-- 엔진은 DAG에 정의된 각 노드(연산자) 상태를 주기적으로 체크포인트(checkpoint)하고, 장애 발생 시 해당 노드 상태만 복구해 재실행 용이  
+- 왜 DAG를 사용하는가?  
+  - 스트림 처리에서 여러 연산자가 순차 혹은 병렬적으로 데이터를 처리하는 과정을 **직관적**으로 표현 -> '그래프'
+  - DAG 형태로 나누어 두면, 각 노드를 여러 태스크로 확장하여 **대규모 데이터를 병렬로 처리**할 수 있음  
+  - DAG 구조를 분석해 노드 간 데이터 교환, 파티셔닝, 스케줄링 등을 **최적화** 가능  
+  - 엔진은 DAG에 정의된 각 노드(연산자) 상태를 주기적으로 체크포인트(checkpoint)하고, **장애 발생 시 해당 노드 상태만 복구해 재실행** 용이  
 
-## 데이터 소스 종류  
+### 데이터 소스(Source) 종류  
 - 파일 시스템  
-  - 로컬 파일, HDFS 등에서 데이터를 읽어 들임  
+  - 로컬 파일, HDFS 등에서 텍스트·CSV·로그 같은 정적 데이터 또는 지속적으로 추가되는 파일을 읽어 스트림 형태로 처리할 수 있음
 - 메시지 큐 / 스트리밍 플랫폼  
-  - Apache Kafka 등과 연동하여 실시간 스트림 처리  
+  - Kafka, Pulsar 등에서 실시간으로 들어오는 이벤트를 지속적으로 소비(consume)
+  - 높은 처리량과 내결함성을 가진 플랫폼과 연동하여 “실시간 스트림 처리”의 대표적인 소스로 활용됨
+  - 즉, Apache Kafka 등과 연동하여 실시간 스트림 처리  
 - 소켓 스트림  
-  - 네트워크 소켓을 통해 실시간 로그나 이벤트 데이터를 수신  
+  - TCP 소켓을 통해 외부 애플리케이션에서 보내는 문자열/로그 데이터를 실시간 스트림으로 수신
+  - 즉, 네트워크 소켓을 통해 실시간 로그나 이벤트 데이터를 수신함
 
-## 데이터 소스 구성 방법
-- Flink의 ‘StreamExecutionEnvironment’를 사용 커넥터 API를 통해 다양한 외부 시스템과 쉽게 연결
+### 데이터 소스 구성 방법
+- Flink의 ‘StreamExecutionEnvironment’를 사용
+
+- 커넥터 API를 통해 다양한 외부 시스템과 쉽게 연결함
+  - 커넥터 API(Connector API)
+    - Flink가 외부 시스템(파일, Kafka, DB, 메시지 큐 등)과 데이터를 주고받기 위해 제공하는 표준 인터페이스(연동 모듈)
+    - 즉, Flink와 외부 데이터 소스를 연결해주는 플러그인 같은 것
+  - 커넥터 API가 하는 역할
+    1. Source 커넥터
+        - 외부 시스템 → Flink 로 데이터 읽기
+        - ex. KafkaConsumer, FileSource, SocketSource
+    2. Sink 커넥터
+        - Flink → 외부 시스템으로 데이터 내보내기
+        - ex. KafkaSink, ElasticsearchSink, JDBC Sink 등
+    3. 포맷/직렬화 세부 처리 지원
+        - JSON, CSV, Avro, protobuf 등 다양한 형식을 읽고 쓰도록 지원
 
 ```py
 from pyflink.datastream import StreamExecutionEnvironment
@@ -71,61 +154,76 @@ text_stream.print()
 # 실행
 env.execute("File Source Example")
 ```
+- `read_text_file()`
+  - Flink의 파일 소스 커넥터(File Source Connector) 를 사용하는 API
+  - 즉, 파일 시스템과 연결해서 데이터를 읽어오는 커넥터 API의 한 형태
+  - Kafka·Pulsar·JDBC 등은 별도의 커넥터 객체를 직접 생성해야 하지만,
+    - 파일 소스는 Flink가 기본 제공하는 간단한 커넥터라 편의 함수 형태로 바로 사용할 수 있음
 
-## Sink
-### 데이터 흐름 : 데이터 소스 -> 연산(변환) -> Sink
-- 데이터 소스 : 데이터 입력을 정의  
-- 연산 : 데이터를 가공하는 작업  
-- Sink : 처리한 스트림을 출력·저장하는 단계  
 
-| Sink 종류 | 설명 |
-|------------|------|
-| PrintSink | print() 메서드를 사용하여 콘솔에 출력 |
-| FileSink | 데이터를 파일로 저장 (텍스트, CSV, JSON 등) |
-| KafkaSink | 데이터를 Kafka에 저장 |
-| DatabaseSink | JDBC를 이용하여 DB(MySQL, PostgreSQL 등)에 저장 |
-| ElasticsearchSink | 데이터를 Elasticsearch에 저장 |
+### Sink
+- 데이터 흐름 : `데이터 소스 -> 연산(변환) -> Sink`
 
-## Sink 예제(FileSink)
-### FileSink를 위해 Java encoder 필요
-- get_gateway()를 통해 Java 가상 머신에 접근, Java의 SimpleStringEncoder를 생성  
-- 생성한 Java encoder를 Encoder 클래스에 전달하여 Python encoder를 생성  
+  ![alt text](image-22.png)
+  - 데이터 소스
+    - 데이터 입력을 정의
+    - 즉, 데이터 가져오는 것
+  - 연산
+    - 데이터를 가공하는 작업  
+  - Sink
+    - 처리한 스트림을 출력·저장하는 단계  
 
-```
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.connectors import FileSink
-from pyflink.common.serialization import Encoder
-from pyflink.common.typeinfo import Types
-from pyflink.java_gateway import get_gateway
+- Sink 종류
+  | Sink 종류 | 설명 |
+  |------------|------|
+  | PrintSink | print() 메서드를 사용하여 콘솔에 출력 |
+  | FileSink | 데이터를 파일로 저장 (텍스트, CSV, JSON 등) |
+  | KafkaSink | 데이터를 Kafka에 저장 |
+  | DatabaseSink | JDBC를 이용하여 DB(MySQL, PostgreSQL 등)에 저장 |
+  | ElasticsearchSink | 데이터를 Elasticsearch에 저장 |
 
-# 실행 환경 생성
-env = StreamExecutionEnvironment.get_execution_environment()
+- Sink 예제(FileSink)
+  - FileSink를 위해 Java encoder 필요함
+    - `get_gateway()`를 통해 Java 가상 머신에 접근, Java의 `SimpleStringEncoder`를 생성  
+    - 생성한 Java encoder를 Encoder 클래스에 전달하여 Python encoder를 생성  
 
-# 데이터 소스 생성
-data = ["Hello", "Flink", "World"]
-data_stream = env.from_collection(data, type_info=Types.STRING())
+  - 파이썬 DataStream에서 생성한 문자열 데이터를 FileSink를 이용해 파일로 저장하는 방법을 보여주는 코드
+    ```py
+    from pyflink.datastream import StreamExecutionEnvironment
+    from pyflink.datastream.connectors import FileSink
+    from pyflink.common.serialization import Encoder
+    from pyflink.common.typeinfo import Types
+    from pyflink.java_gateway import get_gateway
 
-# Java 엔코더 생성
-gateway = get_gateway()
-j_string_encoder = gateway.jvm.org.apache.flink.api.common.serialization.SimpleStringEncoder()
+    # 실행 환경 생성
+    env = StreamExecutionEnvironment.get_execution_environment()
 
-# Python Encoder 생성
-encoder = Encoder(j_string_encoder)
+    # 데이터 소스 생성
+    data = ["Hello", "Flink", "World"]
+    data_stream = env.from_collection(data, type_info=Types.STRING())
 
-# FileSink 설정
-file_sink = FileSink.for_row_format(
-    "./output/result",   # 출력 디렉터리
-    encoder
-).build()
+    # Java 엔코더 생성
+    gateway = get_gateway()
+    j_string_encoder = gateway.jvm.org.apache.flink.api.common.serialization.SimpleStringEncoder()
 
-# Sink에 데이터 연결
-data_stream.sink_to(file_sink)
+    # Python Encoder 생성
+    encoder = Encoder(j_string_encoder)
 
-# 출력결과 실행
-env.execute("File Sink Example")
-```
+    # FileSink 설정
+    file_sink = FileSink.for_row_format(
+        "./output/result",   # 출력 디렉터리
+        encoder
+    ).build()
 
-# 데이터 변환 및 연산
+    # Sink에 데이터 연결
+    data_stream.sink_to(file_sink)
+
+    # 출력결과 실행
+    env.execute("File Sink Example")
+    ```
+
+
+## 데이터 변환 및 연산
 
 ## 데이터 변환  
 ### 데이터 변환은 원시 데이터를 유용한 정보로 변형  
