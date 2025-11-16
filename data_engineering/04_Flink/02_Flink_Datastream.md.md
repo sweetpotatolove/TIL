@@ -224,413 +224,447 @@ env.execute("File Source Example")
 
 
 ## 데이터 변환 및 연산
+### 데이터 변환  
+- 데이터 변환은 원시 데이터를 유용한 정보로 변형  
+  - 원시 데이터를 의미 있는 정보로 재구성  
+  - 후속 처리(ex. 집계, 조인, 윈도우 연산 등)를 위한 전처리 작업을 수행  
+  - 변환 함수들은 병렬 처리에 최적화  
+  - 각 연산은 독립적으로 실행되어 클러스터 환경에서도 높은 확장성과 내결함성을 보장  
 
-## 데이터 변환  
-### 데이터 변환은 원시 데이터를 유용한 정보로 변형  
-- 원시 데이터를 의미 있는 정보로 재구성  
-- 후속 처리(예: 집계, 조인, 윈도우 연산 등)를 위한 전처리 작업을 수행  
-- 변환 함수들은 병렬 처리에 최적화  
-- 각 연산은 독립적으로 실행되어 클러스터 환경에서도 높은 확장성과 내결함성을 보장  
-### 지연 평가(Lazy Evaluation) 방식  
+- 지연 평가(Lazy Evaluation) 방식  
 
-## 지연 평가(Lazy Evaluation)  
+### 지연 평가(Lazy Evaluation)  
 - 연산 계획 수립
   - 데이터 스트림에 대해 여러 변환 연산(map, filter, flatMap 등)을 적용하면, 각 연산은 바로 실행되지 않고 내부적으로 실행 계획(Graph)으로 기록  
+
 - 최적화 기회 제공
   - 실제 실행 전까지 여러 연산이 결합되어 전체 최적화가 가능해짐  
   - 불필요한 중간 결과를 줄이고, 연산 체인을 병합하는 등의 최적화가 수행  
+  - 이때 사용자가 작성한 변환 연산들의 흐름은 로지컬(Logical) 계획으로 먼저 기록되며, 실행 시점에 Flink가 이를 실제 실행 방식까지 포함한 피지컬(Physical) 계획으로 변환하여 수행함
+
+    ![alt text](image-23.png)
+    - 여러 변환 연산이 즉시 실행되지 않고 DAG(실행 계획)으로만 생성되며, 
+    - `execute()` 호출 시 실제 연산이 수행됨
+
 - 실행 트리거
   - 최종 결과를 출력하는 sink가 설정되거나 `execute()` 명령이 호출되면, 기록된 연산 계획에 따라 전체 데이터 플로우가 한꺼번에 실행  
 
-## 지연 평가(Lazy Evaluation) 장점  
-- 효율성
-  - 불필요한 계산을 방지하여 리소스를 절약하고, 전체 실행 계획을 최적화 가능  
-- 성능 향상 
-  - 여러 연산을 하나의 파이프라인으로 결합함으로써, 데이터 전송 및 중간 결과의 저장을 최소화  
-- 유연성
-  - 실행 시점까지 연산을 미루어, 실행 계획을 재구성하거나 동적으로 변경
+- 지연 평가(Lazy Evaluation) 장점  
+  - 효율성
+    - 불필요한 계산을 방지하여 리소스를 절약하고, 전체 실행 계획을 최적화 가능  
+  - 성능 향상 
+    - 여러 연산을 하나의 파이프라인으로 결합함으로써, 데이터 전송 및 중간 결과의 저장을 최소화  
+  - 유연성
+    - 실행 시점까지 연산을 미루어, 실행 계획을 재구성하거나 동적으로 변경
 
-## 기본 변환 함수
-
+### 기본 변환 함수
 | 함수 | 역할 | 용도/설명 |
 |------|------|------------|
-| map | 각 입력 요소를 1:1로 변환 | 데이터 포맷 변경, 특정 필드 추출, 단순 계산 적용 |
-| flatMap | 하나의 입력 요소에서 0개 이상 출력 생성 | 복합 데이터를 분해하거나, 조건에 따라 다수의 결과 생성 |
-| filter | 입력 요소를 조건에 따라 선별 | 노이즈 제거, 유효 데이터 필터링 |
+| `map` | 각 입력 요소를 1:1로 변환 | 데이터 포맷 변경, 특정 필드 추출, 단순 계산 적용 |
+| `flatMap` | 하나의 입력 요소에서 0개 이상 출력 생성 | 복합 데이터를 분해(ex. 단어 쪼개기)하거나, 조건에 따라 다수의 결과 생성 |
+| `filter` | 입력 요소를 조건에 따라 선별 | 노이즈 제거, 유효 데이터 필터링 |
 
-## map 함수
+- map 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# 예제 입력: 정수 리스트
-input_data = [1, 2, 3, 4]
+  # 예제 입력: 정수 리스트
+  input_data = [1, 2, 3, 4]
 
-# DataStream 생성
-ds = env.from_collection(collection=input_data, type_info=Types.INT())
+  # DataStream 생성
+  ds = env.from_collection(collection=input_data, type_info=Types.INT())
 
-# map 함수: 각 요소에 2를 곱하기
-mapped_stream = ds.map(lambda x: x * 2, output_type=Types.INT())
+  # map 함수: 각 요소에 2를 곱하기
+  mapped_stream = ds.map(lambda x: x * 2, output_type=Types.INT())
 
-# 실행 후 결과 수집
-env.execute("Simple Map Job")
-mapped_result = list(mapped_stream.execute_and_collect())
+  # 실행 후 결과 수집
+  env.execute("Simple Map Job")
+  mapped_result = list(mapped_stream.execute_and_collect())
 
-print("map 결과:", mapped_result)
-```
-map 결과: `[2, 4, 6, 8]`
+  print("map 결과:", mapped_result)
+  ```
+  - map 결과: `[2, 4, 6, 8]`
 
-## flat_map 함수
+- flat_map 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# 예제 입력: 문자열 리스트
-input_data = ["hello", "hi"]
+  # 예제 입력: 문자열 리스트
+  input_data = ["hello", "hi"]
 
-# DataStream 생성
-ds = env.from_collection(collection=input_data, type_info=Types.STRING())
+  # DataStream 생성
+  ds = env.from_collection(collection=input_data, type_info=Types.STRING())
 
-# flat_map 함수: 각 문자열을 문자 단위로 분해하여 개별 문자 출력
-def split_string(s):
-    for ch in s:
-        yield ch
+  # flat_map 함수: 각 문자열을 문자 단위로 분해하여 개별 문자 출력
+  def split_string(s):
+      for ch in s:
+          yield ch
 
-flat_mapped_stream = ds.flat_map(split_string, output_type=Types.STRING())
+  flat_mapped_stream = ds.flat_map(split_string, output_type=Types.STRING())
 
-# 실행 후 결과 수집
-env.execute("FlatMap Job")
-flat_mapped_result = list(flat_mapped_stream.execute_and_collect())
+  # 실행 후 결과 수집
+  env.execute("FlatMap Job")
+  flat_mapped_result = list(flat_mapped_stream.execute_and_collect())
 
-print("flat_map 결과:", flat_mapped_result)
-```
-flat_map 결과: `['h', 'e', 'l', 'l', 'o', 'h', 'i']`
+  print("flat_map 결과:", flat_mapped_result)
+  ```
+  - flat_map 결과: `['h', 'e', 'l', 'l', 'o', 'h', 'i']`
 
-## filter 함수
+- filter 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# 예제 입력: 정수 리스트
-input_data = [1, 2, 3, 4, 5, 6]
+  # 예제 입력: 정수 리스트
+  input_data = [1, 2, 3, 4, 5, 6]
 
-# DataStream 생성
-ds = env.from_collection(collection=input_data, type_info=Types.INT())
+  # DataStream 생성
+  ds = env.from_collection(collection=input_data, type_info=Types.INT())
 
-# filter 함수: 짝수만 통과시키기
-filtered_stream = ds.filter(lambda x: x % 2 == 0)
+  # filter 함수: 짝수만 통과시키기
+  filtered_stream = ds.filter(lambda x: x % 2 == 0)
 
-# 실행 후 결과 수집
-env.execute("Filter Job")
+  # 실행 후 결과 수집
+  env.execute("Filter Job")
 
-filtered_result = list(filtered_stream.execute_and_collect())
-print("filter 결과:", filtered_result)
-```
-filter 결과: `[2, 4, 6]`
+  filtered_result = list(filtered_stream.execute_and_collect())
+  print("filter 결과:", filtered_result)
+  ```
+  - filter 결과: `[2, 4, 6]`
 
-## 그룹화 및 집계 함수
 
+### 그룹화 및 집계 함수
 | 함수 | 역할 | 용도/설명 |
 |------|------|------------|
-| keyBy | 스트림 요소들을 특정 키로 그룹화 | 그룹별 집계, 상태 저장, 윈도우 연산 등의 사전 준비 단계 |
-| reduce | 그룹 내 요소들을 누적하여 단일 결과로 집계 | 합계, 최대/최소 값 계산 등 간단한 집계 연산 |
-| process | 각 이벤트에 대한 로직 커스텀 처리 | 상태 기반 집계, 타이밍 제어 등 복잡한 로직 구현 |
+| `keyBy` | 스트림 요소들을 특정 키로 그룹화 | 그룹별 집계, 상태 저장, 윈도우 연산 등의 사전 준비 단계 |
+| `reduce` | 그룹 내 요소들을 누적하여 단일 결과로 집계 | 합계, 최대/최소 값 계산 등 간단한 집계 연산 |
+| `process` | 각 이벤트에 대한 로직 커스텀 처리 | 상태 기반 집계, 타이밍 제어 등 복잡한 로직 구현 |
 
-## keyby 함수
+- keyby 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# 예제 입력: (사용자, 값) 튜플들의 리스트
-input_data = [("A", 1), ("B", 2), ("A", 3), ("B", 4)]
+  # 예제 입력: (사용자, 값) 튜플들의 리스트
+  input_data = [("A", 1), ("B", 2), ("A", 3), ("B", 4)]
 
-# DataStream 생성 (튜플 타입: (String, Int))
-ds = env.from_collection(input_data, type_info=Types.TUPLE([Types.STRING(), Types.INT()]))
+  # DataStream 생성 (튜플 타입: (String, Int))
+  ds = env.from_collection(input_data, type_info=Types.TUPLE([Types.STRING(), Types.INT()]))
 
-# keyBy: 사용자(첫 번째 요소)를 기준으로 그룹화
-keyed_stream = ds.key_by(lambda x: x[0])
-```
+  # keyBy: 사용자(첫 번째 요소)를 기준으로 그룹화
+  keyed_stream = ds.key_by(lambda x: x[0])
+  ```
 
-## reduce 함수
+- reduce 함수
 
-```python
-# 각 키 그룹에서 값을 합산하여 변화를 확인
-summed_stream = keyed_stream.reduce(lambda a, b: (a[0], a[1] + b[1]))
+  ```python
+  # 각 키 그룹에서 값을 합산하여 변화를 확인
+  summed_stream = keyed_stream.reduce(lambda a, b: (a[0], a[1] + b[1]))
 
-# 결과 출력
-summed_stream.print()
+  # 결과 출력
+  summed_stream.print()
 
-# 실행
-env.execute("KeyBy Visualization")
-```
-Keyby+reduce 결과
-(A, 1)  
-(B, 2)  
-(A, 4)  
-(B, 6)
+  # 실행
+  env.execute("KeyBy Visualization")
+  ```
+  - Keyby+reduce 결과
+    ```
+    (A, 1)  
+    (B, 2)  
+    (A, 4)  -> 같은 키(A)에 대해 누적 합
+    (B, 6)
+    ```
 
-## process 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.functions import ProcessFunction
-from pyflink.common.typeinfo import Types
+- process 함수
 
-# ProcessFunction 예제: 짝수면 2배, 홀수면 그대로 반환
-class MyProcessFunction(ProcessFunction):
-    def process_element(self, value, ctx: 'ProcessFunction.Context'):
-        if value % 2 == 0:
-            yield value * 2    # 짝수이면 2배로 출력
-        else:
-            yield value        # 홀수는 그대로 출력
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.datastream.functions import ProcessFunction
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
-env.set_parallelism(1)
+  # ProcessFunction 예제: 짝수면 2배, 홀수면 그대로 반환
+  # ProcessFunction을 상속 받아서 사용
+  class MyProcessFunction(ProcessFunction):
+      def process_element(self, value, ctx: 'ProcessFunction.Context'):
+          if value % 2 == 0:
+              yield value * 2    # 짝수이면 2배로 출력
+          else:
+              yield value        # 홀수는 그대로 출력
 
-# 예제 입력: 정수 리스트
-data = [1, 2, 3, 4, 5, 6]
+  env = StreamExecutionEnvironment.get_execution_environment()
+  env.set_parallelism(1)
 
-# DataStream 생성
-ds = env.from_collection(collection=data, type_info=Types.INT())
+  # 예제 입력: 정수 리스트
+  data = [1, 2, 3, 4, 5, 6]
 
-# ProcessFunction 적용
-processed_stream = ds.process(MyProcessFunction(), output_type=Types.INT())
+  # DataStream 생성
+  ds = env.from_collection(collection=data, type_info=Types.INT())
 
-# Flink 작업 실행
-env.execute("ProcessFunction Example")
+  # ProcessFunction 적용
+  processed_stream = ds.process(MyProcessFunction(), output_type=Types.INT())
 
-# 실행 후 결과 수집
-result = list(processed_stream.execute_and_collect())
+  # Flink 작업 실행
+  env.execute("ProcessFunction Example")
 
-print("Process function result:", result)
-```
-Process 결과: `[1, 4, 3, 8, 5, 12]`
+  # 실행 후 결과 수집
+  result = list(processed_stream.execute_and_collect())
 
-## 멀티 스트림 및 결합 함수
+  print("Process function result:", result)
+  ```
+  - Process 결과: `[1, 4, 3, 8, 5, 12]`
 
+### 멀티 스트림 및 결합 함수
 | 함수 | 역할 | 용도/설명 |
 |------|------|------------|
-| union | 여러 개의 스트림을 하나로 결합 | 서로 다른 데이터 소스의 스트림을 통합하여 일괄 처리할 때 사용 |
-| connect | 서로 다른 타입의 두 스트림을 연결 | 이중 데이터 스트림을 결합한 후, 각각에 대해 별도의 변환을 적용할 수 있음 |
+| `union` | '여러 개의 스트림(같은 타입)'을 하나로 결합 | **서로 다른 데이터 소'의 스트림을 통합**하여 **일괄 처리**할 때 사용 |
+| `connect` | '서로 다른 타입의 두 스트림'을 연결 | **이중 데이터 스트림을 결합**한 후, **각각에 대해 별도의 변환(연산)을 적용**할 수 있음 |
 
-## union 함수
+- union 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# 예제 입력: 두 개의 정수 리스트 스트림
-stream1 = env.from_collection([1, 2, 3], type_info=Types.INT())
-stream2 = env.from_collection([4, 5, 6], type_info=Types.INT())
+  # 예제 입력: 두 개의 정수 리스트 스트림
+  stream1 = env.from_collection([1, 2, 3], type_info=Types.INT())
+  stream2 = env.from_collection([4, 5, 6], type_info=Types.INT())
 
-# union: 두 스트림을 하나로 결합
-union_stream = stream1.union(stream2)
+  # union: 두 스트림을 하나로 결합
+  # 두 스트림이 동일 타입이어야 함!!!
+  union_stream = stream1.union(stream2)
 
-# 결과 수집
-result_union = list(union_stream.execute_and_collect())
-print("Union 결과:", result_union)
-```
-Union 결과: `[1, 2, 3, 4, 5, 6]`
+  # 결과 수집
+  result_union = list(union_stream.execute_and_collect())
+  print("Union 결과:", result_union)
+  ```
+  - Union 결과: `[1, 2, 3, 4, 5, 6]`
 
-## connect 함수
+- connect 함수
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.functions import CoMapFunction
-from pyflink.common.typeinfo import Types
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.datastream.functions import CoMapFunction
+  from pyflink.common.typeinfo import Types
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# 예제 입력: 서로 다른 타입의 두 스트림
-stream_str = env.from_collection(["A", "B"], type_info=Types.STRING())
-stream_int = env.from_collection([1, 2], type_info=Types.INT())
+  # 예제 입력: 서로 다른 타입의 두 스트림
+  stream_str = env.from_collection(["A", "B"], type_info=Types.STRING())
+  stream_int = env.from_collection([1, 2], type_info=Types.INT())
 
-# connect: 두 스트림을 연결
-connected_stream = stream_str.connect(stream_int)
+  # connect: 두 스트림을 '연결'
+  connected_stream = stream_str.connect(stream_int)
 
-# 각 스트림에 다른 방식 처리
-class MyCoMapFunction(CoMapFunction):
-    def map1(self, value):
-        return f"String: {value}"
+  # 각 스트림 타입에 다른 방식 처리(하나의 객체로)
+  class MyCoMapFunction(CoMapFunction):
+      def map1(self, value):
+          return f"String: {value}"
 
-    def map2(self, value):
-        return f"Int: {value}"
+      def map2(self, value):
+          return f"Int: {value}"
 
-co_mapped_stream = connected_stream.map(MyCoMapFunction(), output_type=Types.STRING())
+  co_mapped_stream = connected_stream.map(MyCoMapFunction(), output_type=Types.STRING())
 
-# 결과 수집
-result_connect = list(co_mapped_stream.execute_and_collect())
-print("Connect 결과:", result_connect)
-```
-Connect 결과: `['String: A', 'String: B', 'Int: 1', 'Int: 2']`
+  # 결과 수집
+  result_connect = list(co_mapped_stream.execute_and_collect())
+  print("Connect 결과:", result_connect)
+  ```
+  - Connect 결과: `['String: A', 'String: B', 'Int: 1', 'Int: 2']`
 
-## Java에는 있지만 PyFlink에서는 지원되지 않는 주요 변환 함수
+### Java에는 있지만 PyFlink에서는 지원되지 않는 주요 변환 함수
+| 함수                      | 역할                       | 용도/설명                                                                                 |
+| ----------------------- | ------------------------ | ------------------------------------------------------------------------------------- |
+| `split()`               | 하나의 스트림을 논리적으로 분기        | 각 데이터에 라벨을 부여하여 여러 서브스트림으로 나누는 함수.<br>이후 `select()`를 통해 라벨 별로 처리.                     |
+| `connect().coFlatMap()` | 서로 다른 타입의 두 스트림을 병합하여 처리 | 두 DataStream을 연결하고,<br>각 스트림에 대해 개별 flatMap 로직을 정의할 수 있음.<br>실시간 이벤트 + 설정값 처리 등에서 유용. |
+| `iterate()`             | 반복 처리를 위한 루프 생성          | 특정 조건이 만족될 때까지 스트림 데이터를 반복적으로 처리.<br>예: 수렴 조건이 있는 기계 학습 루프.                           |
+| `CustomPartitioner`     | 사용자 정의 파티셔닝 방식 적용        | `keyBy()` 대신 파티셔너를 지정하여<br>데이터 분배 방식을 직접 제어할 수 있음.<br>고급 분산 로직이 필요한 경우 유용.            |
 
-| 함수 | 역할 | 용도/설명 |
-|------|------|------------|
-| split() | 하나의 스트림을 논리적으로 분기 | 각 데이터에 라벨을 부여하여 여러 서브스트림으로 나누는 함수. 이후 select()를 통해 라벨 별로 처리. |
-| connect().coFlatMap() | 서로 다른 타입의 두 스트림을 병합하여 처리 | 두 DataStream을 연결하고, 각 스트림에 대해 개별 flatMap 로직을 정의할 수 있음. 실시간 이벤트 + 설정값 처리 등에서 유용. |
-| iterate() | 반복 처리를 위한 루프 생성 | 특정 조건이 만족될 때까지 스트림 데이터를 반복적으로 처리할 수 있음. 예: 수렴 조건이 있는 기계 학습 루프. |
-| CustomPartitioner | 사용자 정의 파티셔닝 방식 적용 | keyBy() 대신 파티셔너를 지정하여 데이터 분배 방식을 직접 제어할 수 있음. 고급 분산 로직이 필요한 경우 유용. |
 
-# 데이터 스트림의 분할 및 반복
+## 데이터 스트림의 분할 및 반복
+### 데이터 스트림 분할 (Filter)  
+하나의 스트림에서 서로 다른 조건이나 처리 목적에 따라 데이터를 여러 개의 하위 스트림으로 나누는 작업  
 
-## 데이터 스트림 분할 (Filter)  
-### 하나의 스트림에서 서로 다른 조건이나 처리 목적에 따라 데이터를 여러 개의 하위 스트림으로 나누는 작업  
 - 서로 다른 처리 로직이나 파이프라인을 개별 하위 스트림에 적용  
 - 복잡한 데이터 처리 시 유연성을 높일 수 있음  
 - 초기 Flink 버전에서는 `split()`과 `select()` 연산자를 사용하여 스트림을 분할  
-- 현재는 Filter 변환 연산을 주로 사용  
+- 현재는 **Filter 변환 연산**을 주로 사용
 
-## 데이터 스트림 분할 (Filter)
+  ![alt text](image-24.png)
+  - 여러 개의 filter 연산을 적용하면 하나의 스트림을 조건별로 나누어 사실상 분기(split)와 동일한 효과를 낼 수 있음
+    - 즉, `filter()`는 단일 조건 필터링뿐 아니라 각기 다른 조건을 가진 여러 filter를 병렬로 적용함으로써,
+    - 여러 하위 스트림을 생성하는 분기 방식으로 활용 가능
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+- 데이터 스트림 분할 (Filter) 예시
 
-env = StreamExecutionEnvironment.get_execution_environment()
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-# 예제 입력: 정수 리스트
-data = env.from_collection([1, 2, 3, 4, 5, 6], type_info=Types.INT())
+  env = StreamExecutionEnvironment.get_execution_environment()
 
-# filter 연산을 이용하여 조건에 맞게 데이터 스트림 분할
-even_stream = data.filter(lambda x: x % 2 == 0)  # 짝수 스트림
-odd_stream = data.filter(lambda x: x % 2 != 0)   # 홀수 스트림
+  # 예제 입력: 정수 리스트
+  data = env.from_collection([1, 2, 3, 4, 5, 6], type_info=Types.INT())
 
-# 작업 실행
-env.execute("Split Stream Example")
+  # filter 연산을 이용하여 조건에 맞게 데이터 스트림 분할
+  even_stream = data.filter(lambda x: x % 2 == 0)  # 짝수 스트림
+  odd_stream = data.filter(lambda x: x % 2 != 0)   # 홀수 스트림
 
-# 결과 수집
-evens = list(even_stream.execute_and_collect())
-odds = list(odd_stream.execute_and_collect())
+  # 작업 실행
+  env.execute("Split Stream Example")
 
-print("Even stream:", evens)
-print("Odd stream:", odds)
-```
-짝수 (메인): `[2, 4, 6]`  
-홀수 (Side Output): `[1, 3, 5]`
+  # 결과 수집
+  evens = list(even_stream.execute_and_collect())
+  odds = list(odd_stream.execute_and_collect())
 
-## 데이터 스트림 분할 (Filter)
+  print("Even stream:", evens)
+  print("Odd stream:", odds)
+  ```
+  - 짝수 (메인): `[2, 4, 6]` 
+  - 홀수 (Side Output): `[1, 3, 5]`
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
+- 데이터 스트림 분할 (Filter) 예시2
 
-env = StreamExecutionEnvironment.get_execution_environment()
-env.set_parallelism(1)
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-# 예제 데이터 (무게, 주소, 냉장 여부)
-data = [
-    (25, "서울 강남구", False),
-    (15, "강원도 산간 지역", False),
-    (10, "부산 해운대", True),
-    (5, "서울 관악구", False)
-]
+  env = StreamExecutionEnvironment.get_execution_environment()
+  env.set_parallelism(1)
 
-ds = env.from_collection(data, type_info=Types.TUPLE([Types.INT(), Types.STRING(), Types.BOOLEAN()]))
+  # 예제 데이터 (무게, 주소, 냉장 여부)
+  data = [
+      (25, "서울 강남구", False),
+      (15, "강원도 산간 지역", False),
+      (10, "부산 해운대", True),
+      (5, "서울 관악구", False)
+  ]
 
-# 필터 기반 분기 처리 (split/select 대체)
-heavy = ds.filter(lambda x: x[0] > 20)                         # 무거운 택배
-remote = ds.filter(lambda x: "산간" in x[1])                    # 산간 택배
-cold = ds.filter(lambda x: x[2])                                # 냉장 택배
-normal = ds.filter(lambda x: not (x[0] > 20 or "산간" in x[1] or x[2]))  # 일반 택배
+  ds = env.from_collection(data, type_info=Types.TUPLE([Types.INT(), Types.STRING(), Types.BOOLEAN()]))
 
-heavy.map(lambda x: [f"무거운 택배 {x}"]).print()
-remote.map(lambda x: [f"산간 택배 {x}"]).print()
-cold.map(lambda x: [f"냉장 택배 {x}"]).print()
-normal.map(lambda x: [f"일반 택배 {x}"]).print()
+  # 필터 기반 분기 처리 (split/select 대체)
+  heavy = ds.filter(lambda x: x[0] > 20)                         # 무거운 택배
+  remote = ds.filter(lambda x: "산간" in x[1])                    # 산간 택배
+  cold = ds.filter(lambda x: x[2])                                # 냉장 택배
+  normal = ds.filter(lambda x: not (x[0] > 20 or "산간" in x[1] or x[2]))  # 일반 택배
 
-env.execute("택배 분기 처리")
-```
-결과
-- 무거운 택배: `(25, '서울 강남구', False)`  
-- 산간 택배: `(15, '강원도 산간 지역', False)`  
-- 냉장 택배: `(10, '부산 해운대', True)`  
-- 일반 택배: `(5, '서울 관악구', False)`
+  # 출력
+  heavy.map(lambda x: [f"무거운 택배 {x}"]).print()
+  remote.map(lambda x: [f"산간 택배 {x}"]).print()
+  cold.map(lambda x: [f"냉장 택배 {x}"]).print()
+  normal.map(lambda x: [f"일반 택배 {x}"]).print()
 
-## 데이터 스트림 반복 (Iteration)  
-### 알고리즘을 반복 수행하여 결과를 점진적으로 개선  
-- 드라이버에서 반복문을 통해 피드백 루프 구성  
-### 1. 초기 설정 및 함수 정의 (단일 Job 실행 함수)
-- 데이터 스트림 생성, 변환 연산 적용  
-- Job 실행 및 결과 수집  
-### 2. 드라이버에서 반복 로직 수행
-- 반복문(`while`) 내에서 연산 결과 수집 및 중간 결과 출력  
-### 3. 피드백 및 종료
-- 조건에 따라 반복 결과를 스트림으로 재투입  
-- 반복을 종료하고 최종 결과를 외부로 출력  
+  env.execute("택배 분기 처리")
+  ```
+  - 결과
+    - 무거운 택배: `(25, '서울 강남구', False)`  
+    - 산간 택배: `(15, '강원도 산간 지역', False)`  
+    - 냉장 택배: `(10, '부산 해운대', True)`  
+    - 일반 택배: `(5, '서울 관악구', False)`
 
-## 데이터 스트림 반복 (Iteration)
-### 주의사항  
-### 1. 종료 조건
-- 드라이버에서 반복문을 통해 피드백 루프 구성  
-- 무한 루프를 방지하기 위해 명확한 종료 조건이 필요  
-- 조건이 부적절할 시 시스템 리소스가 낭비될 가능성이 큼  
-### 2. 상태 관리
-- 중간 상태가 반복적으로 업데이트되므로, 올바른 상태 관리와 체크포인트 설정이 필수적  
-### 3. 성능 최적화
-- 드라이버 반복 방식 사용 시 Job 실행 오버헤드가 발생  
-- 반복적으로 데이터를 피드백(Feedback)할 때, 데이터 흐름이 병목 현상이나 지연(latency)을 유발하지 않도록 설계해야 함  
+### 데이터 스트림 반복 (Iteration)  
+- 알고리즘을 반복 수행하여 결과를 점진적으로 개선함
+  - 드라이버에서 반복문을 통해 피드백 루프 구성  
 
-## 데이터 스트림 반복 (Iteration)
+  1. 초기 설정 및 함수 정의 (단일 Job 실행 함수)
+      - 데이터 스트림 생성, 변환 연산 적용  
+      - Job 실행 및 결과 수집  
+  2. 드라이버에서 반복 로직 수행
+      - 반복문(`while`) 내에서 연산 결과 수집 및 중간 결과 출력  
+  3. 피드백 및 종료
+      - 조건에 따라 반복 결과를 스트림으로 재투입  
+      - 반복을 종료하고 최종 결과를 외부로 출력  
 
-```python
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.common.typeinfo import Types
 
-# 데이터에 map 연산(각 값을 2배) 수행 후 결과 반환 함수
-def run_flink_job(input_data):
-    env = StreamExecutionEnvironment.get_execution_environment()
-    ds = env.from_collection(input_data, type_info=Types.INT())
+- 주의사항  
+  1. 종료 조건
+      - 드라이버에서 반복문을 통해 피드백 루프 구성  
+      - 무한 루프를 방지하기 위해 명확한 종료 조건이 필요  
+      - 조건이 부적절할 시 시스템 리소스가 낭비될 가능성이 큼  
+  2. 상태 관리
+    - 중간 상태가 반복적으로 업데이트되므로, 올바른 상태 관리와 체크포인트 설정이 필수적  
+  3. 성능 최적화
+    - 드라이버 반복 방식 사용 시 Job 실행 오버헤드가 발생  
+    - 반복적으로 데이터를 피드백(Feedback)할 때, 데이터 흐름이 병목 현상이나 지연(latency)을 유발하지 않도록 설계해야 함  
 
-    # 간단히 각 값을 2배로 변환
-    mapped_ds = ds.map(lambda x: x * 2, output_type=Types.INT())
+- 데이터 스트림 반복 (Iteration) 예시
 
-    # Flink 잡 실행
-    env.execute("Driver-based iteration job")
+  ```python
+  from pyflink.datastream import StreamExecutionEnvironment
+  from pyflink.common.typeinfo import Types
 
-    # 실행 후 결과 수집
-    result = list(mapped_ds.execute_and_collect())
-    return result
+  # 데이터에 map 연산(각 값을 2배) 수행 후 결과 반환 함수
+  def run_flink_job(input_data):
+      env = StreamExecutionEnvironment.get_execution_environment()
+      ds = env.from_collection(input_data, type_info=Types.INT())
 
-# 초기 데이터
-data = [10]
+      # 간단히 각 값을 2배로 변환
+      mapped_ds = ds.map(lambda x: x * 2, output_type=Types.INT())
 
-# 드라이버 측에서 반복 실행
-while True:
-    data = run_flink_job(data)
-    print("중간 결과:", data)
+      # Flink 잡 실행
+      env.execute("Driver-based iteration job")
 
-    # 모든 값이 100 이상이면 반복 종료
-    if all(x >= 100 for x in data):
-        break
+      # 실행 후 결과 수집
+      result = list(mapped_ds.execute_and_collect())
+      return result
 
-print("최종 결과:", data)
-```
-Iteration 결과
-- 중간 결과: `[20]`  
-- 중간 결과: `[40]`  
-- 중간 결과: `[80]`  
-- 중간 결과: `[160]`  
-- 최종 결과: `[160]`
+  # 초기 데이터
+  data = [10]
 
-# Flink Table API
+  # 드라이버 측에서 반복 실행
+  # 즉, 드라이버 루프라는 것은
+    # 실행 환경을 지속적으로 생성, 실행하는 작업
+  while True:
+      data = run_flink_job(data)
+      print("중간 결과:", data)
 
-## Flink Table API  
+      # 모든 값이 100 이상이면 반복 종료
+      if all(x >= 100 for x in data):
+          break
+
+  print("최종 결과:", data)
+  ```
+  - Iteration 결과
+    - 중간 결과: `[20]`  
+    - 중간 결과: `[40]`  
+    - 중간 결과: `[80]`  
+    - 중간 결과: `[160]`  
+    - 최종 결과: `[160]`
+
+※ 위와 같은 “드라이버 반복 방식”은 가능은 하지만 권장되지 않는 방식임
+
+-> Flink의 강점은 분산 스트림 처리 파이프라인 내부에서 상태(State)를 유지하면서 반복/조건 처리를 수행하는 것
+
+-> 반복을 외부 드라이버에서 돌리는 방식은
+
+-> 매 반복마다 Job을 새로 실행해야 하므로 오버헤드가 크고
+
+-> 체크포인트·상태 관리 등 Flink 고유 기능을 제대로 활용할 수 없음
+
+-> 실제 반복(Iteration)이 필요한 경우에는 Process Function을 구성하고, 내부 상태(State)를 기반으로 조건 처리를 하는 방식이 더 권장됨
+
+-> 고급 스트림 처리 기능들은 대부분 ProcessFunction + State 기반으로 커스터마이징하여 구현하는 것이 일반적임
+
+
+---
+---
+## Flink Table API
 ### Flink Table API란?  
 - Flink에서 제공하는 고수준 선언형 API  
 - 배치 모드와 스트리밍 모드 모두 지원  
