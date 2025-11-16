@@ -617,3 +617,4 @@ env.execute("Basic PyFlink Job")
   - 연산 결과 출력:  
 
     ![alt text](image-17.png)
+
