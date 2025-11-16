@@ -1056,3 +1056,20 @@ Flink에서 제공하는 고수준 선언형 API
       ```
       - upsert-kafka는 key/value 포맷을 별도 정의해야 함
       - Flink가 PK(category, behavior)를 key로 Kafka에 upsert 메시지를 보냄
+
+- 정리
+  1. Python Kafka Producer
+      - 랜덤 사용자 행동 데이터를 생성
+      - Kafka의 `user_behaviors` 토픽에 지속적으로 적재
+      - Flink의 입력(Source) 데이터가 됨
+
+  2. Flink Stream + Table API
+      - Kafka Source 테이블을 등록해 `user_behaviors` 데이터를 읽음
+      - category, behavior 기준으로 실시간 집계 수행
+      - 결과를 `behavior_stats` 토픽으로 출력하기 위한 Sink 테이블 등록
+      - SQL 기반으로 스트림 데이터를 처리 (정적 스키마 기반)
+
+  3. Kafka Sink
+      - Flink가 실시간 집계한 데이터를 `behavior_stats` 토픽으로 저장
+      - upsert-kafka 커넥터를 사용하여 동일 (category, behavior) 조합에 대한 레코드를 최신 값으로 업데이트
+  
