@@ -469,13 +469,13 @@
   from pyflink.common.time import Time
   from pyflink.common.typeinfo import Types
 
-  # 각 이벤트 지연 시간을 설정하는 함수
+  # 각 이벤트별 지연 시간을 설정하는 함수
   # record: (user, value)
   def delayed_map(record):
       if record[1] == 0:
           time.sleep(5)
       elif record[1] in [1, 3]:
-          time.sleep(1.5)
+          time.sleep(0.5)
       elif record[1] == 4:
           time.sleep(2.8)
       elif record[1] == 5:
@@ -486,15 +486,14 @@
   env = StreamExecutionEnvironment.get_execution_environment()
   env.set_parallelism(1)
 
-  # 데이터 소스 생성: dummy 이벤트 포함
+  # 데이터 소스 생성
   data = [("user1", 1), ("user1", 3), ("user1", 4), ("user1", 5), ("user1", 0)]
   data_stream = env.from_collection(
       collection=data,
       type_info=Types.TUPLE([Types.STRING(), Types.INT()])
   )
 
-  # map 연산 처리 시 지연 적용: 이벤트별 도착 시간을 조절
-  # 즉, ProcessingTime을 지연시키기 위한 용도로 delayed_stream 사용
+  # 각 요소 처리 시 지연 적용: 도착 시간을 조절
   delayed_stream = data_stream.map(
       delayed_map,
       output_type=Types.TUPLE([Types.STRING(), Types.INT()])
@@ -503,58 +502,60 @@
   # 텀블링 윈도우 적용: 2초 간격의 윈도우 (겹치지 않는 고정 윈도우)
   windowed_stream = (
       delayed_stream
-      .key_by(lambda x: x[0])
-      .window(TumblingProcessingTimeWindows.of(Time.seconds(2)))
-      .reduce(lambda a, b: (a[0], a[1] + b[1]))
+          .key_by(lambda x: x[0])
+          .window(TumblingProcessingTimeWindows.of(Time.seconds(2)))
+          .reduce(lambda a, b: (a[0], a[1] + b[1]))
   )
 
-  # 윈도우 연산 결과 콘솔에 출력
+  # 윈도우 연산 결과를 콘솔에 출력
   windowed_stream.print()
 
   # 애플리케이션 실행
   env.execute("Tumbling Window Example")
 
-  # 잠 실행 후 추가 대기 (출력 flush를 위해)
+  # 잡 실행 후 추가 대기 (출력 flush를 위해)
   time.sleep(5)
   ```
   - 이벤트 처리 지연(sleep)으로 인해 실제 들어오는 시간
     ```
-    ("user1", 1)   → 1.5초 sleep
-    ("user1", 3)   → 1.5초 sleep
+    ("user1", 1)   → 0.5초 sleep
+    ("user1", 3)   → 0.5초 sleep
     ("user1", 4)   → 2.8초 sleep
     ("user1", 5)   → 0.5초 sleep
     ("user1", 0)   → 5초 sleep
     ```
   - 윈도우별 실제 포함되는 이벤트
-  ```
     1. 윈도우 0~2초
-        - 처리된 이벤트: `1` (1.5초 처리)
-        - 합계: `1`
+        - `T=0.5초`: (1)이 map을 통과하여 [0-2초] 윈도우에 도착
+        - `T=1.0초`: (3)이 map을 통과하여 [0-2초] 윈도우에 도착
+        - `T=2.0초`: 윈도우가 닫히는 시점. (실제로는 map(4)의 sleep(2.8) 때문에 T=3.8초에 지연되어 실행됨)
+        - 포함된 이벤트: `[("user1", 1), ("user1", 3)]`
+        - reduce 실행: 1 + 3 = 4
+        - 출력: `(user1, 4)`
     2. 윈도우 2~4초
-        - 포함 이벤트: `3` (3.0초 처리)
-        - 첫 2초 윈도우에서 온 1과 이번 3 이 합쳐져 출력이 `(user1, 4)`가 됨
-          - `1 + 3 = 4`
+        - `T=3.8초`: (4)가 map을 통과하여 [2-4초] 윈도우에 도착
+        - `T=4.0초`: 윈도우가 닫히는 시점. (실제로는 map(5)의 sleep(0.5) 때문에 T=4.3초에 지연되어 실행됨)
+        - 포함된 이벤트: `[("user1", 4)]`
+        - reduce 실행: (요소가 하나이므로) 단일 요소 4를 그대로 반환
+        - 출력: `(user1, 4)`
     3. 윈도우 4~6초
-          - 포함 이벤트: `4` (5.8초 처리)
-          - reduce의 특성상 이 윈도우 안에 4 하나만 있으므로 출력 없음
-          - (윈도우 종료 시까지 누적된 값이 하나뿐일 경우 reduce가 두 값을 비교해야 하므로 결과 없음)
-    4. 윈도우 6~8초
-        - 포함 이벤트: `5` (6.3초 처리)
-        - 이전 reduce 결과(4)가 유지되지만, 여기서 새로운 윈도우가 열리고 첫 요소가 들어온 것이므로 reduce 출력 없음
-    5. 윈도우 8~10초
-        - 이벤트 없음 → 출력 없음
-    6. 윈도우 10~12초
-        - 포함 이벤트: `0` (11.3초 처리)
-        - 윈도우 안에 하나만 있으므로 역시 즉시 reduce 출력 없음
-        - 그러나 이전까지 reduce를 통해 만들어진 누적 흐름에 따라 최종적으로 아래 같은 출력으로 이어짐
-  
-  설명 검증 필요
-  ```
-  - 결과
+          - `T=4.3초`: (5)가 map을 통과하여 [4-6초] 윈도우에 도착
+          - `T=6.0초`: 윈도우가 닫히는 시점. (실제로는 map(0)의 sleep(5.0) 때문에 T=9.3초에 지연되어 실행됨)
+          - 포함된 이벤트: `[("user1", 5)]`
+          - 출력: `(user1, 5)`
+    4. 이후 `(user1, 0)`도 단독으로 출력
+  - 예상 결과
+    ```
+    (user1,4)
+    (user1,4)
+    (user1,5)
+    (user1,0)
+    ```
+
+  - 실제 결과
     ```
     (user1,4)
     (user1,9)
-    ```
     ```
     - 왜 9가 나올까?
       - reduce는 “각 윈도우 내부에서만” 값을 누적하지만, ProcessingTime 윈도우에서는 time.sleep 때문에 이벤트가 예상과 다른 윈도우로 들어가게 됨
@@ -563,9 +564,6 @@
         - 첫 번째 윈도우: 1, 3 → 4 출력
         - 두 번째 윈도우: 4, 5 → 9 출력 (0은 처리 타이밍에 따라 다른 윈도우로 들어가거나 무시될 수 있음)
       - 결국 ProcessingTime 지연 때문에 이벤트의 실제 처리 시각이 달라지고, 그로 인해 어떤 이벤트들이 같은 윈도우에 묶이느냐가 달라져 결과가 달라지는 전형적인 케이스
-    
-    설명이 맞는지 모르겟ㅆ음,,,
-    ```
 
   - `data_engineering\04_Flink\FlinkCode\03_checkpointing_window\tumbling_window.py` 참고
 
@@ -592,38 +590,74 @@
   windowed_stream.print()
   env.execute("ProcessingTime Window Example")
   ```
+  - 데이터: `[("user1", 1), ("user1", 3), ("user1", 4), ("user1", 5), ("user1", 0)]`
+  - 윈도우: 2초 크기, 1초 슬라이드 -> `.of(Time.seconds(2), Time.seconds(1))`
+  - 지연: `time.sleep(1.2)` (모든 이벤트에 공통 적용)
   - 윈도우 계산 타임라인
-    | 이벤트        | 값 | sleep | 처리되는 시점 |
-    | ---------- | - | ----- | ------- |
-    | (user1, 1) | 1 | 1.2초  | 약 1.2초  |
-    | (user1, 3) | 3 | 1.2초  | 약 2.4초  |
-    | (user1, 3) | 3 | 1.2초  | 약 3.6초  |
-    | (user1, 2) | 2 | 1.2초  | 약 4.8초  |
-    1. 0~2초 윈도우
-        - 포함되는 값: `1` (1.2초 지점)
-        - 결과: `1`
-    2. 1~3초 윈도우
-        - 포함되는 값: `1` (1.2초), `3` (2.4초)
-        - 결과: `4`
-    3. 2~4초 윈도우
-        - 포함되는 값: `3` (2.4초), `3` (3.6초)
-        - 결과: `7`
-    4. 3~5초 윈도우
-        - 포함되는 값: `3` (3.6초), `2` (4.8초)
-        - 결과: `9`
+    1. 윈도우 0~2초 (T=2.0초에 닫힐 예정)
+        - `T=1.2초`: (1)이 map을 통과하여 **[0-2초]**와 [1-3초] 윈도우에 도착
+        - `T=2.4초`: map(3)의 sleep이 끝난 후, 지연되었던 [0-2초] 윈도우가 실행됨
+        - 포함된 이벤트: `[("user1", 1)]`
+        - 출력: `(user1, 1)`
+    2. 윈도우 1~3초 (T=3.0초에 닫힐 예정)
+        - `T=2.4초`: (3)이 map을 통과하여 [1-3초]와 [2-4초] 윈도우에 도착
+        - T=3.6초`: map(4)의 sleep이 끝난 후, 지연되었던 [1-3초] 윈도우가 실행됨
+        - 포함된 이벤트: `[("user1", 1), ("user1", 3)]` (1.2초에 온 1과 2.4초에 온 3이 모두 포함됨)
+        - reduce 실행: 1 + 3 = 4
+        - 출력: `(user1, 4)`
+    3. 윈도우 2~4초 (T=4.0초에 닫힐 예정)
+        - `T=3.6초`: (4)가 map을 통과하여 [2-4초]와 [3-5초] 윈도우에 도착
+        - `T=4.8초`: map(5)의 sleep이 끝난 후, 지연되었던 [2-4초] 윈도우가 실행됨
+        - 포함된 이벤트: `[("user1", 3), ("user1", 4)]` (2.4초에 온 3과 3.6초에 온 4가 포함됨)
+        - reduce 실행: 3 + 4 = 7
+        - 출력: `(user1, 7)`
+    4. 윈도우 3~5초 (T=5.0초에 닫힐 예정)
+        - `T=4.8초`: (5)가 map을 통과하여 [3-5초]와 [4-6초] 윈도우에 도착
+        - `T=6.0초`: map(0)의 sleep이 끝난 후, 지연되었던 [3-5초] 윈도우가 실행됨
+        - 포함된 이벤트: `[("user1", 4), ("user1", 5)]` (3.6초에 온 4와 4.8초에 온 5가 포함됨)
+        - reduce 실행: 4 + 5 = 9
+        - 출력: `(user1, 9)`
+    5. 윈도우 4~6초 (T=6.0초에 닫힐 예정)
+        - `T=6.0초`: map(0)의 sleep이 끝난 시점. 이 윈도우는 지연되지 않고 정시에 실행됨
+        - 포함된 이벤트: `[("user1", 5)]` (4.8초에 온 5만 포함됨)
+        - 출력: `(user1, 5)`
+    6. 이후 윈도우 (5~7초, 6~8초)
+        - `T=6.0초`: (0)이 map을 통과하여 [5-7초]와 [6-8초] 윈도우에 도착
+        - `T=7.0초`: [5-7초] 윈도우가 닫힘. (포함: [0]) → (user1, 0) 출력
+        - `T=8.0초`: [6-8초] 윈도우가 닫힘. (포함: [0]) → (user1, 0) 출력
 
-  - 결과
+  - 예상 결과
     ```
     (user1,1)  → 0~2초 윈도우  
     (user1,4)  → 1~3초 윈도우  
     (user1,7)  → 2~4초 윈도우  
     (user1,9)  → 3~5초 윈도우  
+    (user1,5)
+    (user1,0)
+    (user1,0)
     ```
+  
+  - 실제 결과
+    ```
+    (user1,1)
+    (user1,1)
+    (user1,3)
+    (user1,3)
+    (user1,9)
+    ```
+
   - `data_engineering\04_Flink\FlinkCode\03_checkpointing_window\sliding_window.py` 참고
     - ProcessingTime 윈도우는 “실제 처리된 시간” 기준이라서, `time.sleep` 때문에 이벤트 처리 시간이 밀리면 데이터가 다른 윈도우에 들어가 버려서 결과가 달라질 수 있음
     - 즉, sleep 때문에 처리 타이밍이 흔들리고
     - 윈도우는 실제 시간 기준으로 계속 열리고 닫히기 때문에
     - 기대한 합계가 아니라 뒤죽뒤죽 다른 윈도우에 들어가서 다른 결과가 나옴
+
+※ ProcessingTime 윈도우는 "실제 처리된 시간" 기준 -> time.sleep 같은 **처리 지연(delay)**에 매우 취약함
+
+> 텀블링 윈도우 예제처럼 지연이 불규칙하면(0.5초, 2.8초 등), 이벤트가 "뒤죽박죽" 섞여 (9)처럼 예측 불가능한 결과가 나옴
+
+> 슬라이딩 윈도우 예제처럼 지연이 일정해도(1.2초), 모든 윈도우 계산이 "밀려서" 실행되며, 만약 이 지연이 윈도우 크기(2초)보다 길어지면 이벤트가 계산에서 **"누락"** 되는 치명적인 문제가 발생
+ (이벤트가 도착하기도 전에 윈도우가 닫혀버리기 떄문 (정확히는, 윈도우 시간 범위 밖으로 밀려남))
 
 - 세션 윈도우 (Session Window)
   - ProcessingTimeSessionWindows
@@ -636,29 +670,32 @@
   from pyflink.common.time import Time
   from pyflink.common.typeinfo import Types
 
+  # 각 이벤트별 지연 시간을 설정하는 함수
+  # record: (user, value)
   def delayed_map(record):
-      # record: (user, value)
-      # Session 테스트 위해 데이터별 딜레이 설정.
+      # Session 테스트를 위해 데이터별 딜레이 설정.
       if record[1] == 0:
           time.sleep(5)
       elif record[1] in [1, 3]:
-          time.sleep(1.5)
-      elif record[1] == 4:
-          time.sleep(2.8)
-      elif record[1] == 5:
           time.sleep(0.5)
+      elif record[1] == 4:
+          time.sleep(2)
+      elif record[1] == 5:
+          time.sleep(0.2)
       return record
 
+  # 실행 환경 설정
   env = StreamExecutionEnvironment.get_execution_environment()
   env.set_parallelism(1)
 
-  # dummy 이벤트 포함 데이터 준비
+  # dummy 이벤트를 포함하여 데이터를 준비
   data = [("user1", 1), ("user1", 3), ("user1", 4), ("user1", 5), ("user1", 0)]
   data_stream = env.from_collection(
       collection=data,
       type_info=Types.TUPLE([Types.STRING(), Types.INT()])
   )
 
+  # map 연산에서 지연 적용
   delayed_stream = data_stream.map(
       delayed_map,
       output_type=Types.TUPLE([Types.STRING(), Types.INT()])
@@ -667,47 +704,72 @@
   # Processing Time Session Window: gap 2초
   windowed_stream = (
       delayed_stream
-      .key_by(lambda x: x[0])
-      .window(ProcessingTimeSessionWindows.with_gap(Time.seconds(2)))
-      .reduce(lambda a, b: (a[0], a[1] + b[1]))
+          .key_by(lambda x: x[0])
+          .window(ProcessingTimeSessionWindows.with_gap(Time.seconds(2)))
+          .reduce(lambda a, b: (a[0], a[1] + b[1]))
   )
 
   windowed_stream.print()
   env.execute("Session Window Split Example")
 
-  # 잠시 실행 후 추가 대기(출력 flush를 위해)
+  # 잡 실행 후 추가 대기 (출력 flush를 위해)
   time.sleep(5)
   ```
-  - 입력 데이터 + 의도적 delay
-    ```
-    ("user1", 1) -> 1.5초 지연
-    ("user1", 3) -> 1.5초 지연
-    ("user1", 4) -> 2.8초 지연
-    ("user1", 5) -> 0.5초 지연
-    ("user1", 0) -> 5초 지연
-    ```
+  - 데이터: `[("user1", 1), ("user1", 3), ("user1", 4), ("user1", 5), ("user1", 0)]`
+  - Sleep 값: 
+    - (1): 0.5초
+    - (3): 0.5초
+    - (4): 2.0초
+    - (5): 0.2초
+    - (0): 5.0초
+  - 세션 Gap: 2초
+
   - 세션이 어떻게 나뉘나?
     - 이벤트 A 처리 완료 → 이벤트 B 처리까지 2초 이내 → 같은 세션
     - 2초 넘게 간격이 벌어지면 → 새로운 세션 생성
   
   - 실제 처리 흐름
-    1. `1` 처리 완료 → 1.5초 지연
-    2. `3` → 다시 1.5초 지연
-        - 1.5초 < 2초 → 같은 세션 유지
-        - `1 + 3 = 4`
-    3. `4` → 2.8초 지연
-        - 이전 이벤트(3) 처리 이후 2.8초 지연
-        - 2.8초 > 2초 → 새로운 세션 시작됨
-    4. `5` → 0.5초 지연
-        - 0.5초 < 2초 → 같은 두 번째 세션 유지
-    5. `0` → 5초 지연
-        - 5초 > 2초 → 세션 종료 트리거 발생 (reduce 실행)
-        - 두 번째 세션 값: `4 + 5 + 0 = 9`
+    1. 세션 1: (1)과 (3)이 묶임
+        - `T=0.5초`: map(1)이 끝나고 (1)이 윈도우에 도착
+          - **[세션 1]** 이 생성됨
+          - Flink가 T=0.5초 + 2초 = 2.5초에 세션 종료 타이머를 설정함
+        - `T=1.0초`: map(3)이 끝나고 (3)이 윈도우에 도착
+          - (1)이 도착한 T=0.5초와의 간격은 0.5초
+          - 0.5초 < 2초 (Gap)이므로, (3)은 **[세션 1]** 에 병합됨
+          - Flink가 세션 종료 타이머를 `T=1.0초 + 2초 = 3.0초`로 연장(update)
+    2. 세션 1 종료 / 세션 2 시작: (4)에서 분리됨
+        - `T=3.0초`: map(4)가 끝나고 (4)가 윈도우에 도착
+          - (3)이 도착한 T=1.0초와의 간격은 2.0초
+          - 이 간격(2.0초)은 설정된 Gap(2.0초)보다 작지 않음
+          - 따라서 Flink는 (4)가 도착하기 직전(T=3.0초)에 **[세션 1]** 의 타이머가 만료되었다고 판단
+          - **[세션 1]** 이 닫히고, `reduce(1, 3)`가 실행됨
+          - 출력: `(user1, 4)`
+          - (4)는 T=3.0초에 **[세션 2]** 를 새로 시작함
+          - Flink가 `T=3.0초 + 2초 = 5`.0초에 세션 종료 타이머를 설정함
+    3. 세션 2: (5)가 묶임
+        - `T=3.2초`: map(5)가 끝나고 (5)가 윈도우에 도착
+          - (4)가 도착한 T=3.0초와의 간격은 0.2초
+          - 0.2초 < 2초 (Gap)이므로, (5)는 **[세션 2]** 에 병합됨
+          - Flink가 세션 종료 타이머를 `T=3.2초 + 2초 = 5.2초`로 연장함
+    4. 세션 2 종료 / 세션 3 시작: (0)에서 분리됨
+        - `T=8.2초`: map(0)이 끝나고 (0)이 윈도우에 도착
+        - (5)가 도착한 T=3.2초와의 간격은 5.0초
+        - 5.0초 > 2초 (Gap)이므로, 세션이 분리됨
+        - Flink는 map(0)의 sleep(5.0) 동안(T=3.2초 ~ T=8.2초) 이미 T=5.2초에 **[세션 2]** 의 타이머가 만료되었다고 판단
+        - T=8.2초에 sleep이 끝나자마자, 밀렸던 **[세션 2]** 의 종료 처리를 실행함
+        - `reduce(4, 5)`가 실행됨
+        - 출력: `(user1, 9)`
+        - (0)은 T=8.2초에 **[세션 3]** 을 새로 시작함
+        - Flink가 `T=8.2초 + 2초 = 10.2초`에 세션 종료 타이머를 설정함
+    5. 세션 3 종료
+        - 더 이상 데이터가 없으므로, `T=10.2초` (혹은 잡 종료 시) **[세션 3]** 의 타이머가 실행됨
+        - 출력: `(user1, 0)`
 
-  - 결과
+  - 예상 결과
     ```
-    (user1,4)
-    (user1,9)
+    (user1,4)   <-- 세션 1: [1, 3]
+    (user1,9)   <-- 세션 2: [4, 5]
+    (user1, 0)  <-- 세션 3: [0]
     ```
   - `data_engineering\04_Flink\FlinkCode\03_checkpointing_window\session_window.py` 참고
     - 얘도 ProcessingTime Session Window(처리 시간 기반 세션 윈도우)이기 때문에,
@@ -761,12 +823,17 @@
       def on_merge(self, window, ctx):
           return TriggerResult.CONTINUE
   ```
+  - `GlobalWindows.create()`
+    - 모든 데이터를 key 구분 없이 (`.window_all`을 사용했으므로) 단 하나의 무한한 윈도우에 할당함
   - `CustomCountTrigger.of(3)`
     - 요소(element) 3개가 들어올 때마다 결과를 출력(FIRE)하고, 윈도우를 비움(PURGE)
     - 작동 플로우:
       1. 요소 1개 들어오면 count=1 → CONTINUE
       2. 요소 2개 들어오면 count=2 → CONTINUE
       3. 요소 3개 들어오면 count=3 → FIRE_AND_PURGE (계산 + 초기화)
+  - `TriggerResult.FIRE_AND_PURGE`
+    - `FIRE`: 카운트가 3이 되면 reduce 연산(a + b)을 실행하라고 Flink에 신호를 보냄
+    - `PURGE`: reduce가 실행된 후, 윈도우에 쌓여있던 데이터([1, 2, 3])와 집계 상태(6)를 모두 비움
 
   ```python
   # 실행 환경 생성
@@ -794,51 +861,53 @@
     - 두 번째 3개: `4 + 5 + 6 = 15` -> FIRE(출력) -> PURGE(윈도우 비워짐)
 
 
----
----53p
-# Triggers 및 Evictors
+## Triggers 및 Evictors
+### Trigger
+윈도우가 언제 결과를 내보낼지를 결정하는 조건/규칙
 
-## Trigger
-- 트리거의 개념
-  - 윈도우가 언제 결과를 내보낼지를 결정하는 조건/규칙
-  - 각 윈도우에는 디폴트 트리거가 정의되어 있어서, 특별히 지정하지 않아도 작동
+-> 각 윈도우에는 디폴트 트리거가 정의되어 있어서, 특별히 지정하지 않아도 작동함
+
 - 기본 트리거 종류
   - 이벤트 시간 기반 윈도우
+    - **이벤트에 기록된 원본 발생 시간을 기준**으로, 윈도우의 종료 시간에 도달하면 (정확히는 워터마크가 도달하면) 트리거가 동작함
   - 처리 시간 기반 윈도우
+    - Flink가 이벤트를 처리하는 **장비의 현재 시스템 시계를 기준**으로, 윈도우의 종료 시간에 도달하면 트리거가 동작함
   - 세션 윈도우
+    - 마지막 이벤트를 받은 후 설정된 비활성 간격(gap) 동안 새 이벤트가 없으면 윈도우를 닫고 트리거가 동작함
 
-## Trigger
-- 시간 기반 트리거
-  - 일정 시간 간격으로 윈도우를 강제로 출력.
-  - ex) Processing-Time 트리거: 5초마다 강제 출력
-- 카운트 기반 트리거
-  - 윈도우에 누적된 이벤트 개수가 특정 숫자에 도달할 때 출력
-  - ex) 100개의 이벤트가 모일 때마다 출력
+- 트리거 로직 종류
+  - 시간 기반 트리거
+    - 일정 시간 간격으로 윈도우를 강제로 출력
+    - ex. Processing-Time 트리거: 5초마다 강제 출력
+  - 카운트 기반 트리거
+    - 윈도우에 누적된 이벤트 개수가 특정 숫자에 도달할 때 출력
+    - ex. 100개의 이벤트가 모일 때마다 출력
+  - 복합 조건 트리거
+    - 시간 OR 카운트 등 여러 조건 중 하나 만족 시 출력하거나, AND 조건 등 조합
+    - ex. 1분이 지났거나 50개가 모이면 출력
+  - 사용자 정의 트리거
+    - 특정 값 이상이 되면 출력 등, Trigger 인터페이스를 구현하여 onElement에서 임의의 조건으로 FIRE 시킴
 
-## Trigger
-- 복합 조건 트리거
-  - 시간 OR 카운트 등 여러 조건 중 하나 만족 시 출력하거나, AND 조건 등 조합
-  - ex) 1분이 지났거나 50개가 모이면 출력
-- 사용자 정의 트리거
-  - 특정 값 이상이 되면 출력 등, Trigger 인터페이스를 구현하여 onElement에서 임의의 조건으로 FIRE 시킴
-
-## TriggerResult
+### TriggerResult
+트리거 발생했을 때 실제로 어떤 동작을 하게 만들 것인지
 
 | TriggerResult | 설명 | 사용 |
 | --- | --- | --- |
-| TriggerResult.FIRE | 현재까지 수집된 데이터를 출력하지만 윈도우는 유지 | 부분 출력을 원할 때 |
-| TriggerResult.FIRE_AND_PURGE | 현재까지 수집된 데이터를 출력하고 윈도우를 초기화 | 새로운 윈도우 시작할 때 |
-| TriggerResult.CONTINUE | 현재 윈도우를 유지하고 아무 작업도 수행하지 않음 | 기준이 충족되지 않았을 때 |
-| TriggerResult.PURGE | 출력 없이 윈도우만 초기화 | 이벤트 삭제할 때 |
+| `TriggerResult.FIRE` | 현재까지 수집된 데이터를 출력하지만 윈도우는 유지 | 부분 출력을 원할 때 |
+| `TriggerResult.FIRE_AND_PURGE` | 현재까지 수집된 데이터를 출력하고 윈도우를 초기화 | 새로운 윈도우 시작할 때 |
+| `TriggerResult.CONTINUE` | 현재 윈도우를 유지하고 아무 작업도 수행하지 않음 | 기준이 충족되지 않았을 때 |
+| `TriggerResult.PURGE` | 출력 없이 윈도우만 초기화 | 이벤트 삭제할 때 |
 
 ## 기본 Trigger 유형
 - ProcessingTimeTrigger
-  - 처리 시간 기준 특정 시점에 FIRE.
+  - 처리 시간 기준 특정 시점에 FIRE
 - EventTimeTrigger
-  - 이벤트 시간 워터마크 기준 FIRE. (모든 이벤트-타임 윈도우의 default 트리거)
+  - 이벤트 시간 워터마크 기준 FIRE (모든 이벤트-타임 윈도우의 default 트리거)
 - CountTrigger
   - 누적 이벤트 개수가 기준에 도달하면 FIRE
 
+---
+---
 ## CustomTrigger
 - Trigger 클래스 상속, 필수 메서드 구현
   - Trigger 구현을 위해 반드시 추상 메서드 5개를 구현해야 함.

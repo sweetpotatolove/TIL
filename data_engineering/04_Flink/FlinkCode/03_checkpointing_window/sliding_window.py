@@ -4,19 +4,6 @@ from pyflink.datastream.window import SlidingProcessingTimeWindows
 from pyflink.common.time import Time
 from pyflink.common.typeinfo import Types
 
-# 각 이벤트별 지연 시간을 설정하는 함수
-# record: (user, value)
-def delayed_map(record):
-    if record[1] == 0:
-        time.sleep(5)
-    elif record[1] in [1, 3]:
-        time.sleep(0.5)
-    elif record[1] == 4:
-        time.sleep(2.8)
-    elif record[1] == 5:
-        time.sleep(0.5)
-    return record
-
 # 실행 환경 생성 및 병렬성 1로 설정
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_parallelism(1)
