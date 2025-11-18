@@ -898,7 +898,7 @@
 | `TriggerResult.CONTINUE` | 현재 윈도우를 유지하고 아무 작업도 수행하지 않음 | 기준이 충족되지 않았을 때 |
 | `TriggerResult.PURGE` | 출력 없이 윈도우만 초기화 | 이벤트 삭제할 때 |
 
-## 기본 Trigger 유형
+### 기본 Trigger 유형
 - ProcessingTimeTrigger
   - 처리 시간 기준 특정 시점에 FIRE
 - EventTimeTrigger
@@ -906,26 +906,24 @@
 - CountTrigger
   - 누적 이벤트 개수가 기준에 도달하면 FIRE
 
----
----
-## CustomTrigger
+### CustomTrigger
 - Trigger 클래스 상속, 필수 메서드 구현
-  - Trigger 구현을 위해 반드시 추상 메서드 5개를 구현해야 함.
-  - 미사용 메서드는 return TriggerResult.CONTINUE 로 처리할 수 있음.
+  - Trigger 구현을 위해 반드시 추상 메서드 5개를 구현해야 함
+  - 미사용 메서드는 `return TriggerResult.CONTINUE` 로 처리할 수 있음
 
-| 메서드 | 설명 | 사용 여부 |
-| --- | --- | --- |
-| on_element(self, element, timestamp, window, ctx) | 새 데이터가 들어올 때 실행됨 | 필수 |
-| on_processing_time(self, time, window, ctx) | 특정 처리 시간이 도래하면 실행됨 | 선택 |
-| on_event_time(self, time, window, ctx) | 특정 이벤트 시간이 도래하면 실행됨 | 선택 |
-| on_merge(self, window, ctx) | 여러 윈도우가 병합될 때 실행됨 | 선택 |
-| clear(self, window, ctx) | 윈도우가 닫힐 때 상태 초기화 | 필수 |
+    | 메서드 | 설명 | 사용 여부 |
+    | --- | --- | --- |
+    | `on_element(self, element, timestamp, window, ctx)` | 새 데이터가 들어올 때 실행됨 | **필수** |
+    | `on_processing_time(self, time, window, ctx)` | 특정 처리 시간이 도래하면 실행됨 | 선택 |
+    | `on_event_time(self, time, window, ctx)` | 특정 이벤트 시간이 도래하면 실행됨 | 선택 |
+    | `on_merge(self, window, ctx)` | 여러 윈도우가 병합될 때 실행됨 | 선택 |
+    | `clear(self, window, ctx)` | 윈도우가 닫힐 때 상태 초기화 | **필수** |
 
-## CustomTrigger 예제 : CountTrigger
-
-- Trigger 클래스 상속, 필수 메서드 구현 예제
+### CustomTrigger 예제 : CountTrigger
+Trigger 클래스 상속, 필수 메서드 구현 예제
 
 ```py
+# Trigger를 상속받고 CountTrigger 형태로 커스텀 트리거 구현
 class CustomCountTrigger(Trigger):
     def __init__(self, count_threshold):
         super().__init__()
@@ -935,6 +933,7 @@ class CustomCountTrigger(Trigger):
     def of(count_threshold):
         return CustomCountTrigger(count_threshold)
 
+    # 핵심 메서드(CustomTrigger 필수 메서드): 새 요소가 들어올 때마다 호출됨
     def on_element(self, element, timestamp, window, ctx):
         """ 새 요소가 들어올 때마다 호출됨 """
         count_state_desc = ValueStateDescriptor("count", Types.INT())  # 상태 저장을 위한 ValueStateDescriptor
@@ -949,12 +948,17 @@ class CustomCountTrigger(Trigger):
             return TriggerResult.FIRE_AND_PURGE  # 트리거 실행 + 윈도우 초기화
         return TriggerResult.CONTINUE  # 계속 대기
 ```
-
-## CustomTrigger 예제 : CountTrigger
-
-- Trigger 클래스 상속, 필수 메서드 구현 예제
-
+- `CustomCountTrigger`
+  - 이 클래스는 Flink의 Trigger를 상속받아, "데이터 개수(Count)" 를 기준으로 윈도우를 닫고 결과를 배출(Fire)할지 결정함
+  - `ValueStateDescriptor` & `ctx.get_partitioned_state`
+    - Flink는 분산 환경에서 동작하므로, 단순히 클래스 멤버 변수(self.count)로 카운트를 세면 안됨 (장애 발생 시 데이터가 유실될 수 있음)
+    - 반드시 Flink가 관리하는 **State(상태 저장소)** 를 사용해야 하며, 여기서는 정수형(Types.INT) 데이터를 저장하는 ValueState를 사용하여 현재까지 들어온 데이터 개수를 기록함
+  - `TriggerResult` 반환 값
+    - `CONTINUE`: 아무 일도 하지 않음 (다음 데이터 대기)
+    - `FIRE_AND_PURGE`: 현재 윈도우의 계산 결과(Reduce)를 내보내고(FIRE), 윈도우 내부의 데이터를 비움(PURGE)
+      - 이로 인해 다음 계산은 0부터 다시 시작됨
 ```py
+# 필수 메서드 이외에 나머지 메서드들도 구현 (사용하지 않음) -> return TriggerResult.CONTINUE로 처리
 def on_processing_time(self, self, time, window, ctx):
     """ 처리 시간 기반 트리거 (사용하지 않음) """
     return TriggerResult.CONTINUE
@@ -972,54 +976,75 @@ def clear(self, window, ctx):
     count_state_desc = ValueStateDescriptor("count", Types.INT())
     ctx.get_partitioned_state(count_state_desc).clear()
 ```
-
 ```py
+# 실행 환경 설정
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_parallelism(1)
 
-data = [(i,) for i in range(1, 16)]  # 1부터 15까지의 숫자를 포함하는 데이터
+# 입력 데이터: 1부터 15까지의 숫자
+data = [(i,) for i in range(1, 16)]
 ds = env.from_collection(collection=data, type_info=Types.TUPLE([Types.INT()]))
 
-# CountTrigger(5) 적용 : 5개마다 실행
-windowed = ds.window_all(GlobalWindows.create()) \
-    .trigger(CustomCountTrigger.of(5)) \
-    .reduce(lambda a, b: (a[0] + b[0],))
+# GlobalWindow + 사용자 정의 CountTrigger(5개마다 실행)
+windowed = (
+    ds.window_all(GlobalWindows.create())
+      .trigger(CustomCountTrigger.of(5))
+      .reduce(lambda a, b: (a[0] + b[0],))  # 집계: 합계 구하기
+)
 
+# 결과 출력
 windowed.print()
 
+# 실행
 env.execute("Custom CountTrigger Example")
 ```
+- `GlobalWindows`
+  - 기본적으로 윈도우가 닫히지 않는 단 하나의 거대한 윈도우를 생성
+  - 시간이나 세션 같은 기준이 없으므로, CustomTrigger가 없으면 데이터는 영원히 쌓이기만 하고 절대 결과를 출력하지 않음
+  - 우리가 만든 CustomCountTrigger가 "5개가 찰 때마다" 강제로 문을 열어주는 역할을 함
+- `reduce(lambda ...)`
+  - 트리거가 발동(FIRE)될 때 실행되는 집계 함수
+  - 들어온 튜플들의 첫 번째 요소(a[0] + b[0])를 계속해서 더해나감
 
-```
-(15)
-(40)
-(65)
-```
+- 결과
+
+  | 윈도우 배치 | 포함된 데이터 | 계산 과정 (Reduce) | 결과 출력 | 트리거 동작 |
+  | :--- | :--- | :--- | :--- | :--- |
+  | **1차** | 1, 2, 3, 4, 5 | 1+2+3+4+5 | **(15)** | `FIRE_AND_PURGE` (초기화) |
+  | **2차** | 6, 7, 8, 9, 10 | 6+7+8+9+10 | **(40)** | `FIRE_AND_PURGE` (초기화) |
+  | **3차** | 11, 12, 13, 14, 15 | 11+12+13+14+15 | **(65)** | `FIRE_AND_PURGE` (초기화) |
+
 
 ## Evictor
+윈도우에서 일부 요소를 제거(evict)하는 역할
 
-- 윈도우에서 일부 요소를 제거(evict)하는 역할
-  - 윈도우 연산이 수행되기 전후에 적용되어, 남겨둘 요소와 버릴 요소를 결정할 수 있음
-  - 특정 기준에 따라 오래된 데이터나 조건에 맞지 않는 데이터를 윈도우에서 빼냄으로써 실제 연산에 사용되는 데이터 범위를 조절
-- 사용이유(길이가 1시간인 윈도우에서 최대값 구하기)
-  - 데이터를 오래 유지하면 메모리 사용량이 증가하고, 최근 데이터만 남기면 분석 효율이 증가
-  - 이빅터를 사용해 최근 10분치 데이터만 남겨두고 이전 50분치 데이터는 버릴 수 있음.
-  - 메모리 사용 최적화 → 오래된 데이터(50분 이전)는 제거됨.
-  - 최신 데이터 기반 분석 가능 → 최근 10분 데이터만 반영되므로 실시간성 유지.
-  - 윈도우 크기는 1시간으로 유지 → 여전히 1시간 내에서 트리거가 실행되지만, 계산은 최근 10분 데이터만 사용하는 효과 발생.
+- 윈도우 연산이 수행되기 전후에 적용되어, 남겨둘 요소와 버릴 요소를 결정할 수 있음
+  - 특정 기준에 따라 오래된 데이터나 조건에 맞지 않는 데이터를 윈도우에서 빼냄으로써 실제 연산에 사용되는 데이터 범위를 조절함
 
-## Evictor 유형
-- CountEvictor(N)
-  - 각 윈도우마다 N개의 요소만 유지하고 나머지는 제거
-  - ex) 윈도우에 100개가 쌓였는데 CountEvictor(50)을 쓰면 50개만 남기고 50개 evict
-- TimeEvictor(t)
-  - 현재 윈도우의 가장 늦은 타임스탬프 – t 보다 이전의 모든 요소를 제거
-  - ex) TimeEvictor(10초) → 윈도우 내에서 최신 이벤트 시간으로부터 10초보다 더 오래된 이벤트들은 제외하고 연산
-- DeltaEvictor(Δ)
-  - 델타 함수를 이용한 사용자 정의 기준. 요소들 간의 차이나 특정 속성 변화량이 설정한 Δ 기준보다 크면 제거하는 방식 등, 사용자가 DeltaFunction을 정의해야 함
+- 사용이유 (ex. 길이가 1시간인 윈도우에서 최대값 구하기)
+  - 데이터를 오래 유지하면 메모리 사용량이 증가하고, 최근 데이터만 남기면 분석 효율이 증가함
+    - 이빅터를 사용해 최근 10분치 데이터만 남겨두고 이전 50분치 데이터는 버릴 수 있음
+  - 메모리 사용 최적화
+    - 오래된 데이터(50분 이전)는 제거됨
+  - 최신 데이터 기반 분석 가능
+    - 최근 10분 데이터만 반영되므로 실시간성 유지됨
+  - 윈도우 크기는 1시간으로 유지
+    - 여전히 1시간 내에서 트리거가 실행되지만, 계산은 최근 10분 데이터만 사용하는 효과 발생
+    - 즉, 50분치 데이터가 윈도우 연산 흐름에서 완전히 제거되어 없어진 것처럼 취급되어 동작함
 
-## TimeEvictor 예제
+### Evictor 유형
+- `CountEvictor(N)`
+  - 각 윈도우마다 N개의 요소만 유지하고 나머지는 제거됨
+  - ex. 윈도우에 100개가 쌓였는데 CountEvictor(50)을 쓰면 50개만 남기고 50개 evict
+- `TimeEvictor(t)`
+  - 현재 윈도우의 가장 늦은 타임스탬프
+  - t 보다 이전의 모든 요소를 제거함
+  - ex. TimeEvictor(10초) → 윈도우 내에서 최신 이벤트 시간으로부터 10초보다 더 오래된 이벤트들은 제외하고 연산
+- `DeltaEvictor(Δ)`
+  - 델타 함수를 이용한 사용자 정의 기준
+  - 요소들 간의 차이나 특정 속성 변화량이 설정한 Δ 기준보다 크면 제거하는 방식 등 사용자가 DeltaFunction을 정의해야 함
 
+### TimeEvictor 예제
 - 오래된 데이터 제거
   - 윈도우 자체는 60분치 데이터를 모으지만, 실제 계산에는 가장 최근 10분 이내의 데이터만 사용
 
@@ -1032,10 +1057,16 @@ class TimeEvictor:
     def __init__(self, max_time_seconds):
         self.max_time_seconds = max_time_seconds
 
+    # 동작 시점 (evict_before)
+    # 윈도우에 데이터가 모인 후, 실제 계산(educe/Process)이 수행되기 직전에 호출
+    # 여기서 통과 못한 데이터는 계산에서 제외됨
     def evict_before(self, elements):
         current_time = time.time()
-        filtered = [e for e in elements if current_time - e[1] <= self.max_time_seconds]
+
+        filtered = [e for e in elements if current_time - e[1] <= self.max_time_seconds]  # 600초 = 10분
         removed = [e for e in elements if e not in filtered]
+        # Filtered: 조건을 만족하여 살아남은 데이터 (최근 데이터)
+        # Removed: 조건을 만족하지 못해 삭제된 데이터 (오래된 데이터)
 
         print("**Evictor 적용 결과**")
         print(f"* 총 입력 데이터 개수: {len(elements)}")
@@ -1050,7 +1081,6 @@ class TimeEvictor:
 
         return filtered
 ```
-
 ```py
 # 윈도우 설정 (1시간) + Evictor 적용 (최근 10분 유지)
 def time_evictor_example():
@@ -1062,114 +1092,177 @@ def time_evictor_example():
 
 time_evictor_example()
 ```
+- Evictor 적용 결과
+  - 총 입력 데이터 개수: 60  
+  - 유지된 데이터 개수 (최근 10분): 9  
+  - 제거된 데이터 개수: 51
 
-**\*\*Evictor 적용 결과\*\***  
-\* 총 입력 데이터 개수: 60  
-\* 유지된 데이터 개수 (최근 10분): 9  
-\* 제거된 데이터 개수: 51
+- 결과 데이터 해석
 
-# Watermarks와 Late Elements 처리
+  | 데이터 ($i$) | 생성 시점 (이론상) | 실제 경과 시간 (실행 지연 포함) | 조건 (`<= 600s`) | 처리 결과 |
+  | :---: | :--- | :--- | :---: | :--- |
+  | **1** | 1분 전 (60초) | 약 60.00초 | True | **유지 (Kept)** |
+  | ... | ... | ... | ... | **유지 (Kept)** |
+  | **9** | 9분 전 (540초) | 약 540.00초 | True | **유지 (Kept)** |
+  | **10** | 10분 전 (600초) | **600.01초** (미세한 실행 지연) | **False** | **제거 (Evicted)** |
+  | **11** | 11분 전 (660초) | 약 660.01초 | False | **제거 (Evicted)** |
+  - $i=10$인 데이터는 생성 시점에는 정확히 600초 전이었으나,
+  - evict_before에 도달하는 아주 짧은 순간 동안 시간이 흘러 600초를 초과하게 됨
+  - 따라서 엄격한 조건(`<= 600`)에 의해 10번째 데이터부터 삭제되어, 총 9개의 데이터만 남게 됨
 
-## Watermarks
+
+## Watermarks와 Late Elements 처리
+### Watermarks
 - 필요성
-  - 실시간 스트림 처리에서 이벤트의 시간(timestamp)을 기준으로 윈도우를 사용하는 경우, 이벤트가 발생한 실제 시각(Event Time)과 시스템이 이벤트를 처리하는 시각(Processing Time) 사이에 차이가 있을 수 있음
+  - 실시간 스트림 처리에서 이벤트의 시간(timestamp)을 기준으로 윈도우를 사용하는 경우
+    - 이벤트가 발생한 실제 시각(Event Time)과 시스템이 이벤트를 처리하는 시각(Processing Time) 사이에 차이가 있을 수 있음
   - 네트워크 지연이나 시스템 부하 때문에 이벤트들이 생성 순서와 다르게 도착하기도 함
   - 이런 경우 아무 대책 없이 이벤트 시간 윈도우를 사용하면, 윈도우가 이미 닫힌 후에 늦게 도착한 이벤트가 발생하여 데이터 손실이나 잘못된 결과가 나올 수 있음
 
 - 워터마크란?
   - 특수한 타임스탬프 메타데이터로서, 현재까지 도착한 이벤트 중 가장 큰 이벤트 시간에 대한 정보를 표현
   - “현재 시각(t)까지의 이벤트는 모두 도착했다고 간주하겠다”라는 마커를 주기적으로 생성하여 스트림과 함께 흘려보냄
-  - 윈도우 연산자는 워터마크를 참고하여, 특정 윈도우를 언제 확정 짓고 닫을지 결정
+  - 윈도우 연산자는 워터마크를 참고하여, 특정 윈도우를 언제 확정 짓고 닫을지 결정함
 
-- 워터마크란?
+    ![alt text](image-52.png)
+    - 워터마크를 1h 14m로 잡으면 이전 데이터(1h10m, 1h11m ..)들은 더이상 도착할 가능성이 없다고 판단함
+    - 지금까지 안온거면 안올거다 하는거
+
   - Window Operator 에 Watermark 가 유입되고 나면 Window Operator 는 더 이상 1h 13m 보다 과거의 Event 는 유입되지 않는다고 판단
-  - Watermark 가 명시한 시간보다 과거의 Event 들은 모두 Purge 됨
+  - Watermark 가 명시한 시간보다 과거의 Event 들은 모두 Purge(제거) 됨
 
-## 이벤트 시간 vs 처리 시간
+    ![alt text](image-53.png)
+
+### 이벤트 시간 vs 처리 시간
 - 이벤트 시간(Event Time)
   - 데이터가 실제 현실에서 발생한 시각
-  - 이벤트 시간 기반으로 윈도우를 처리하면, 결과가 데이터 발생 시각을 정확히 반영하므로, 지연이나 순서 뒤바뀜에도 논리적으로 일관된 결과를 얻을 수 있음
+  - 이벤트 시간 기반으로 윈도우를 처리하면, 결과가 데이터 발생 시각을 정확히 반영하므로
+    - 지연이나 순서 뒤바뀜에도 논리적으로 일관된 결과를 얻을 수 있음
   - 이벤트 시간이 올바르게 동작하려면 워터마크를 통해 Flink가 시간 진행을 파악해야함
 - 처리 시간(Processing Time)
   - Flink 태스크가 실제로 이벤트를 처리하는 현재 시스템 시간
   - 구현이 간단하고 지연 처리도 필요없지만, 외부요인에 따라 순서가 어긋나거나 지연된 이벤트를 고려할 수 없음
   - 따라서 실시간성은 높지만 정확도는 떨어질 수 있음
 
-## Watermarks
-- 작동 원리
-  - 워터마크는 보통 ‘현재 이벤트 타임 - (허용 지연 시간)’의 값으로 주기적으로 생성
-  - 워터마크를 받은 윈도우 오퍼레이터는 해당 워터마크 시각보다 이전에 끝나는 윈도우들은 이제 모두 이벤트가 다 왔다고 판단하고, 그 윈도우들을 마감
+### Watermarks 작동 원리
+- 워터마크는 보통 '현재 이벤트 타임 - (허용 지연 시간)'의 값으로 주기적으로 생성
+- 워터마크를 받은 윈도우 오퍼레이터는 해당 워터마크 시각보다 이전에 끝나는 윈도우들은 이제 모두 이벤트가 다 왔다고 판단하고, 그 윈도우들을 마감함
 
-## Late Elements와 Allowed Lateness
+  ![alt text](image-54.png)
+  - Late Event(지연 이벤트) 때문에 윈도우가 늦게 평가되는 상황 -> 왼쪽 그림
+    - 녹색 a = 정상적으로 제시간에 도착
+    - 빨간 a = 지연(dropped late) 이벤트
+    - 15초에 끝나는 window1은 원래라면 녹색 a를 받고 (a, 1)로 바로 마감 가능
+    - but, event time 기준으로 20초쯤에 late event(빨간 a)가 뒤늦게 도착함
+    - window1은 "혹시 더 올 수도 있는가?" 하고 기다린 뒤
+    - 늦게 온 이벤트까지 계산해서 (a, 2) 또는 (a, 3) 같이 값이 바뀜
+    - 즉, 지연 이벤트 때문에 평가가 딜레이됨
+  - Watermark가 있어 적절한 시점에 윈도우가 마감됨 -> 오른쪽 그림
+    - 워터마크 = 현재 이벤트 타임 - 허용 지연 5초
+    - 워터마크가 20초에 도착했다면 → "15초 이전 윈도우는 이제 마감해도 된다" 판단
+    - window1(5~15s)은 실제로 늦은 빨간 이벤트가 20초쯤 왔지만
+    - 워터마크가 이미 20초로 평가됐기 때문에 → 15초 윈도우는 더 기다리지 않고 (a,2) 시점에서 바로 마감
+    - window2, window3도 마찬가지로 워터마크 기반으로 정해진 시점에서 close됨
+  
+### Late Elements와 Allowed Lateness
 - 지연 도착 데이터 처리
-  - Allowed Lateness(허용 지연) 설정을 통해, 윈도우가 닫힌 후에도 일정 기간 동안 늦은 데이터를 수용하는 기능을 제공
-  - Allowed Lateness(Duration)을 설정하면, 해당 기간 내에 도착한 늦은 이벤트는 다시 그 윈도우를 열어서 계산에 반영
+
+  ![alt text](image-55.png)
+  - 늦게 도착한 데이터는 앞에서 Drop 하기로 했고, Drop 가능함
+  - 그러나 flink에서 Allowed Lateness(허용 지연) 설정을 통해 윈도우가 닫힌 후에도 일정 기간 동안 늦은 데이터를 수용하는 기능을 제공함
+  - `Allowed Lateness(Duration)`
+    - 얘를 설정하면, 해당 기간 내에 도착한 늦은 이벤트는 다시 그 윈도우를 열어서 계산에 반영함
+    - 다만, 허용 지연 설정 시간 너무 길게 잡으면 실시간성에 부정적인 영향을 줄 수 있으므로 적절한 조절이 필요함
   - Allowed Lateness는 watermark delay 이후 적용
 
-## Watermarks + allowedLateness 예제
+    ![alt text](image-56.png)
+    1. Window Start (윈도우 시작)
+    2. Window End (윈도우 종료 시점)
+        - 지연 이벤트가 올 수 있으므로 윈도우 끝났다고 바로 계산하지XX
+    3. First Firing (워터마크 도착으로 윈도우 최초 계산)
+    4. Window Purged (Allowed Lateness 종료 → 메모리 완전 제거)
+        - 워터마크 이후도 지연 이벤트는 여전히 들어올 수 있음
+        - 하지만 너무 늦은 이벤트를 모두 기다리면 실시간성이 망가짐
+        - → 그래서 Flink는 “허용 지연 시간(Allowed Lateness)”을 설정해 둠
+        - ex. First firing 이후 10초 동안 늦게 오는 이벤트만 수용
+        - 해당 늦은 이벤트가 오면 윈도우를 잠깐 다시 열어서 재계산
+
+### Watermarks + allowedLateness 예제
 - 1초까지 out-of-order를 허용하는 워터마크
 - 2초의 이벤트 시간 텀블링 윈도우에 대해 최대 2초의 허용 지연 설정
 
-```python
-# 사용자 정의 TimestampAssigner: 두 번째 필드를 타임스탬프로 사용 (밀리초)
-class CustomTimestampAssigner(TimestampAssigner):
-    def extract_timestamp(self, self, element, record_timestamp):
-        return element[1]
+  ```python
+  # 사용자 정의 TimestampAssigner: 두 번째 필드를 타임스탬프로 사용 (밀리초)
+    # 스트림 이벤트에서 이벤트 타임(event time) 으로 사용할 필드를 추출해주는 클래스
+    # 데이터 (id, timestamp) 중 timestamp 컬럼이 event time이 됨
+    # Flink는 이 값(event time)을 기준으로 윈도우를 열고 닫고, 워터마크를 계산함
+  class CustomTimestampAssigner(TimestampAssigner):
+      def extract_timestamp(self, self, element, record_timestamp):
+          return element[1]
 
-# ProcessFunction: 각 이벤트와 현재 워터마크 출력
-class PrintWatermarkProcessFunction(ProcessFunction):
-    def process_element(self, value, ctx):
-        watermark = ctx.timer_service().current_watermark()
-        print(f"Event: {value}, Current Watermark: {watermark}")
-        yield value
+  # ProcessFunction: 각 이벤트와 현재 워터마크 출력
+  class PrintWatermarkProcessFunction(ProcessFunction):
+      def process_element(self, value, ctx):
+          watermark = ctx.timer_service().current_watermark()
+          print(f"Event: {value}, Current Watermark: {watermark}")
+          yield value
 
-env = StreamExecutionEnvironment.get_execution_environment()
-env.set_parallelism(1)
-```
+  env = StreamExecutionEnvironment.get_execution_environment()
+  env.set_parallelism(1)
+  ```
 
-```python
-# 현재 시간 기준 샘플 데이터 생성
-now = datetime.now()
-data = [
-    (1, int(now.timestamp())),
-    (2, int((now + timedelta(milliseconds=1000)).timestamp())),
-    (3, int((now + timedelta(milliseconds=2000)).timestamp())),
-    (4, int((now + timedelta(milliseconds=3000)).timestamp())),
-    (5, int((now + timedelta(milliseconds=4000)).timestamp())),
-]
+  ```python
+  # 현재 시간 기준 샘플 데이터 생성
+  now = datetime.now()
+  data = [
+      (1, int(now.timestamp())),
+      (2, int((now + timedelta(milliseconds=1000)).timestamp())),
+      (3, int((now + timedelta(milliseconds=2000)).timestamp())),
+      (4, int((now + timedelta(milliseconds=3000)).timestamp())),
+      (5, int((now + timedelta(milliseconds=4000)).timestamp())),
+  ]
 
-source = env.from_collection(data, type_info=Types.TUPLE([Types.INT(), Types.LONG()]))
+  source = env.from_collection(data, type_info=Types.TUPLE([Types.INT(), Types.LONG()]))
 
-# 워터마크 전략 설정: 1초의 out-of-orderness 허용
-watermark_strategy = (
-    WatermarkStrategy.for_bounded_out_of_orderness(Duration.of_seconds(1))
-    .with_timestamp_assigner(CustomTimestampAssigner())
-)
+  # 워터마크 전략 설정: 1초의 out-of-orderness 허용
+  # 워터마크 생성 규칙을 설정하는 객체
+  watermark_strategy = (
+      WatermarkStrategy.for_bounded_out_of_orderness(Duration.of_seconds(1))
+      .with_timestamp_assigner(CustomTimestampAssigner())
+  )
+  # for_bounded_out_of_orderness: out-of-order 이벤트를 얼마나 허용할지 지정
+  # Duration.of_seconds(1): 최대 1초 늦게 도착한 이벤트까지 정상 처리
+  # with_timestamp_assigner: 특정 이벤트 필드를 event time으로 설정
 
-# 타임스탬프와 워터마크 할당
-watermarked_stream = source.assign_timestamps_and_watermarks(watermark_strategy)
-```
+  # 타임스탬프와 워터마크 할당
+  # 스트림에 타임스탬프와 워터마크를 실제로 지정해줌
+  # 반드시 window 연산보다 먼저 해야 함
+  watermarked_stream = source.assign_timestamps_and_watermarks(watermark_strategy)
+  ```
 
-# Watermarks + allowedLateness 예제
 - Late Elements 처리
   - side output으로 모은 너무 늦은 이벤트들을 처리
 
-```python
-# 텀블링 이벤트 시간 윈도우: 2초의 allowed lateness 적용
-windowed_stream = watermarked_stream.key_by(lambda x: x[0]) \
-    .window(TumblingEventTimeWindows.of(Time.seconds(2))) \
-    .allowed_lateness(Duration.of_seconds(2))
+  ```python
+  # 이벤트 타임 기반의 고정 길이 윈도우를 정의
+  # 텀블링 이벤트 시간 윈도우: 2초의 allowed lateness 적용
+  windowed_stream = watermarked_stream.key_by(lambda x: x[0]) \
+      .window(TumblingEventTimeWindows.of(Time.seconds(2))) \
+      .allowed_lateness(Duration.of_seconds(2))
 
-# 각 이벤트와 워터마크 출력
-processed_stream = watermarked_stream.process(PrintWatermarkProcessFunction())
-processed_stream.print()
+  # 각 이벤트와 워터마크 출력
+  processed_stream = watermarked_stream.process(PrintWatermarkProcessFunction())
+  processed_stream.print()
 
-env.execute("Watermark with Allowed Lateness Example")
-```
+  env.execute("Watermark with Allowed Lateness Example")
+  ```
 
-### 출력 예시
-Event: (1, 1683512335), Current Watermark: 1683512335  
-Event: (2, 1683512336), Current Watermark: 1683512336  
-Event: (3, 1683512337), Current Watermark: 1683512337  
-Event: (4, 1683512338), Current Watermark: 1683512338  
-Event: (5, 1683512339), Current Watermark: 1683512339
+  - 결과
+    ```
+    Event: (1, 1683512335), Current Watermark: 1683512335  
+    Event: (2, 1683512336), Current Watermark: 1683512336  
+    Event: (3, 1683512337), Current Watermark: 1683512337  
+    Event: (4, 1683512338), Current Watermark: 1683512338  
+    Event: (5, 1683512339), Current Watermark: 1683512339
+    ```
+  - `data_engineering\04_Flink\FlinkCode\03_checkpointing_window\watermark_late_elements.py` 참고
