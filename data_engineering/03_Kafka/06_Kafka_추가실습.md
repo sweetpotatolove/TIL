@@ -751,7 +751,7 @@ def update_broker_config(send_buffer, receive_buffer, net_threads, io_threads):
         f"num.io.threads={io_threads}"
     ]
 
-    config_file = "/home/ssafy/kafka/config/server.properties"
+    config_file = "/home/my/kafka/config/server.properties"
 
     with open(config_file, "r") as file:
         lines = file.readlines()
@@ -772,13 +772,13 @@ def restart_kafka_broker():
 
     if result.stdout.strip():
         print("Stopping Kafka broker...")
-        subprocess.run(["/home/ssafy/kafka/bin/kafka-server-stop.sh"], check=False)
+        subprocess.run(["/home/my/kafka/bin/kafka-server-stop.sh"], check=False)
         time.sleep(5)
 
     print("Starting Kafka broker...")
     subprocess.Popen([
-        "/home/ssafy/kafka/bin/kafka-server-start.sh",
-        "/home/ssafy/kafka/config/server.properties"
+        "/home/my/kafka/bin/kafka-server-start.sh",
+        "/home/my/kafka/config/server.properties"
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
 
     time.sleep(5)
@@ -846,3 +846,4 @@ for send_buffer in SEND_BUFFER_SIZES:
 
                 time.sleep(5)
 ```
+

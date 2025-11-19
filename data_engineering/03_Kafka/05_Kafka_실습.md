@@ -63,7 +63,7 @@ wget https://dlcdn.apache.org/kafka/3.9.0/kafka_2.12-3.9.0.tgz
 tar -xvzf kafka_2.12-3.9.0.tgz
 
 # Kafka 폴더 이동
-sudo mv kafka_2.12-3.9.0 /home/ssafy/kafka
+sudo mv kafka_2.12-3.9.0 /home/my/kafka
 ```
 - 압축을 해제하고 `config/server.properties` 파일을 확인하여 설정을 조정합니다.
 
@@ -73,7 +73,7 @@ sudo mv kafka_2.12-3.9.0 /home/ssafy/kafka
 - 아래의 명령어로 Zookeeper를 실행합니다.
 ```bash
 # Zookeeper 실행
-cd /home/ssafy/kafka
+cd /home/my/kafka
 ./bin/zookeeper-server-start.sh config/zookeeper.properties
 
 # 정상 로그 예시:
@@ -84,7 +84,7 @@ binding to port 0.0.0.0/0.0.0.0:2181
 - Zookeeper가 실행 중인 상태에서 다음 명령어를 실행하여 Kafka 브로커를 실행합니다.
 - 새로운 터미널을 열어 Kafka 브로커를 실행합니다.
 ```bash
-cd /home/ssafy/kafka
+cd /home/my/kafka
 ./bin/kafka-server-start.sh config/server.properties
 
 # 정상 로그 예시:
