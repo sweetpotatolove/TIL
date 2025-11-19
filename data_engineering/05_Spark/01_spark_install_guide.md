@@ -3,7 +3,7 @@
 ## 1. Spark 다운로드 및 설치
 
 ```bash
-cd /home/ssafy
+cd /home/myuser
 
 # Spark 3.5.4 다운로드
 wget https://archive.apache.org/dist/spark/spark-3.5.4/spark-3.5.4-bin-hadoop3.tgz
@@ -11,8 +11,8 @@ wget https://archive.apache.org/dist/spark/spark-3.5.4/spark-3.5.4-bin-hadoop3.t
 # 압축 해제
 tar -xvzf spark-3.5.4-bin-hadoop3.tgz
 
-# /home/ssafy/spark 로 이동
-sudo mv spark-3.5.4-bin-hadoop3 /home/ssafy/spark
+# /home/myuser/spark 로 이동
+sudo mv spark-3.5.4-bin-hadoop3 /home/myuser/spark
 ```
 
 ---
@@ -25,8 +25,13 @@ vi ~/.bashrc
 
 파일 마지막에 아래 내용 추가:
 ```bash
-export SPARK_HOME=/home/ssafy/spark
+export SPARK_HOME=/home/myuser/spark
 export PATH=$SPARK_HOME/bin:$SPARK_HOME/sbin:$PATH
+
+# 파일에 작성 안하고 터미널에 직접 입력할 경우, 
+# 터미널 종료 시 사라지므로 주의!
+
+# 파일에 입력하면 전체 적용되는 환경변수
 ```
 
 변경 사항 적용:
@@ -37,7 +42,7 @@ source ~/.bashrc
 환경변수 설정 확인:
 ```bash
 echo $SPARK_HOME
-# 출력: /home/ssafy/spark
+# 출력: /home/myuser/spark
 ```
 
 ---

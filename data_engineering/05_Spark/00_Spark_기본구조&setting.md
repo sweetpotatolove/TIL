@@ -206,300 +206,339 @@ Spark는 Driver, Cluster Manager, Worker Nodes로 구성된 분산 데이터 처
 6) 스테이지 (Stage)  
 7) 태스크 (task)
 
-- 클러스터 매니저
-  - Spark 애플리케이션이 실행되는 클러스터의 **리소스를 관리**하는 컴포넌트 (**자원 관리자**)
-    - 드라이버가 요청한 실행기 프로세스 시작
-    - 실행 중인 프로세스를 중지하거나 재시작
-    - 실행자 프로세스가 사용할 수 있는 최대 CPU 코어 개수 제한 등
-  - 종류
-    - `Standalone` : Spark 전용 클러스터 매니저(자체 내장된 매니저)
-    - `Hadoop Yarn` : Hadoop 클러스터 운영에 쓰이는 대표적인 리소스 매니저
-    - `Kubernetes` : 클라우드 환경이나 데브옵스 환경에서 배포를 고려할 때 주로 사용
-  - driver가 클러스터 매니저에게 리소스를 요청하면, 클러스터 매니저는 클러스터의 상태를 고려해 적절한 워커 노드에 Executor를 할당
+### 클러스터 매니저
+- Spark 애플리케이션이 실행되는 클러스터의 **리소스를 관리**하는 컴포넌트 (**자원 관리자**)
+  - 드라이버가 요청한 실행기 프로세스 시작
+  - 실행 중인 프로세스를 중지하거나 재시작
+  - 실행자 프로세스가 사용할 수 있는 최대 CPU 코어 개수 제한 등
+- 종류
+  - `Standalone` : Spark 전용 클러스터 매니저(자체 내장된 매니저)
+  - `Hadoop Yarn` : Hadoop 클러스터 운영에 쓰이는 대표적인 리소스 매니저
+  - `Kubernetes` : 클라우드 환경이나 데브옵스 환경에서 배포를 고려할 때 주로 사용
+- driver가 클러스터 매니저에게 리소스를 요청하면, 클러스터 매니저는 클러스터의 상태를 고려해 적절한 워커 노드에 Executor를 할당
 
-- 드라이버(Driver)
-  - **스파크 애플리케이션의 실행을 관장하고 모니터링**
-    - 클러스터 매니저에 메모리 및 CPU 리소스를 요청 (**자원 요청**)
-    - 애플리케이션 로직을 스테이지와 태스크로 분할 (**작업 분할**)
-    - 여러 실행자에 태스크를 전달 (어떤 실행기에 어떤 태스크를 할당할지 결정 = **작업 분배**)
-    - 태스크 실행 결과 수집 (**결과 수집**)
+### 드라이버(Driver)
+- **스파크 애플리케이션의 실행을 관장하고 모니터링**
+  - 클러스터 매니저에 메모리 및 CPU 리소스를 요청 (**자원 요청**)
+  - 애플리케이션 로직을 스테이지와 태스크로 분할 (**작업 분할**)
+  - 여러 실행자에 태스크를 전달 (어떤 실행기에 어떤 태스크를 할당할지 결정 = **작업 분배**)
+  - 태스크 실행 결과 수집 (**결과 수집**)
 
-  - 특징
-    - 1개의 스파크 애플리케이션에는 1개의 드라이버만 존재  
-    - 드라이버 프로세스가 어디에 있는지에 따라, 스파크에는 크게 두 가지 모드가 존재함
-      1. 클러스터 모드 – 드라이버가 클러스터 내의 특정 노드에 존재  
-      2. 클라이언트 모드 – 드라이버가 클러스터 외부에 존재  
+- 특징
+  - 1개의 스파크 애플리케이션에는 1개의 드라이버만 존재  
+  - 드라이버 프로세스가 어디에 있는지에 따라, 스파크에는 크게 두 가지 모드가 존재함
+    1. 클러스터 모드 – 드라이버가 클러스터 내의 특정 노드에 존재  
+    2. 클라이언트 모드 – 드라이버가 클러스터 외부에 존재  
 
----
----
-- 실행기 (Executor)
-  - 드라이버로부터 전달받은 태스크를 실행하는 프로세스
-    - 스파크 드라이버가 요청한 태스크들을 받아서 실행하고, 그 결과를 드라이버로 반환
-    - 각 프로세스는 드라이버가 요청한 태스크들을 여러 태스크 슬롯(스레드)에서 병렬로 실행
-    - JVM 프로세스
+### 실행기 (Executor)
+- 드라이버로부터 전달받은 태스크를 실행하는 프로세스
+  - 스파크 **드라이버가 요청한 태스크들을 받아서 실행**하고, 그 **결과를 드라이버로 반환**
+  - 각 프로세스는 드라이버가 요청한 태스크들을 여러 태스크 **슬롯(스레드)에서 병렬로 실행**
+  - Executor는 JVM 기반 프로세스 (JVM에서 실행됨)
+  - PySpark에서는 Executor가 JVM 기반 프로세스이고, 그 안에서 별도의 Python Worker 프로세스가 함께 실행됨
+  - 파이썬으로 작성한 연산은 이 Python Worker에서 수행되며, JVM Executor와 Python Worker 간에는 소켓 기반 통신을 통해 데이터를 주고받음
 
-# Spark의 실행구조
+    ![alt text](image-6.png)
+  - `PySpark`: Apache Spark를 파이썬으로 사용할 수 있게 해주는 인터페이스(라이브러리)
 
-## 스파크 세션(Spark Session)
+### 스파크 세션(Spark Session)
+- 스파크 기능(DataFrame, SQL 등)을 사용하기 위한 진입점(entry point)
+  - Spark Core 기능들과 상호 작용할 수 있는 진입점 제공
+    - Spark와 대화하려면 일단 연결해야 하는데, 그 진입점!
+  - API로 프로그래밍을 할 수 있게 해주는 객체
+  - spark-shell에서 기본적으로 제공
+  - 스파크 애플리케이션에서는 사용자가 **SparkSession 객체를 생성해 사용해야 함**
 
-### 스파크 기능(DataFrame, SQL 등)을 사용하기 위한 진입점
-- Spark Core 기능들과 상호 작용할 수 있는 진입점 제공
-- API로 프로그래밍을 할 수 있게 해주는 객체
-- spark-shell에서 기본적으로 제공
-- 스파크 애플리케이션에서는 사용자가 SparkSession 객체를 생성해 사용해야 함
+    ![alt text](image-6.png)
+  - User가 PySpark 코드를 작성하면, 해당 명령은 SparkSession을 통해 Spark 클러스터로 전달됨
+  - SparkSession은 작업을 Driver에서 Executor로 분배하고, Executor 내부의 Task Slot(스레드)에서 여러 Task가 병렬로 실행됨
+  - 이때 PySpark 작업은 JVM 기반 Executor와 별도로 실행되는 Python Worker 간에 소켓 통신을 통해 데이터가 교환되며 처리됨
+  - 각각 따로 사용하던 여러 가지 진입점(context)을 하나의 객체로 묶어놓은 객체가 Spark Session
+    | 기능              | 사용 객체(context) |
+    | --------------- | ---------------- |
+    | RDD 연산          | `SparkContext`   |
+    | SQL / DataFrame | `SQLContext`     |
+    | Hive 지원         | `HiveContext`    |
+    - -> 이 기능들이 모두 SparkSession 안으로 통합됨
 
-# Spark의 실행구조
+### 잡 (Job)
+- 사용자가 실행한 액션(`collect()`, `count()` 등)에 의해 생성되는 작업 단위
+  - 스파크 액션(`save()`, `collect()` 등)에 대한 응답으로 생성되는 여러 태스크로 이루어진 병렬 연산
+- job은 단일 연산XX
+  - Job은 stage, task로 구성됨
 
-## 잡 (Job)
+  ![alt text](image-7.png)
+- 드라이버가 실행 계획을 세우고 Job을 여러 개의 Stage로 분할함
+  - Stage 간에는 **셔플(데이터 재배치)** 가 발생할 수 있음
+    - 셔플이 발생하는 이유:
+      - 데이터의 Key를 기준으로 다시 그룹핑해야 하거나
+      - 파티션 간 데이터를 섞어야 하는 연산(예: groupBy, reduceByKey, join 등) 때문에 전체적으로 데이터 재분배가 필요한 경우
+  - 여기서 말하는 Task는 파티션과 유사한 개념
+  - Stage가 Task로 실행될 때는 각 Task가 파티션 단위로 병렬 처리됨
 
-### 사용자가 실행한 액션(collect(), count() 등)에 의해 생성되는 작업 단위
-- 스파크 액션(save(), collect() 등)에 대한 응답으로 생성되는 여러 태스크로 이루어진 병렬 연산
+- Action 호출 → Job 생성 → Stage로 분할 → Task 단위로 실행(병렬)
 
-# Spark의 실행구조
+### 스테이지 (stage)
+- Job을 셔플(데이터 이동) 기준으로 나눈 실행 단위
+  - 각 Job은 stage라 불리는 서로 의존성을 가지는 다수의 태스크 모음으로 나뉨
+- 즉, stage는 작업을 묶어서 실행하는 논리적 단위
+  - 스테이지 내에서는 데이터 이동(shuffle) 없이 연산이 순차적으로 이어서 실행됨
+  - 만약 연산 과정에서 데이터가 섞이거나 이동해야 하는 상황이 발생하면 셔플이 일어나고, 그 지점에서 다음 stage가 생성되어 넘어가게 됨
 
-## 스테이지(stage)
+- stage를 분할하는 기준
+  - Wide Transformation
+    - 데이터를 처리하기 위해 **여러 노드(파티션)에 흩어진 데이터를 다시 재배치(Shuffle)** 해야 하는 연산
+    - ex. `groupByKey`, `reduceByKey`, `join` 등
+    - → 셔플 필요 → stage 경계가 생김
+  - Narrow Transformation
+    - 한 파티션의 데이터가 **다른 파티션 데이터를 참조하지 않고**, 같은 파티션 내에서만 처리 가능한 연산
+    - ex. `map`, `filter`, `mapPartitions` 등
+    - → 셔플 불필요 → 같은 stage 안에서 연속 실행 가능
 
-### 잡(Job)을 셔플(데이터 이동) 기준으로 나눈 실행 단위
-- 스파크 각 잡은 스테이지라 불리는 서로 의존성을 가지는 다수의 태스크 모음으로 나뉨
+**※ Shuffle 기준으로 나뉘는 Spark Stage 구조 (stage 분할 흐름)**
 
-# Spark의 실행구조
+![alt text](image-8.png)
+- 파란색 블록들이 각각 하나의 파티션이라고 가정하면, Spark는 이 파티션을 기반으로 Task를 생성하여 병렬로 실행하게 됨
+  - 파티션 안에서 p → p 형태로 연속적으로 이어지는 처리 과정은 Narrow Transformation에 해당
+  - 이 구간에서는 데이터 이동 없이, 동일 파티션 내에서만 처리되므로 스테이지가 끊기지 않음
+  - 그러나 p → 진한 노란색 p로 넘어가는 구간에서
+    - `groupBy`, `join` 등 **데이터가 섞이거나 재배치(Shuffle)** 가 필요한 순간이 발생
+    - 이 시점에서 Shuffle이 일어나고, 그 지점에서 스테이지가 분리됨
+  - 그림에서는
+    - Stage0과 Stage1이 각각 독립적으로 실행되다가
+    - Shuffle이 필요한 시점에서 스테이지가 끊기고
+    - Stage2가 새롭게 시작됨
+    - 이후 Stage2 내에서는 다시 Narrow Transformation 흐름처럼 데이터 이동 없이 연속적으로 처리됨
+  - 즉, 스테이지는 셔플 발생 여부를 기준으로 나뉘며, 각 스테이지 내부의 작업은 파티션 단위로 Task가 생성되어 병렬로 실행되는 구조
 
-## 태스크(task)
 
-### 스테이지를 구성하는 실제 실행 단위
-- 스파크 각 잡별 실행기로 보내지는 작업 할당의 가장 기본적인 단위  
-- 개별 task slot에 할당되고, 데이터의 개별 파티션을 가지고 작업
+### 태스크(task)
+- 스테이지를 구성하는 실제 실행 단위
+  - 스파크 각 잡별 실행기로 보내지는 작업 할당의 가장 기본적인 단위  
+  - 개별 task slot에 할당되고, 데이터의 개별 파티션을 가지고 작업
+  - 따라서, 데이터가 10개의 파티션으로 이루어져있으면 Task도 10개가 생성됨
+    - Task는 Executor에서 병렬로 배분, 실행됨
+    - 그래서 Executor 한 대에 CPU 코어가 4개라면, 동시에 4개의 Task가 실행될 수 있음
 
-# Spark의 실행구조
-
-## 스파크 연산의 종류
+### 스파크 연산의 종류
 - 스파크 연산은 크게 트랜스포메이션(Transformation), 액션(Action)으로 구별
+  - Transformation
+    - ex. `map()`, `filter()`, `select()`, `groupby()` 등
+    - Transformation은 실행 '계획'만 생성하고 실제 연산은 수행하지 않음 (**Lazy Evaluation**)
+  - Action
+    - ex. `count()`, `collect()`, `save()` 등
+    - Action은 실제로 연산을 수행하고 결과를 반환함
+    - 즉, Spark가 쌓아왔던 연산 계획을 Job Stage Task 단위로 실행함
 
-# Spark의 실행구조
-
-## Transformation
+### Transformation
 - immutable(불변)인 원본 데이터를 수정하지 않고, 하나의 RDD나 Dataframe을 새로운 RDD나 Dataframe으로 변형  
+  - RDD(Resilient Distributed Dataset) : 스파크의 기본 데이터 구조(기본 데이터 처리 단위)로, 분산된 불변의 데이터 컬렉션 -> 불변 객체
+  - DataFrame: RDD와 처리 방식이 추상화 계층만 다를 뿐, 기본적으로 RDD 위에 구축된 구조화된 데이터 표현 방식
 
-- (input, output) 타입 : (RDD, RDD), (DataFrame, DataFrame)인 연산  
-  - map(), filter(), flatMap(), select(), groupby(), orderby() 등  
+- `(input, output)` 타입 : `(RDD, RDD)`, `(DataFrame, DataFrame)`인 연산  
+  - `map()`, `filter()`, `flatMap()`, `select()`, `groupby()`,` orderby()` 등  
+  - input RDD를 변환하는 것이 아니라, 새로운 output RDD를 생성하는 것
 
-- Narrow, Wide Transformation 존재
+    ![alt text](image-9.png)
+    - 새로운 Transformation이 호출될 때마다, 기존 RDD/DataFrame은 변경되지 않고, 새로운 RDD/DataFrame이 생성되어 쌓이게 됨
+    - Lineage(계보) : 이러한 Transformation 연산의 기록이 쌓여있는 형태 -> RDD가 어떻게 생성되었는지에 대한 기록
+    - 장애가 발생하면 이 Lineage를 따라가면서 다시 RDD를 재생성할 수 있음
 
-# Spark의 실행구조
-
-## Narrow transformation
 - Narrow transformation  
   - input : 1개의 파티션  
   - output : 1개의 파티션  
   - 파티션 간의 데이터 교환이 발생하지 않음  
-  - ex) filter(), map(), coalesce()
+  - 즉, 1개의 입력 파티션이 1개의 출력 파티션으로 매핑됨
+  - ex. `filter()`, `map()`, `coalesce()`
 
-## Wide transformation
+    ![alt text](image-10.png)
+    - 출력 파티션은 새로운 RDD/DataFrame의 파티션이지만, 입력 파티션과 1:1로 매핑되어 데이터 이동 없이 처리됨 (불변성 유지)
+
 - Wide transformation  
   - 연산 시 파티션끼리 데이터 교환 발생  
-  - ex) groupby(), orderby(), sortByKey(), reduceByKey()  
+    - 데이터 교환 -> 네트워크 통신이 발생 -> 성능 저하 요인(속도↓, 리소스 소모↑) -> 때문에 스테이지가 분리되는 지점
+  - ex. `groupby()`, `orderby()`, `sortByKey()`, `reduceByKey()  `
   - 단, join의 경우 두 부모 RDD/Dataframe이 어떻게 파티셔닝 되어 있나에 따라 narrow일 수도 wide일 수도 있음
 
-## Action
-- immutable(불변)인 인풋에 대해, Side effect(부수 효과)를 포함하고, 아웃풋이 RDD 혹은 Dataframe이 아닌 연산  
+    ![alt text](image-11.png)
 
-- count() -> 아웃풋 : int  
-- collect() -> 아웃풋 : array  
-- save() -> 아웃풋 : void
+**※ stage 수 = shuffle 수 + 1**
 
-## Lazy evaluation
+### Action
+- immutable(불변)인 인풋에 대해, Side effect(부수 효과)를 포함하고, 아웃풋이 RDD 혹은 Dataframe이 아닌 연산
+  - `count()` -> 아웃풋 : int  
+  - `collect()` -> 아웃풋 : array  
+  - `save()` -> 아웃풋 : void
+    - JVM 기반 언어이기 때문에 파이썬에서 다루지 않는 자료형도 존재함
+
+    ![alt text](image-9.png)
+  
+- Action은 실행 계획을 시작(실행)하는 역할
+  - Action이 호출되기 전까지 아무 일도 일어나지 않는다는 것이 중요 포인트
+- RDD, DataFrame과 같은 처리 형태 구조가 아닌, 우리가 코드상에서 사용할만한 형태로 결과를 반환함
+  - ex. `count()` → 정수형(int) 반환  
+  - ex. `collect()` → 배열(array) 반환  
+  - ex. `save()` → 파일로 저장 (void)
+- Action이 끝나면 결과가 Driver로 반환됨
+
+### Lazy evaluation
 - 모든 transformation은 즉시 계산되지 않음  
-- 계보(lineage)라 불리는 형태로 기록  
+- 계보(lineage)라 불리는 형태로 기록 (실행 계획만 생성)
 - transformation이 실제 계산되는 시점은 action이 실행되는 시점  
 - action이 실행될 때, 그 전까지 기록된 모든 transformation들의 지연 연산이 수행됨  
 
-### 장점
-- 스파크가 연산 쿼리를 분석하고, 어디를 최적화할지 파악하여, 실행 계획 최적화가 가능  
-  - (eager evaluation이라면, 즉시 연산이 수행되기 때문에 최적화 여지가 없음)
-- 장애에 대한 데이터 내구성을 제공  
-- 장애 발생 시, 스파크는 기록된 lineage를 재실행 하는 것만으로 원래 상태를 재생성 할 수 있음
+- 장점
+  - 스파크가 연산 쿼리를 분석하고, 어디를 최적화할지 파악하여, 실행 계획 최적화가 가능  
+    - eager evaluation이라면, 즉시 연산이 수행되기 때문에 최적화 여지가 없음
+  - 장애에 대한 데이터 내구성을 제공  
+  - 장애 발생 시, 스파크는 기록된 lineage를 재실행 하는 것만으로 원래 상태를 재생성 할 수 있음
 
-# Spark 설치 및 실행 환경설정
 
-## Spark 설치
+## Spark 설치 및 실행 환경설정
+`data_engineering\05_Spark\01_spark_install_guide.md` 참고
 
-### WSL
-- wget https://archive.apache.org/dist/spark/spark-3.5.4/spark-3.5.4-bin-hadoop3.tgz
-- tar -xvzf spark-3.5.4-bin-hadoop3.tgz
-- sudo mv spark-3.5.4-bin-hadoop3 spark
+### pyspark 에서 간단한 예제
+a값이 5이고, b의 값이 10일때 각 `a+b`, `a*b`의 값을 출력
 
-### WSL
-- Spark 환경변수 등록  
-- vi ~/.bashrc  
-  - export SPARK_HOME=/home/ssafy/spark  
-  - export PATH=$SPARK_HOME/bin:$SPARK_HOME/sbin:$PATH  
-- source ~/.bashrc  
-- echo $SPARK_HOME 잘 설정 됐는지 확인
-
-### WSL
-- Spark 실행 확인  
-- spark-shell 후 나가기
-
-## PySpark 설치
-
-### WSL
-- pip install pyspark==3.5.4
-- pyspark 설치 확인
-
-# Spark 설치 및 실행 환경 설정
-
-## pyspark 에서 간단한 예제
-a값이 5이고, b의 값이 10일때 각 a+b, a*b의 값을 출력
+```sh
+# pyspark 실행
+pyspark
 ```
-(Spark ASCII 로고)  
-version 3.5.4
-
-Using Python version 3.12.3  
-Spark context Web UI available at http://172.28.224.58:4040  
-Spark context available as 'sc'  
-SparkSession available as 'spark'
-
+```sh
 >>> a = 5  
 >>> b = 10  
 >>> print("a+b=", a+b)  
-a+b= 15  
+# a+b= 15  
 >>> print("a*b=", a*b)  
-a*b= 50
+# a*b= 50
 ```
+- pyspark 셸은 기본적으로 python 인터프리터 위에 spark를 씌운 형태이므로, python 코드를 바로 실행할 수 있음
 
-# Spark 설치 및 실행 환경 설정
+### Pyspark 실행
+- Pyspark 코드가 실제로 내부에서 어떻게 작동할까?
+  ```
+  Python 코드 (PySpark API)  
+  ↓ Py4J  
+  JVM: SparkSession / SparkContext (Driver)  
+  ↓  
+  Cluster Manager → Executors  
+  ↓  
+  분산 데이터 처리
+  ```
+  - python 코드를 PySpark API 통해서 작성하면
+  - JVM 위에서 실행되는 SparkSession / SparkContext로 전달됨
+    - `Py4J` : Python <-> JVM 간 소켓 기반 통신을 제공하는 라이브러리
+    - Py4J는 Python 프로세스와 JVM 프로세스 사이에 GatewayServer를 두고 TCP/IP 소켓을 통해 양쪽이 서로 데이터를 주고받을 수 있게 함
+  - SparkSession / SparkContext는 Driver 역할을 수행하며, Cluster Manager에게 자원 할당 요청
+  - Cluster Manager는 클러스터의 상태를 고려해 적절한 워커 노드에 Executor를 할당
+  - 각 Executor는 할당받은 Task들을 병렬로 수행하며 데이터를 처리
 
-## Pyspark 실행
-Pyspark 코드가 실제로 내부에서 어떻게 작동할까
+- Pyspark 코드가 실제로 내부에서 어떻게 동작하는가
+  ```sh
+  >>> from pyspark.sql import SparkSession  
+  >>> spark = SparkSession.builder.appName("App").getOrCreate()  
+  >>> print(spark.version)  
+  # 3.5.4
+  >>> spark.stop()
+  ```
+  - `pyspark.sql` 모듈에서 `SparkSession` 클래스를 임포트
+  - `SparkSession.builder.appName("App").getOrCreate()`를 통해 SparkSession 객체 생성
+    - `appName("App")` : 애플리케이션 이름 설정
+    - `getOrCreate()` : 기존 세션이 있으면 반환, 없으면 새로 생성
+  - getOrCreate를 선언한 순간 python에서 JVM 쪽으로 명령을 보내고, Sparkcontext가 만들어지면서 Driver 프로그램이 초기화 되며 클러스터와 연결할 준비를 마치게 됨
 
-Python 코드 (PySpark API)  
-↓ Py4J  
-JVM: SparkSession / SparkContext (Driver)  
-↓  
-Cluster Manager → Executors  
-↓  
-분산 데이터 처리
+### sc.textFile()을 활용한 파일 읽기
+- `sc.textFile()`
+  - 텍스트 파일을 읽어 RDD로 변환하는 기본적인 함수
 
-# Spark 설치 및 실행 환경 설정
+- transformation 예제
+  1. 터미널에서 테스트 파일 생성
+      ```sh
+      echo -e "Hello Spark\nApache Spark is powerful\nBig Data Processing" > test.txt
+      ```
+  2. Spark shell에서 `sc.textFile()` 실행
+      ```sh
+      pyspark
+      
+      >>> rdd = sc.textFile("test.txt")  
+      >>> rdd.foreach(print)
 
-## Pyspark 실행
-Pyspark 코드가 실제로 내부에서 어떻게 동작하는가
-```
-from pyspark.sql import SparkSession  
-spark = SparkSession.builder.appName("App").getOrCreate()  
-print(spark.version)  
-spark.stop()
-```
-```
->>> from pyspark.sql import SparkSession  
->>> spark = SparkSession.builder.appName("App").getOrCreate()  
->>> print(spark.version)  
-3.5.4  
->>> spark.stop()
-```
+      # Hello Spark  
+      # Apache Spark is powerful  
+      # Big Data Processing
+      ```
+  3. 현재 파티션의 개수
+      ```sh
+      >>> rdd.getNumPartitions()  
+      # 2  
+      >>> print("현재 파티션 개수:", rdd.getNumPartitions())  
+      # 현재 파티션 개수: 2
+      ```
+      - `.getNumPartitions()` : RDD의 현재 파티션 개수를 반환하는 메서드
+      - 현재 spark local 모드로 실행 중이므로 기본적으로 2개의 파티션이 생성됨 (최소 병렬 처리를 위해)
+      - 파일 크기가 작아도 일단 나누고 보는 경향이 있어서, 작은 파일에서 효율적이지 않을 수 있음
 
-# Spark 설치 및 실행 환경 설정
+  4. Spark에서 데이터를 하나의 파티션에서 처리
+      ```sh
+      >>> rdd_repartitioned = rdd.repartition(1)  
+      >>> print("변경된 파티션 수:", rdd_repartitioned.getNumPartitions())  
+      # 변경된 파티션 수: 1
+      ```
+      - `repartition(1)` : 파티션 수를 1개로 줄여서 병렬성을 제한하고 데이터를 한곳으로 모음
+      - 즉, 파티션 수를 2에서 1로 변경하면 셔플이 발생하여 데이터가 한 파티션으로 모이게 됨 -> 비용 발생할 수 있음
 
-## sc.textFile()을 활용한 파일 읽기
-- 텍스트 파일을 읽어 RDD로 변환하는 기본적인 함수
+- action 예제
+  1. 데이터 변환 후 결과 확인(`collect()` 함수)
+      - RDD의 모든 데이터를 배열 형태로 변환하는 연산  
+      - `collect()`는 Action 연산, 데이터를 변환 후 결과를 확인할 때 사용 (배열 형태로 확인 가능)
+      - 큰 데이터셋에서는 사용 지양
+        - 데이터가 너무 크면 드라이버 메모리가 부족해질 수 있음
+      ```sh
+      >>> rdd = sc.textFile("file:///usr/local/spark/data/test.txt")  
+      >>> result = rdd.collect()  
+      >>> print(result)
 
-### 1. 터미널에서 테스트 파일 생성
->> Hello Spark Apache Spark is powerful Big Data Processing
-```
-$ echo -e "Hello Spark\nApache Spark is powerful\nBig Data Processing" > test.txt
-```
-### 2. Spark shell에서
->> sc.textFile() 실행
-```
->>> rdd = sc.textFile("test.txt")  
->>> rdd.foreach(print)
+      # ['Hello Spark', 'Apache Spark is powerful', 'Big Data Processing']
+      ```
 
-Hello Spark  
-Apache Spark is powerful  
-Big Data Processing
-```
+  2. 줄 개수 세기 (count 연산)
+      - RDD의 전체 줄 개수를 세는 기본적인 Action 연산  
+      - `count()`는 모든 요소의 개수를 반환하며, RDD 연산의 결과를 즉시 평가함
+      ```sh
+      >>> line_count = rdd.count()  # rdd 객체의 줄 개수 세기
+      >>> print("줄 개수:", line_count)  
+      # 줄 개수: 3
+      ```
 
-# Spark 설치 및 실행 환경 설정
+  3. 특정 단어가 포함된 줄 필터링(filter 연산)
+      - 특정 키워드를 포함한 줄만 필터링할 수 있음  
+      - `filter()`는 Transformation 연산으로, 조건을 만족하는 요소만 포함하는 새로운 RDD를 생성
+      ```sh
+      # "Spark" 단어가 포함된 줄만 필터링 -> transformation
+      >>> filtered_rdd = rdd.filter(lambda line: "Spark" in line)  
+      # foreach로 결과 출력 -> action
+      # print 메서드 사용하여 각 요소에 대해 출력
+      >>> filtered_rdd.foreach(print)
+      # Hello Spark  
+      # Apache Spark is powerful
+      ```
+  
+  4. 모든 단어를 소문자로 변환하기(map 연산)
+      - RDD의 모든 요소에 변환 함수를 적용 가능  
+      - `map()`은 Transformation 연산으로, RDD의 각 요소를 변환하여 새로운 RDD를 생성
+      ```sh
+      >>> lower_rdd = rdd.map(lambda line: line.lower())  
+      >>> lower_rdd.foreach(print)
 
-## sc.textFile()을 활용한 파일 읽기
+      # hello spark  
+      # apache spark is powerful  
+      # big data processing
+      ```
 
-### 3. 현재 파티션의 개수
->> .getNumPartitions()
-```
->>> rdd.getNumPartitions()  
-2  
->>> print("현재 파티션 개수:", rdd.getNumPartitions())  
-현재 파티션 개수: 2
-```
+- pyspark 스크립트 파일로 실행하기
+  - 위에서 작성한 코드를 `spark_example.py` 파일로 저장한 후, 터미널에서 실행
+    ```sh
+    spark-submit spark_example.py
+    ```
+  - `data_engineering\05_Spark\SparkCode\spark_example.py`
 
-# Spark 설치 및 실행 환경 설정
-
-## sc.textFile()을 활용한 파일 읽기
-
-### 4. Spark에서 데이터를 하나의 파티션에서 처리
->> repartition(1) : 파티션 수를 1개로 줄여서 병렬성을 제한하고 데이터를 한곳으로 모은다.
-```
->>> rdd_repartitioned = rdd.repartition(1)  
->>> print("변경된 파티션 수:", rdd_repartitioned.getNumPartitions())  
-변경된 파티션 수: 1
-```
-
-# Spark 설치 및 실행 환경 설정
-
-## sc.textFile()을 활용한 예제
-
-### 1. 데이터 변환 후 결과 확인(collect() 함수)
->> RDD의 모든 데이터를 배열 형태로 변환하는 연산  
->> collect()는 Action 연산, 데이터를 변환 후 결과를 확인할 때 사용  
->> 큰 데이터셋에서는 사용 지양
-```
->>> rdd = sc.textFile("file:///usr/local/spark/data/test.txt")  
->>> result = rdd.collect()  
->>> print(result)
-
-['Hello Spark', 'Apache Spark is powerful', 'Big Data Processing']
-```
-
-# Spark 설치 및 실행 환경 설정
-
-## sc.textFile()을 활용한 예제
-
-### 2. 줄 개수 세기 (count 연산)
->> RDD의 전체 줄 개수를 세는 기본적인 Action 연산  
->> count()는 모든 요소의 개수를 반환하며, RDD 연산의 결과를 즉시 평가함
-```
->>> line_count = rdd.count()  
->>> print("줄 개수:", line_count)  
-줄 개수: 3
-```
-
-# Spark 설치 및 실행 환경 설정
-
-## sc.textFile() 활용 예제
-
-### 3. 특정 단어가 포함된 줄 필터링(filter 연산)
->> 특정 키워드를 포함한 줄만 필터링할 수 있음  
->> filter()는 Transformation 연산으로, 조건을 만족하는 요소만 포함하는 새로운 RDD를 생성
-```
->>> filtered_rdd = rdd.filter(lambda line: "Spark" in line)  
->>> filtered_rdd.foreach(print)
-
-Hello Spark  
-Apache Spark is powerful
-```
-
-# Spark 설치 및 실행 환경 설정
-
-## sc.textFile() 활용 예제
-
-### 4. 모든 단어를 소문자로 변환하기(map 연산)
->> RDD의 모든 요소에 변환 함수를 적용 가능  
->> map()은 Transformation 연산으로, RDD의 각 요소를 변환하여 새로운 RDD를 생성
-```
->>> lower_rdd = rdd.map(lambda line: line.lower())  
->>> lower_rdd.foreach(print)
-
-hello spark  
-apache spark is powerful  
-big data processing
-```
