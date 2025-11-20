@@ -1618,14 +1618,29 @@ sudo service grafana-server status
 - Dashboard → Import
 - Dashboard ID 입력: 7589
 - Prometheus 데이터 소스 연결
+- 데이터 보내고 Grafana 확인
+    ```sh
+    # 터미널 1
+    ./bin/kafka-console-producer.sh \
+    --topic lecture-test-topic \
+    --bootstrap-server localhost:9092
 
----
----
----
+    # 터미널 2
+    ./bin/kafka-console-consumer.sh \
+    --topic lecture-test-topic \
+    --from-beginning \
+    --bootstrap-server localhost:9092
+    ```
+
+    ![alt text](image-169.png)
+
+
 ### Step3: Kafka 컨슈머 그룹 및 메시지 소비량 분석
 - Grafana의 Metrics Browser를 사용하여 적절한 Kafka Exporter 메트릭을 검색
     - Grafana Metrics Browser(메트릭 탐색기) 열기
     - Grafana 왼쪽 메뉴 → Explore(돋보기 아이콘) 클릭
+
+        ![alt text](image-170.png)
 - 핵심 Kafka Exporter 메트릭 정리
     | 분석 목적                 | Prometheus Metric 이름                   |
     | --------------------- | -------------------------------------- |
@@ -1638,10 +1653,223 @@ sudo service grafana-server status
     - Grafana Explore에서 다음 쿼리를 입력:
     - `kafka_consumergroup_lag{consumergroup="test-group"}`
 
+        ![alt text](image-172.png)
 
 
-ㅎ ㅏ..
+## 과제1
+### 학습목표
+Kafka Exporter를 설정해 Prometheus가 컨슈머 Lag 데이터를 수집하도록 구성하고, Prometheus API를 활용해 특정 컨슈머 그룹의 Lag을 주기적으로 조회하는 코드를 작성합니다. 이후 일정 주기(예: 5초)마다 Lag을 출력하며, 특정 임계값을 초과할 경우 경고 메시지를 표시하도록 구현합니다. 또한 CLI에서 프로듀서를 실행해 메시지를 전송하여 Lag 증가를 확인하고, 컨슈머를 실행해 메시지를 소비하면서 Lag이 감소하는 과정을 검증합니다.
+- Kafka Exporter를 설정하여 Prometheus가 컨슈머 Lag을 수집하도록 구성합니다.
+- Prometheus API를 사용하여 특정 컨슈머 그룹의 Lag을 주기적으로 조회하는 코드를 작성합니다.
+- 일정 주기(예: 5초)마다 Lag을 출력하고, 특정 임계값을 초과하면 경고 메시지를 출력합니다.
+- CLI에서 프로듀서를 실행하고 메시지를 전송하여 Lag 증가를 확인합니다.
+- 컨슈머를 실행하여 메시지를 소비하고 Lag이 감소하는 것을 확인합니다.  
+
+### Step0: Step1 실행 전 세팅
+- 모든 프로세스 포트 충돌 체크 후 정리 (중복 실행 예방)
+```sh
+ps aux | grep kafka
+ps aux | grep zookeeper
+
+# 중복 있으면 종료
+pkill -f kafka
+pkill -f zookeeper
+
+# 특정 PID만 죽이려면
+kill -9 <PID>
+```
+
+- 포트 점검
+    | 서비스            | 포트   |
+    | -------------- | ---- |
+    | Zookeeper      | 2181 |
+    | Kafka          | 9092 |
+    | Kafka Exporter | 9308 |
+    | Prometheus     | 9090 |
+    | Grafana        | 3000 |
+
+- Zookeeper 시작
+```sh
+# 주키퍼 실행
+./bin/zookeeper-server-start.sh config/zookeeper.properties
+
+# 확인
+ps aux | grep zookeeper
+```
+- Kafka 브로커 시작
+```sh
+# 카프카 실행
+./bin/kafka-server-start.sh config/server.properties
+
+# 확인
+ps aux | grep kafka
+```
+
+- Kafka Topic 생성
+```sh
+# test-topic 새로 만들기
+cd ~/kafka/bin
+./kafka-topics.sh --create --topic test-topic --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+
+# 토픽 확인
+./kafka-topics.sh --list --bootstrap-server localhost:9092
+```
+
+- Consumer Group 생성
+```sh
+# 컨슈머 그룹은 “생성”하는 명령이 없음
+# 컨슈머를 실행하면 자동 생성됨
+
+./kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic test-topic \
+  --group test-group
+
+# 확인
+./kafka-consumer-groups.sh --list --bootstrap-server localhost:9092
+```
+
+- Producer 실행
+```sh
+# 새 터미널
+
+cd ~/kafka/bin
+./kafka-console-producer.sh --broker-list localhost:9092 --topic test-topic
+
+# 메시지 입력
+# hello
+# world
+# test
+```
+- Lag 발생시키는 방법
+    - Lag을 증가시키고 싶으면:
+        1. 컨슈머 종료
+        2. 프로듀서로 메시지 계속 입력
 
 
+### Step1: Kafka Exporter를 활용한 컨슈머 Lag 데이터 수집
+```sh
+cd kafka_exporter-1.4.2.linux-amd64
+./kafka_exporter --kafka.server=localhost:9092
+```
+- 이 터미널은 계속 열어둠
+- 9308 포트에서 `/metrics` 제공
+
+### Step2: Kafka Exporter가 실행 중인지 확인
+```sh
+# Kafka Exporter 정상 동작하는지 확인
+curl http://localhost:9308/metrics | grep kafka_consumergroup_lag
+```
+
+### Step3: 특정 컨슈머 그룹의 Lag 데이터를 가져오는 API 호출
+```sh
+curl -s http://localhost:9308/metrics | grep 'kafka_consumergroup_lag{consumergroup="test-group"}'
+```
+
+### Step4: Skeleton 코드 작성 및 실행
+- 제공된 Skeleton 코드에서 `get_consumer_lag()` 함수를 완성하고, 일정 주기마다 Lag을 출력하도록 구현합니다.
+```py
+# consumer_lag_monitor.py
+
+"""
+Kafka Exporter를 활용하여 특정 컨슈머 그룹의 Lag을 모니터링하는 스크립트입니다.
+
+TODO:
+1. Kafka Exporter(9308 포트)의 /metrics 데이터를 호출하여 특정 컨슈머 그룹의 Lag을 추출합니다.
+2. 일정 주기(예: 5초)마다 Lag을 출력합니다.
+3. Lag 값이 특정 임계값(예: 100 이상)을 초과하면 경고 메시지를 출력합니다.
+"""
+
+import time
+import requests
+
+# 설정 값
+PROMETHEUS_URL = "http://localhost:9308/metrics"  # Kafka Exporter 주소
+CONSUMER_GROUP = "test-group"  # 모니터링할 컨슈머 그룹명
+LAG_THRESHOLD = 100            # Lag 임계값
+CHECK_INTERVAL = 5             # 체크 주기 (초)
+
+# -----------------------------------------
+# 1. 특정 컨슈머 그룹의 Lag 합계를 가져오는 함수
+# -----------------------------------------
+def get_consumer_lag():
+    try:
+        response = requests.get(PROMETHEUS_URL)
+        lines = response.text.split('\n')
+        total_lag = 0
+
+        for line in lines:
+            if f'kafka_consumergroup_lag{{consumergroup="{CONSUMER_GROUP}"' in line:
+                try:
+                    lag_value = float(line.split()[-1])
+                    total_lag += lag_value
+                except:
+                    continue
+
+        return total_lag
+
+    except Exception as e:
+        print(f"ERROR: Kafka Exporter 접근 실패 → {e}")
+        return None
 
 
+# -----------------------------------------
+# 2. 일정 주기마다 Lag 모니터링
+# -----------------------------------------
+print(f"▶ Monitoring Kafka Consumer Group Lag: {CONSUMER_GROUP}")
+
+while True:
+    lag = get_consumer_lag()
+
+    if lag is None:
+        print("Lag 데이터를 가져올 수 없습니다. Kafka Exporter 상태를 확인하세요.")
+    else:
+        print(f"Current Lag for {CONSUMER_GROUP}: {lag}")
+
+        if lag >= LAG_THRESHOLD:
+            print("⚠ WARNING: Consumer Lag is too high!")
+
+    time.sleep(CHECK_INTERVAL)
+```
+
+### Step5: CLI를 사용하여 Lag 변화 확인
+- 컨슈머 그룹이 실행되지 않은 상태에서 프로듀서를 실행하여 Lag이 증가하는 것을 확인합니다.
+    - Kafka Exporter 실행은 이미 하고 있어야함(터미널 A)
+
+- 컨슈머를 실행하여 메시지를 소비하고 Lag이 감소하는지 확인합니다.
+    - Lag 모니터링 Python 스크립트 실행 (터미널 B)
+```sh
+python3 consumer_lag_monitor.py
+```
+
+- 컨슈머는 잠시 끄고 Lag 증가시키기 (터미널 C) 
+    - Lag을 증가시키려면 컨슈머가 메시지를 읽지 않고 있어야 함
+    - 컨슈머가 실행중인 터미널에서 `Ctrl + C` 로 종료
+
+- 프로듀서 실행해서 Lag 증가시키기 (터미널 C)
+```sh
+cd ~/kafka/bin
+./kafka-console-producer.sh --broker-list localhost:9092 --topic test-topic
+
+# 메시지 입력
+# hello
+# msg1
+# msg2
+# msg3
+# msg4
+```
+
+- Lag 증가 확인 (터미널 B, Python 모니터링)
+    - Python 모니터링 터미널에서 값이 증가하는지 확인:
+
+
+- 컨슈머 실행해서 Lag 감소 확인 (터미널 D)
+```sh
+cd ~/kafka/bin
+./kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic test-topic \
+  --group test-group
+
+# 컨슈머가 메시지를 읽으면 Lag이 줄어든다
+```
