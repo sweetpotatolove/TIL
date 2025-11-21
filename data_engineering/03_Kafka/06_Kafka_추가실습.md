@@ -1873,3 +1873,70 @@ cd ~/kafka/bin
 
 # 컨슈머가 메시지를 읽으면 Lag이 줄어든다
 ```
+
+
+## 과제2
+### 학습목표
+Grafana를 설치하고 브라우저에서 실행한 뒤, Prometheus를 Grafana의 데이터 소스로 연결하여 메트릭 데이터를 불러옵니다. 이후 Kafka의 주요 성능 지표(CPU 사용량, JVM 메모리, GC 시간, 메시지 수신량, 바이트 입출력 등)를 시각화하는 공식 대시보드를 Import하고, 구성된 대시보드를 통해 Kafka 브로커의 성능 상태를 실시간으로 모니터링합니다.
+- Grafana를 설치하고 브라우저에서 실행합니다.
+- Prometheus를 Grafana의 데이터 소스로 연결하여 메트릭 데이터를 불러옵니다.
+- Kafka의 성능 지표(CPU 사용량, JVM 메모리, GC 시간, 메시지 수신량, 바이트 입출력 등)를 시각화하는 공식 대시보드를 Import합니다.
+- 구성된 대시보드를 통해 Kafka 브로커의 주요 성능 상태를 실시간으로 모니터링합니다.  
+
+### Step1: Grafana 설치 및 실행
+- 터미널에서 다음 명령어를 순차적으로 실행하여 Grafana 10.2.2를 설치합니다. 
+```bash
+wget https://dl.grafana.com/oss/release/grafana-10.2.2.linux-amd64.tar.gz
+tar -xvzf grafana-10.2.2.linux-amd64.tar.gz
+cd grafana-10.2.2
+./bin/grafana-server
+``` 
+- Windows 브라우저에서 Grafana UI 접속
+    - 주소: http://localhost:3000
+    - 로그인 정보: admin / admin
+
+- Prometheus 실행
+```sh
+cd ~/prometheus
+./prometheus --config.file=prometheus.yml
+```
+
+### Step2: Prometheus 데이터 소스 추가
+- Grafana UI에서 Connections → Data Sources로 이동합니다.
+- "Add data source" 버튼을 클릭하고 Prometheus를 선택합니다.
+- URL을 http://localhost:9090으로 설정한 후 Save & Test를 클릭하여 연결을 확인합니다. 
+
+### Step3: Kafka 모니터링 대시보드 Import
+- Grafana UI 상단 메뉴에서 + → Import로 이동합니다.
+- Dashboard ID: 721을 입력하고 Load 버튼을 클릭합니다. 
+    - (링크 : https://grafana.com/grafana/dashboards/721-kafka/)
+- 데이터 소스로 Prometheus를 선택하고 Import를 클릭합니다.
+
+### Step4: 주요 메트릭 확인 및 분석
+- Import된 대시보드에서는 다음과 같은 Kafka 주요 메트릭이 시각화되어 있어야 합니다. 
+    - CPU Usage
+    - JVM Memory Used
+    - Time spent in GC
+    - Messages In per Topic
+    - Bytes In per Topic
+    - Bytes Out per Topic 
+
+### Step5: 실습 결과 제출
+- 대시보드를 구성한 후, 주요 패널의 시각화하세요
+
+### Step6: 진행시 유의사항
+- ① 메시지 전송 필수 
+    - 다음 메트릭은 Kafka에 메시지가 실제로 전송되어야만 시각화 패널에 데이터가 나타납니다. 
+        - Messages In per Topic
+        - Bytes In per Topic
+        - Bytes Out per Topic 
+    - 따라서 실습 중에는 `kafka-console-producer.sh`를 활용하여 테스트 메시지를 반드시 전송해 보세요. 
+- ② 쿼리 수정 필요성 
+    - 공식 대시보드가 업데이트된 지 다소 시간이 지나, 일부 패널에서는 메트릭이 비정상적으로 표시되거나 사라지는 경우가 있습니다. 
+    - 이럴 경우, 다음과 같은 쿼리로 수정하면 보다 안정적으로 메트릭이 표시됩니다: 
+        - `sum by(topic) (kafka_server_BrokerTopicMetrics_OneMinuteRate{name="MessagesInPerSec"})`
+        - `sum by(topic) (kafka_server_BrokerTopicMetrics_OneMinuteRate{name="BytesInPerSec"})` 
+        - `sum by(topic) (kafka_server_BrokerTopicMetrics_OneMinuteRate{name="BytesOutPerSec"})` 
+    - 수정된 쿼리는 토픽별 합계(sum by topic) 방식으로 데이터를 그룹화하여 시각화합니다.
+    - 왜 이 방식이어야 진행이 되는지, 어떤 변화가 있었는지 한번 확인해보세요.
+
