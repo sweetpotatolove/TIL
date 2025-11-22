@@ -1,48 +1,70 @@
 # Spark RDD
+## RDD의 개념과 특징 이해
+### RDD
+대용량 데이터를 분산 처리하고 분석하기 위한 Spark의 기본 데이터 처리 단위
 
-## 챕터의 포인트
-- RDD의 개념과 특징 이해
-- RDD 생성 및 변환 학습
+![alt text](image-13.png)
+- **R**esilient (탄력적인)
+  - 장애 복구 가능
+- **D**istributed (분산된)
+- **D**ataset (데이터셋)
 
-# RDD의 개념과 특징 이해
+### RDD의 특징
+1. 데이터의 추상화 (Data Abstraction)
+    - 데이터 저장 방식이나 물리적 위치를 몰라도 데이터를 거대한 집합처럼 다룰 수 있게 해줌
 
-## RDD란?
-- 대용량 데이터를 분산 처리하고 분석하기 위한 Spark의 기본 데이터 처리 단위
-- Resilient (탄력적인)
-- Distributed (분산된)
-- Dataset (데이터셋)
+      ![alt text](image-14.png)
+    - 여러 데이터 조각들이 여러 파티션에 나누어져 분산 저장됨
+      - 파티션은 데이터를 나누는 기준이 되고, 하나의 Task로 매핑되어 Executor에서 병렬 처리됨
+    - 데이터가 1번 파티션에 속하는지 2번 파티션에 속하는지 신경 쓸 필요 없이, RDD API를 통해 데이터를 다룰 수 있음 (내부적으로 알아서 처리됨)
+    - 즉, **분산된 추상화 계층을 제공**하여 개발자가 분산 처리의 복잡성을 신경 쓰지 않고도 대규모 데이터를 효율적으로 처리할 수 있게 함
 
+2. 탄력성(Resilient) & 불변성(Immutable)
+    - RDD는 한 번 생성되면 변경할 수 없음
+    - 어떤 노드(서버)가 장애로 인해 중단되더라도, 데이터 복구 가능
 
-## RDD의 특징
+      ![alt text](image-15.png)
+      - 기존 RDD가 transformation 연산을 거치면 새로운 RDD가 생성됨
+      - 즉, 원본 데이터가 유지되므로 장애 발생 시에도 원본 RDD를 기반으로 다시 계산하여 복구 가능
 
-### 1. 데이터의 추상화 (Data Abstraction)
+3. 타입의 안정성 보장
+    - 어떠한 하나의 타입의 객체를 가질 수 있음
+      - RDD의 모든 요소가 동일한 데이터 타입이어야 함
+    - 데이터 타입을 컴파일 시점에 검사
+      - 데이터 타입이 고정되어 있으면, 실행 전 데이터 타입을 알 수 있으므로 최적화된 상태의 실행 계획을 세울 수 있음
+      - 타입이 고정되어 있다 = 스키마가 있다
+    - 성능 최적화
+    - 코드의 가독성과 유지보수성 향상
+    - Pyspark를 쓸 때는 Python이 동적 타입 언어이기 때문에 타입 안정성이 적용되지는 않음
 
-### 2. 탄력성(Resilient) & 불변성(Immutable)
-- RDD는 한 번 생성되면 변경할 수 없음
-- 어떤 노드(서버)가 장애로 인해 중단되더라도, 데이터 복구 가능
+4. 정형(Structured) & 비정형(Unstructured) 데이터 처리 가능
+    - 비정형 데이터
+      - 고정된 포맷이 없는 텍스트 데이터  
+      - → `sc.textFile()`을 이용해 RDD로 로딩 후 map, filter, flatMap 등으로 가공
+      - 비정형 데이터는 구조가 없으므로(스키마가 없으므로) 변환 연산을 통해 직접 구조화
+    - 정형 데이터
+      - 컬럼이 있는 테이블 형태 데이터 (스키마 존재)
+      - → `DataFrame` 또는 `RDD.map()`으로 가공 (컬럼 구조에 맞게 변환 가능)
+      - 정형 데이터는 스키마가 있으므로 Datafrome API 또는 RDD.map() 형태로 변환하여 처리
 
-### 3. 타입의 안정성 보장
-- 어떠한 하나의 타입의 객체를 가질 수 있음
-- 데이터 타입을 컴파일 시전에 검사
-- 성능 최적화
-- 코드의 가독성과 유지보수성 향상
-- Pyspark를 쓸 때는 Python이 동적 타입 언어이기 때문에 타입 안정성이 적용되지는 않음
+5. 지연 평가(Lazy Evaluation)
+    - 중간 연산을 줄여 성능 최적화
+    - 실행 계획을 최적화하여 성능 향상
+    - 불필요한 연산 방지로 리소스 절약
 
-### 4. 정형(Structured) & 비정형(Unstructured) 데이터
-- 비정형 데이터: 고정된 포맷이 없는 텍스트 데이터  
-  → sc.textFile()을 이용해 RDD로 로딩 후 map, filter, flatMap 등으로 가공
-- 정형 데이터: 컬럼이 있는 테이블 형태 데이터  
-  → DataFrame 또는 RDD.map()으로 가공
+      ![alt text](image-16.png)
+      - Storage에서 데이터를 읽어옴
+        - Spark는 기본적으로 배치 처리를 다루기 떄문에 Storage을 대표적으로 씀
+      - 읽어온 데이터를 RDD 형태로 변환
+      - Transformation 연산을 통해 새로운 RDD를 생성
+        - 이 과정에서는 실제로 데이터가 처리되지 않음
+      - Action 연산이 호출될 때 비로소 모든 Transformation 연산이 실행되어 최종 결과가 생성됨
 
-### 5. 지연 평가(Lazy Evaluation)
-- 중간 연산을 줄여 성능 최적화
-- 실행 계획을 최적화하여 성능 향상
-- 불필요한 연산 방지로 리소스 절약
-
-## 주요 구성 요소 정리 코드
+### 주요 구성 요소 정리 코드
 ```py
 from pyspark import SparkContext
 
+# SparkContext 객체 생성
 sc = SparkContext("local", "LazyEvalExample")
 
 # 1. 텍스트 데이터 로딩 → Transformation
@@ -60,61 +82,57 @@ filtered_rdd = upper_rdd.filter(lambda x: "SPARK" in x)
 result = filtered_rdd.collect()
 ```
 
-# RDD 생성 및 변환 학습
+## RDD 생성 및 변환 학습
+### RDD 생성
+1. 기존의 메모리 데이터를 RDD로 변환하는 방법
+    - Python의 리스트(List)나 Scala의 컬렉션(Collection)을 RDD로 변환 가능
+      - 기존 메모리에 올린 데이터를 RDD로 변환하는 것
+    - 이 방법은 주로 테스트나 작은 데이터 셋을 다룰 때 사용
 
-## RDD 생성
+2. 외부파일(텍스트, CSV, JSON 등)에서 RDD를 생성하는 방법
+    - 실무에서는 보통 파일이나 데이터베이스에서 데이터를 불러와야 함
+    - `sc.textFile(“파일 경로”)`, `spark.read.format("jdbc").option(…)` 형태를 사용하여 외부 데이터를 RDD로 변환할 수 있음
 
-### 1. 기존의 메모리 데이터를 RDD로 변환하는 방법
-- Python의 리스트(List)나 Scala의 컬렉션(Collection)을 RDD로 변환 가능
-- 이 방법은 주로 테스트나 작은 데이터 셋을 다룰 때 사용
-
-### 2. 외부파일(텍스트, CSV, JSON 등)에서 RDD를 생성하는 방법
-- 실무에서는 보통 파일이나 데이터베이스에서 데이터를 불러와야 함
-- sc.textFile(“파일 경로”), spark.read.format("jdbc").option(…) 형태를 사용하여 외부 데이터를 RDD로 변환할 수 있음
-
-## RDD 생성 : 메모리 데이터 활용(parallelize())
-
-### Parallelize()
-1. 기존 메모리 데이터를 Spark의 RDD로 변환하는 역할
-
+### RDD 생성 : 메모리 데이터 활용 `parallelize()`
+- 기존 메모리 데이터를 Spark의 RDD로 변환하는 역할
 - RDD parallelize() 생성 코드 예제 (Python / Scala / Java 비교)
 
-```
-# Parallelize in Python
-wordsRDD = sc.parallelize([“fish”, “cats”, “dogs”])
+  ```
+  # Parallelize in Python
+  wordsRDD = sc.parallelize([“fish”, “cats”, “dogs”])
 
-// Parallelize in Scala
-val wordsRDD = sc.parallelize(List(“fish”, “cats”, “dogs”))
+  // Parallelize in Scala
+  val wordsRDD = sc.parallelize(List(“fish”, “cats”, “dogs”))
 
-// Parallelize in Java
-JavaRDD<String> wordsRDD = sc.parallelize(Arrays.asList(“fish”, “cats”, “dogs”))
-```
+  // Parallelize in Java
+  JavaRDD<String> wordsRDD = sc.parallelize(Arrays.asList(“fish”, “cats”, “dogs”))
+  ```
 
-2. parallelize()는 메모리에 있는 데이터를 Spark 클러스터로 보낼 때 사용
-- ≫ 데이터가 클 경우 비효율적일 수 있어 소규모 데이터분석에 주로 이용
+2. `parallelize()`는 메모리에 있는 데이터를 Spark 클러스터로 보낼 때 사용
+    - 데이터가 클 경우 비효율적일 수 있어 소규모 데이터분석에 주로 이용
 
-## RDD 생성 : 외부 파일에서 데이터 읽기 (sc.textFile())
+### RDD 생성 : 외부 파일에서 데이터 읽기  `sc.textFile()`
+- 외부 파일에서 데이터를 직접 읽어와 RDD로 변환하는 역할
+- 일반적인 텍스트 파일 (CSV, 로그 파일 등), S3 → 저장소에서 데이터 로드
+- HBase, Cassandra (C)* → NoSQL 데이터베이스에서 읽기 등
+- RDD `sc.textFile()` 생성 코드 예제 (Python / Scala / Java 비교)
 
-### sc.textFile()
-1. 외부 파일에서 데이터를 직접 읽어와 RDD로 변환하는 역할
-- ≫ 일반적인 텍스트 파일 (CSV, 로그 파일 등), S3 → 저장소에서 데이터 로드
-  HBase, Cassandra (C* → NoSQL 데이터베이스에서 읽기 등
+  ```
+  # Read a local text file in Python
+  linesRDD = sc.textFile(“/path/to/README.md”)
 
-- RDD sc.textFile() 생성 코드 예제 (Python / Scala / Java 비교)
+  // Read a local text file in Scala
+  val linesRDD = sc.textFile(“/path/to/README.md”)
 
-```
-# Read a local text file in Python
-linesRDD = sc.textFile(“/path/to/README.md”)
+  // Read a local text file in Java
+  JavaRDD<String> linesRDD = sc.textFile(“/path/to/README.md”)
+  ```
 
-// Read a local text file in Scala
-val linesRDD = sc.textFile(“/path/to/README.md”)
-
-// Read a local text file in Java
-JavaRDD<String> linesRDD = sc.textFile(“/path/to/README.md”)
-```
 
 ## RDD 변환
-
+---
+---
+---
 ### MAP
 RDD의 각 요소에 함수 f 를 적용하여 새로운 RDD를 반환
 
