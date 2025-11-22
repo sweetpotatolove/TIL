@@ -129,31 +129,32 @@ result = filtered_rdd.collect()
   ```
 
 
-## RDD 변환
----
----
----
-### MAP
+### RDD 변환 : `MAP`
 RDD의 각 요소에 함수 f 를 적용하여 새로운 RDD를 반환
 
+![map](16-21.gif)
 ```python
-x = sc.parallelize(["b", "a", "c"])
+x = sc.parallelize(["b", "a", "c"])   # parallelize -> RDD로 만들어 놓은 상태 
 y = x.map(lambda z: (z,1))
-print (x.collect())
+
+# action 메서드 -> RDD의 데이터를 드라이버 프로그램으로 가져옴
+# 파티션에서 데이터 가져올 때 순서를 보장하지 않음
+print (x.collect()) 
 print (y.collect())
 ```
-
 ```python
 x: ['b', 'a', 'c']
 y: [('b',1), ('a',1), ('c',1)]
 ```
+![alt text](image-17.png)
 
----
+- 네트워크 간 연결이 필요 없으므로 narrow transformation에 속함
 
-### FLATMAP
-RDD의 모든 요소에 먼저 함수 f 를 적용한 뒤,  
-그 결과를 평탄화(flatten)하여 새로운 RDD를 반환
 
+### RDD 변환 : `FLATMAP`
+RDD의 모든 요소에 먼저 함수 f 를 적용한 뒤, 그 결과를 평탄화(flatten)하여 새로운 RDD를 반환
+
+![Flatmap](23-28.gif)
 ```python
 x = sc.parallelize([1, 2, 3])
 y = x.flatMap(lambda x: (1*x, 2*x, 3*x, 100))
@@ -161,56 +162,62 @@ print(x.collect())
 print(y.collect())
 print(y.mean())
 ```
-
 ```python
 x : [1, 2, 3]
 y : [1, 2, 3, 100, 2, 4, 6, 100, 3, 6, 9, 100]
 y.mean() : 28.0
 ```
+![alt text](image-19.png)
+- 1:1 매핑이 아닌 1:N 매핑이므로, wide transformation에 속함
+- 하나씩 펼쳐서 flat(납작하게) 만들어 줌
+  - 하나의 item이 여러 개의 item으로 변환될 수 있음
+  - 즉, 전체 아이템 수가 늘어날 수 있음
 
----
-
-### FILTER
+### RDD 변환 : `FILTER`
 filter의 조건을 만족하는 요소들만 포함하는 새로운 RDD를 반환
 
+![Filter](30-34.gif)
 ```python
 x = sc.parallelize([1,2,3])
 y = x.filter(lambda x: x%2 == 1) #keep odd value
 print (x.collect())
 print (y.collect())
 ```
-
 ```python
 x: [1, 2, 3]
 y: [1, 3]
 ```
+![alt text](image-20.png)
 
----
-
-### MAPPARTITIONS
+### RDD 변환 : `MAPPARTITIONS`
 RDD의 각 파티션에 함수 f 를 적용하여 새로운 RDD를 반환
 
+![alt text](image-24.png)
 ```python
-x = sc.parallelize([1,2,3],2)
+x = sc.parallelize([1,2,3],2) # 2 : 파티션 몇개로 나눌지 지정
 def f(iterator):
         yield sum(iterator); yield 42
 
 y = x.mapPartitions(f)
 print(x.glom().collect())
 print(y.glom().collect())
+# glom().collect() : 각 파티션을 리스트로 묶어서 출력
 ```
-
 ```python
 x: [[1], [2, 3]]
 y: [[1,42], [5,42]]
 ```
+![alt text](image-21.png)
+- 각 '파티션' 단위로 연산 수행
+  - map이 각 item 단위로 연산 수행하는 것과 대비
+- 파티션 크기가 너무 크면 out of memory 발생 가능
+- 같은 파티션 내의 데이터끼리만 연산하므로 셔플이 발생하지 않음
+  - 따라서, 파티션 단위로 데이터 처리 시 유용하게 사용 가능
 
----
+### RDD 변환 : `MAPPARTITIONS WITH INDEX`
+원래 파티션의 인덱스를 추적하면서, RDD의 각 파티션에 함수를 적용하여 새로운 RDD를 반환
 
-### MAPPARTITIONS WITH INDEX
-원래 파티션의 인덱스를 추적하면서,  
-RDD의 각 파티션에 함수를 적용하여 새로운 RDD를 반환
-
+![alt text](image-22.png)
 ```python
 x = sc.parallelize([1,2,3],2)
 def f(partitionIndex, iterator):
@@ -220,68 +227,82 @@ y = x.mapPartitionsWithIndex(f)
 print(x.glom().collect())
 print(y.glom().collect())
 ```
-
 ```python
 x: [[1], [2, 3]]
 y: [[0,1], [1,5]]
 ```
+![alt text](image-23.png)
 
----
+### RDD 변환 : `KEYBY`
+원래 RDD의 각 항목에 대해 하나의 쌍(pair)을 생성하여 Pair RDD를 만들고, 쌍의 key는 사용자 정의 함수에 의해 값으로부터 계산
 
-### KEYBY
-원래 RDD의 각 항목에 대해 하나의 쌍(pair)을 생성하여  
-Pair RDD를 만들고, 쌍의 key는 사용자 정의 함수에 의해 값으로부터 계산.
-
+![KeyBy](40-43.gif)
 ```python
 x = sc.parallelize(['John', 'Fred', 'Anna', 'James'])
 y = x.keyBy(lambda w: w[0])
 print(y.collect())
 ```
-
 ```python
 x: [['John', 'Fred', 'Anna', 'James']]
 y: [('J', 'John'), ('F', 'Fred'), ('A', 'Anna'), ('J', 'James')]
 ```
+![alt text](image-25.png)
+- 각 항목에 대해 key-value 쌍 생성
+- `collect()` : RDD의 모든 항목을 드라이버 프로그램으로 반환
+- 데이터 재분배 필요
+- 그러나 셔플은 발생하지 않음
+- 'J' 키를 가진 항목들이 같은 파티션에 모이게 하고싶다면 groupby 사용
 
----
-
-### GROUPBY
+### RDD 변환 : `GROUPBY`
 원래 RDD의 데이터를 그룹화하기 위해,  
 사용자 정의 함수의 출력값을 key로 하고  
 이 key에 해당하는 모든 항목들을 value로 가지는 쌍(pair)을 생성
 
+![GroupBy](45-49.gif)
 ```python
 x = sc.parallelize(['John', 'Fred', 'Anna', 'James'])
 y = x.groupBy(lambda w: w[0])  # A function to generate keys
 print({(t[0], [i for i in t[1]]) for t in y.collect()})
 ```
-
 ```python
 x: ['John', 'Fred', 'Anna', 'James']
 y: [('A', ['Anna']), ('J', ['John', 'James']), ('F', ['Fred'])]
 ```
+![alt text](image-26.png)
+- 데이터 셔플 발생
+- 'J' 키를 가진 항목들이 같은 파티션에 모이게 함
 
+- key-value RDD 사용할 때 groupby보다 groupbykey 주로 사용함
 ```python
 x = x.map(lambda w: (w[0], w))
 y = x.groupByKey()
 ```
 
-### GROUPBYKEY
-원래 RDD에서 각 key에 해당하는 value들을 그룹화하고  
-그룹화된 value들을 모아, 원래의 key와 함께 새로운 쌍(pair)을 생성
+### RDD 변환 : `GROUPBYKEY`
+원래 RDD에서 각 key에 해당하는 value들을 그룹화하고 그룹화된 value들을 모아, 원래의 key와 함께 새로운 쌍(pair)을 생성
 
+![GroupByKey](51-53.gif)
 ```python
 x = sc.parallelize([('B',5),('B',4),('A',3),('A',2),('A',1)])
 y = x.groupByKey()
 print(x.collect())
 print([(t[0],[i for i in t[1]]) for t in y.collect()])
 ```
-
 ```python
 x: [('B',5),('B',4),('A',3),('A',2),('A',1)]
 y: [('B', [5,4]), ('A', [3,2,1])]
 ```
+![alt text](image-27.png)
+- 기존에 key가 있는 상태일 시
+  - key는 유지되고 value들만 그룹화됨
+- value가 많아지면 한 파티션에 데이터가 몰릴 수 있음
+  - 이 경우 out of memory 발생 가능
+- 데이터 재분배 필요
+- 셔플 발생
 
+
+--
+--
 ### Word Counting 예시 (GROUPBYKEY)
 
 ```python
