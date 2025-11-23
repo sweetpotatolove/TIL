@@ -936,3 +936,4 @@ bin/kafka-console-consumer.sh --topic test-topic --bootstrap-server localhost:90
   - test-topic 에 타임스탬프 잘 생성되어 들어오는지 확인
 
     ![alt text](image-82.png)
+  
