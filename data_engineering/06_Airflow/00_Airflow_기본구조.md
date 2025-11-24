@@ -337,3 +337,5 @@ Airflow Web UI는 DAG 및 Task의 실행 상태를 시각적으로 모니터링�
 
   ![alt text](image-22.png)
 
+
+
