@@ -389,4 +389,3 @@ DAG이 얼마나 자주 실행될지를 정의하는 간격
     | 활용 목적 | 정기 워크플로우 운영 | 테스트, 백필 등 |
     | 명령 방식 | Airflow Scheduler 자동 실행 | airflow dags trigger 또는 web UI |
 
-
