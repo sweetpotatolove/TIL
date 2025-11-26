@@ -254,3 +254,87 @@ pip install "apache-airflow[celery]==2.10.5" \
 </code></pre>
 
 - 해당 형태와 같이 skeleton.py를 dags 하위에 놓아야 dag 파일을 인식합니다.
+
+---
+
+# Chapter 2
+
+## 10. EmailOperator 사용을 위한 SMTP 설정
+
+> 설정 -> 모든 설정
+
+> 계정 클릭 -> Google 계정관리 -> 보안 -> 2단계 인증 -> 앱 비밀번호 (검색창에 쳐서 생성)
+
+Airflow에서 `EmailOperator`를 통해 Gmail SMTP로 메일을 보내기 위해서는 다음과 같은 환경변수를 설정해야 합니다.
+
+| 환경 변수 키 | 설명 |
+|---------------|------|
+| `AIRFLOW__SMTP__SMTP_HOST` | 사용할 SMTP 서버의 호스트 주소입니다. Gmail을 사용할 경우 `smtp.gmail.com`을 입력합니다. |
+| `AIRFLOW__SMTP__SMTP_USER` | 이메일을 보낼 Gmail 계정입니다. |
+| `AIRFLOW__SMTP__SMTP_PASSWORD` | Gmail 계정의 **앱 비밀번호**입니다. 일반 비밀번호가 아닌, [2단계 인증](https://myaccount.google.com/security) 설정 후 발급된 16자리 앱 비밀번호를 사용해야 합니다. |
+| `AIRFLOW__SMTP__SMTP_PORT` | SMTP 포트 번호입니다. TLS의 경우 보통 `587`번 포트를 사용합니다. |
+| `AIRFLOW__SMTP__SMTP_MAIL_FROM` | 이메일 발송 시 표시될 '보낸 사람' 주소입니다. 보통 `SMTP_USER`와 동일하게 설정합니다. |
+
+```yaml
+    # docker-compose.yaml 파일의 AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg' 아래에
+    AIRFLOW__SMTP__SMTP_HOST: 'smtp.gmail.com'
+    AIRFLOW__SMTP__SMTP_USER: '{내 Gmail 주소}' 
+    AIRFLOW__SMTP__SMTP_PASSWORD: '{발급받은 앱 비밀번호}'
+    AIRFLOW__SMTP__SMTP_PORT: 587
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: '{내 Gmail 주소}' 
+```
+
+## 11. shell script
+
+- Airflow에서 Shell Script를 실행하려면 먼저 **실행 권한 (+x)** 부여 필요.
+- 이는 어떤 스크립트 형태를 실행시키던 쓰던 마찬가지
+
+```bash
+cd /home/my/my_airflow
+
+# plugins 하위에 shell 디렉토리 생성 후 select_fruit.sh 이동 필요
+chmod +x ./plugins/shell/select_fruit.sh
+```
+
+-  줄바꿈 형태 Linux 포맷으로 변환하여 파일 변환 실패 방지
+```bash
+sudo apt install dos2unix
+sudo dos2unix plugins/shell/select_fruit.sh
+```
+
+---
+
+# chapter 3
+
+## 12. Postgres Hook 테스트
+
+Airflow에서 PostgresHook를 통해 별도 Postgres DB와 연결을 확인하는 실습을 진행합니다.
+
+### 12-1) Postgres 컨테이너 실행
+
+- `docker-compose.yml`에 `postgres-db` 서비스를 추가합니다.  
+- 기본 설정: `user=myuser`, `password=my`, `db=mydb`, 포트 `5432`  
+- 로컬 PC에서 이미 `5432` 포트를 사용 중이면 `5442:5432` 등으로 바꿔야 합니다.  
+- Airflow 컨테이너에서 접근할 때는 항상 **호스트명 `postgres-db`, 포트 `5432`** 로 접속해야 합니다.
+
+### 12-2) Airflow Connection 등록
+
+`PostgresHook(postgres_conn_id="my_postgres_conn")`가 실행되려면, **Connection ID = `my_postgres_conn`** 이 Airflow에 미리 등록되어야 합니다.
+
+1. **Airflow Web UI → Admin → Connections → + 버튼** (Airflow가 같은 shared_net을 공유하므로 내부 포트를 활용)
+   - Conn Id: `my_postgres_conn`  
+   - Conn Type: `Postgres`  
+   - Host: `postgres-db`  
+   - Database: `mydb`  
+   - Login: `myuser`  
+   - Password: `my`  
+   - Port: `5432`
+
+2. 프로젝트 진행하면서 만들며 구성해놓은 로컬 PostgreSQL로 테스트 하고 싶은 경우
+   - Conn Id: `my_postgres_conn2`  
+   - Conn Type: `Postgres`  
+   - Host: `host.docker.internal`  
+   - Database: `news`  
+   - Login: `myuser`  
+   - Password: `my`  
+   - Port: `5442`
