@@ -1,5 +1,25 @@
+📌 목차 (Table of Contents)
+---
+- [Kafka 최적화](#kafka-최적화)
+  - [실습1](#k-ex-1)
+  - [실습2](#k-ex-2)
+  - [실습3](#k-ex-3)
+  - [실습4](#k-ex-4)
+  - [실습5](#k-ex-5)
+  - [과제1](#k-hw-1)
+  - [과제2](#k-hw-2)
+
+- [Kafka 모니터링](#kafka-모니터링)
+  - [실습1](#m-ex-1)
+  - [실습2](#m-ex-2)
+  - [실습3](#m-ex-3)
+  - [실습4](#m-ex-4)
+  - [실습5](#m-ex-5)
+  - [과제1](#m-hw-1)
+  - [과제2](#m-hw-2)
+
 # Kafka 최적화
-## 실습1
+## 실습1 <a id="k-ex-1"></a>
 ### 학습목표
 Kafka 프로듀서를 생성하여 batch.size 값을 설정하고, 메시지를 전송하면서 실행 시간을 측정한 뒤, batch.size 값을 변경하며 실험을 수행하고 그 결과를 비교합니다.
 
@@ -125,7 +145,7 @@ python3 batch_test.py
     - 하지만 너무 크면 메모리 사용 증가
 
 
-## 실습2
+## 실습2 <a id="k-ex-2"></a>
 ### 학습목표
 Kafka 프로듀서를 생성하고 compression.type을 설정한 뒤, `none`, `gzip`, `snappy`, `lz4`로 변경하며 동일한 개수(`NUM_MESSAGES = 50000`)의 메시지를 전송하고 실행 시간을 측정하며, 각 압축 방식의 전송 속도와 네트워크 사용량을 비교·분석합니다.
 
@@ -252,7 +272,7 @@ python3 compression_benchmark.py
     - 압축하지 않으면 CPU 부담은 적지만, 전송해야 할 데이터 양이 크기 때문에 네트워크 병목이 발생 → 가장 느림
 
 
-## 실습3
+## 실습3 <a id="k-ex-3"></a>
 ### 학습목표
 Kafka 프로듀서를 생성해 메시지를 전송하고, `fetch.min.bytes`와 `max.poll.records` 값을 조정하며 컨슈머를 실행한 뒤, 동일한 개수의 메시지를 소비하면서 실행 시간을 측정하고 각 설정값에 따른 메시지 소비 속도를 비교·분석합니다.
 - Kafka 프로듀서를 생성하여 메시지를 전송합니다.
@@ -427,7 +447,7 @@ python3 consumer_fetch_experiment.py
     - 너무 크게 잡으면 처음 읽기까지 지연이 길어질 수 있으므로, 실시간성 vs 처리량 트레이드오프 설명 가능
 
 
-## 실습4
+## 실습4 <a id="k-ex-4"></a>
 ### 학습목표
 Kafka 프로듀서를 생성해 메시지를 전송하고, fetch.max.bytes와 max.poll.interval.ms 값을 조정하며 컨슈머를 실행한 뒤, 동일한 개수의 메시지를 소비하면서 실행 시간을 측정하고 각 설정값에 따른 메시지 소비 속도를 비교·분석합니다.
 
@@ -587,7 +607,7 @@ python3 throttling_consumer_test.py
         - 분산 시스템에서 처리량 vs 안정성 트레이드오프 실험 가능
 
 
-## 실습5
+## 실습5 <a id="k-ex-5"></a>
 ### 학습목표
 Kafka 브로커의 설정을 변경하고, `socket.send.buffer.bytes`, `socket.receive.buffer.bytes`, `num.network.threads`, `num.io.threads` 값을 조정하며 실험을 진행한 뒤,동일한 개수의 메시지를 전송하여 실행 시간을 측정하고 성능 결과를 비교·분석해 최적의 설정을 도출합니다.
 - Kafka 브로커의 설정을 변경합니다.
@@ -851,7 +871,7 @@ for send_buffer in SEND_BUFFER_SIZES:
     ![alt text](image-152.png)
 
 
-## 과제1
+## 과제1 <a id="k-hw-1"></a>
 ### 학습목표
 Kafka 프로듀서를 생성하고 `batch.size`, `compression.type`, `linger.ms` 등의 설정 값을 조정하며 실험을 진행한 뒤, 동일한 개수의 메시지를 전송하고 실행 시간을 측정하여 실험 결과를 비교·분석해 최적의 설정 값을 도출합니다
 
@@ -993,7 +1013,7 @@ python3 kafka_producer_performance_test.py
     - 등을 분석할 수 있음
 
 
-## 과제2
+## 과제2 <a id="k-hw-2"></a>
 ### 학습목표
 Kafka 컨슈머를 생성하고 `max.poll.records`, `fetch.min.bytes`, `fetch.max.wait.ms` 등의 설정 값을 조정하며 실험을 진행한 뒤, 동일한 개수의 메시지를 소비하고 실행 시간을 측정하여 실험 결과를 비교·분석해 최적의 설정 값을 도출합니다.
 - Kafka 컨슈머를 생성하여 설정 값을 조정합니다.
@@ -1133,7 +1153,7 @@ python3 consumer_performance_test.py
 
 
 # Kafka 모니터링
-## 실습1
+## 실습1 <a id="m-ex-1"></a>
 ### 학습목표
 Kafka 브로커의 상태를 조회하여 클러스터의 정상 동작 여부를 확인하고, Kafka CLI 명령어를 활용해 토픽 및 컨슈머 그룹의 상태를 점검합니다. 이후 특정 컨슈머 그룹의 메시지 Lag을 분석해 메시지 소비 속도를 파악하고, 브로커의 메시지 처리량을 조회하여 성능 상태를 확인하며, 마지막으로 브로커 로그를 모니터링해 오류 및 성능 문제를 감지합니다.
 - Kafka 브로커 상태를 조회하여 클러스터가 정상적으로 동작하는지 확인합니다.
@@ -1220,7 +1240,7 @@ tail -f server.log
         ```
 
 
-## 실습2
+## 실습2 <a id="m-ex-2"></a>
 ### 학습목표
 Kafka 브로커에서 JMX 포트를 활성화하고, JMXTerm을 다운로드하여 JMX를 통해 Kafka 브로커의 성능 지표를 조회합니다. 이후 CLI 명령어를 사용해 메모리 사용량, 메시지 처리량 등의 특정 JMX 메트릭을 확인하고, JMX를 활용해 브로커 성능을 분석하며 실행 결과를 검증합니다.
 
@@ -1297,7 +1317,7 @@ get 99thPercentile
     - 지금 브로커는 아무런 메시지도 받고 있지 않은 상태
 
 
-## 실습3
+## 실습3 <a id="m-ex-3"></a>
 ### 학습목표
 WSL 환경에 Prometheus를 설치하고 실행한 뒤, Kafka 브로커에서 JMX Exporter를 설정하여 JMX 데이터를 Prometheus 형식으로 변환하고, Prometheus가 Kafka의 JMX 메트릭을 수집하도록 설정합니다.
 
@@ -1392,7 +1412,7 @@ static_configs:
         - mapped buffer 사용량: `jvm_buffer_pool_used_bytes{pool="mapped"}`
 
 
-## 실습4
+## 실습4 <a id="m-ex-4"></a>
 ### 학습목표
 Kafka 브로커의 메시지 처리 속도와 총 메시지 처리량을 확인하고, Prometheus API를 활용해 브로커의 성능 데이터를 수집합니다. 이후 Skeleton 코드를 작성하여 성능 데이터를 가져오는 기능을 구현하고, 수집된 데이터를 기반으로 Kafka 브로커의 성능을 분석하여 개선점을 도출합니다.
 - Kafka 브로커의 메시지 처리 속도 및 총 메시지 처리량을 확인합니다.
@@ -1525,8 +1545,8 @@ python3 kafka_analysis.py
 ```
 ![alt text](image-168.png)
 
-
-## 실습5
+ 
+## 실습5 <a id="m-ex-5"></a>
 ### 학습목표
 - Kafka Exporter를 설정하고 Prometheus에 연동합니다.
 - Kafka 토픽 생성 후 메시지를 전송하고, 컨슈머를 실행한 뒤 종료하여 Lag 상황을 유도합니다.
@@ -1656,7 +1676,7 @@ sudo service grafana-server status
         ![alt text](image-172.png)
 
 
-## 과제1
+## 과제1 <a id="m-hw-1"></a>
 ### 학습목표
 Kafka Exporter를 설정해 Prometheus가 컨슈머 Lag 데이터를 수집하도록 구성하고, Prometheus API를 활용해 특정 컨슈머 그룹의 Lag을 주기적으로 조회하는 코드를 작성합니다. 이후 일정 주기(예: 5초)마다 Lag을 출력하며, 특정 임계값을 초과할 경우 경고 메시지를 표시하도록 구현합니다. 또한 CLI에서 프로듀서를 실행해 메시지를 전송하여 Lag 증가를 확인하고, 컨슈머를 실행해 메시지를 소비하면서 Lag이 감소하는 과정을 검증합니다.
 - Kafka Exporter를 설정하여 Prometheus가 컨슈머 Lag을 수집하도록 구성합니다.
@@ -1875,7 +1895,7 @@ cd ~/kafka/bin
 ```
 
 
-## 과제2
+## 과제2 <a id="m-hw-2"></a>
 ### 학습목표
 Grafana를 설치하고 브라우저에서 실행한 뒤, Prometheus를 Grafana의 데이터 소스로 연결하여 메트릭 데이터를 불러옵니다. 이후 Kafka의 주요 성능 지표(CPU 사용량, JVM 메모리, GC 시간, 메시지 수신량, 바이트 입출력 등)를 시각화하는 공식 대시보드를 Import하고, 구성된 대시보드를 통해 Kafka 브로커의 성능 상태를 실시간으로 모니터링합니다.
 - Grafana를 설치하고 브라우저에서 실행합니다.
@@ -1939,4 +1959,3 @@ cd ~/prometheus
         - `sum by(topic) (kafka_server_BrokerTopicMetrics_OneMinuteRate{name="BytesOutPerSec"})` 
     - 수정된 쿼리는 토픽별 합계(sum by topic) 방식으로 데이터를 그룹화하여 시각화합니다.
     - 왜 이 방식이어야 진행이 되는지, 어떤 변화가 있었는지 한번 확인해보세요.
-
