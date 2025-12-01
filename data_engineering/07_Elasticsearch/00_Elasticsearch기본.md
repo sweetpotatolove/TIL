@@ -833,3 +833,4 @@ for hit in res["hits"]["hits"]:
   - JSON 형태의 데이터 나열 후 elasticsearch의 helpers 모듈에 있는 `bulk`를 사용하면 한번에 데이터 처리 가능
 - 데이터를 다룰 때 모아서 넣는 경우가 많은데, 이때 bulk를 사용하면 더 효율적임
 
+
