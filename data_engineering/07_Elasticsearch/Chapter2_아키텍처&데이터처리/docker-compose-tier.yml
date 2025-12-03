@@ -1,0 +1,49 @@
+services:
+  es-hot:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    container_name: es-hot
+    environment:
+      - node.name=hot
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=es-hot,es-warm,es-cold
+      - cluster.initial_master_nodes=hot
+      - node.roles=master,data_hot,data_content
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    networks:
+      - esnet
+
+  es-warm:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    container_name: es-warm
+    environment:
+      - node.name=warm
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=es-hot,es-warm,es-cold
+      - node.roles=data_warm,data_content
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9201:9200"
+    networks: 
+      - esnet
+
+  es-cold:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    container_name: es-cold
+    environment:
+      - node.name=cold
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=es-hot,es-warm,es-cold
+      - node.roles=data_cold,data_content
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9202:9200"
+    networks:
+      - esnet
+
+networks:
+  esnet:

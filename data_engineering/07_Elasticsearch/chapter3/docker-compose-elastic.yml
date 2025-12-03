@@ -1,0 +1,118 @@
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=elastic-docker-cluster
+
+      ## 3개의 노드 실행 시
+      # - discovery.seed_hosts=es02,es03
+      # - cluster.initial_master_nodes=es01,es02,es03
+      
+      ## 노드 하나만 실행 시
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01
+
+      - node.roles=master,data,ingest
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - network.host=0.0.0.0
+    volumes:
+      - ./config/dictionary:/usr/share/elasticsearch/config/dictionary
+    ports:
+      - 9200:9200
+    networks:
+      - elastic
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      sh -c "
+      if [ ! -d /usr/share/elasticsearch/plugins/analysis-nori ]; then
+        elasticsearch-plugin install analysis-nori --batch;
+      fi &&
+      exec /usr/local/bin/docker-entrypoint.sh elasticsearch"
+
+
+  # es02:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+  #   container_name: es02
+  #   environment:
+  #     - node.name=es02
+  #     - cluster.name=elastic-docker-cluster
+  #     - discovery.seed_hosts=es01,es03
+  #     - cluster.initial_master_nodes=es01,es02,es03
+  #     - node.roles=master,data,ingest
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - xpack.security.enabled=false
+  #     - network.host=0.0.0.0
+  #   volumes:
+  #     - ./config/dictionary:/usr/share/elasticsearch/config/dictionary
+  #   ports:
+  #     - 9201:9200
+  #   networks:
+  #     - elastic
+  #   command: >
+  #     sh -c "
+  #     if [ ! -d /usr/share/elasticsearch/plugins/analysis-nori ]; then
+  #       elasticsearch-plugin install analysis-nori --batch;
+  #     fi &&
+  #     exec /usr/local/bin/docker-entrypoint.sh elasticsearch"
+
+  # es03:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+  #   container_name: es03
+  #   environment:
+  #     - node.name=es03
+  #     - cluster.name=elastic-docker-cluster
+  #     - discovery.seed_hosts=es01,es02
+  #     - cluster.initial_master_nodes=es01,es02,es03
+  #     - node.roles=master,data,ingest
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - xpack.security.enabled=false
+  #     - network.host=0.0.0.0
+  #   volumes:
+  #     - ./config/dictionary:/usr/share/elasticsearch/config/dictionary
+  #   ports:
+  #     - 9202:9200
+  #   networks:
+  #     - elastic
+  #   command: >
+  #     sh -c "
+  #     if [ ! -d /usr/share/elasticsearch/plugins/analysis-nori ]; then
+  #       elasticsearch-plugin install analysis-nori --batch;
+  #     fi &&
+  #     exec /usr/local/bin/docker-entrypoint.sh elasticsearch"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.1
+    container_name: kibana
+    depends_on:
+      es01:
+        condition: service_healthy
+    environment:
+      - SERVER_NAME=kibana
+      - ELASTICSEARCH_HOSTS=http://es01:9200
+      - XPACK_ALERTING_ENABLED=false
+      - XPACK_ACTIONS_ENABLED=false
+      - XPACK_RULE_REGISTRY_WRITE_ENABLED=false
+      - XPACK_SECURITY_SOLUTION_ENABLED=false
+      - XPACK_INFRA_ENABLED=false
+      - XPACK_LOGS_ENABLED=false
+      - XPACK_APM_ENABLED=false
+      - XPACK_FLEET_ENABLED=false
+      - XPACK_OBSERVABILITY_ENABLED=false
+      - XPACK_REPORTING_ENABLED=false
+      - XPACK_ML_ENABLED=false
+    ports:
+      - 5601:5601
+    networks:
+      - elastic
+
+networks:
+  elastic:
+    driver: bridge
+
