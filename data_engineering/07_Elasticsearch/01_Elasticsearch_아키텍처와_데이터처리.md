@@ -887,4 +887,3 @@
     ```
 
 ※ `data_engineering\07_Elasticsearch\Chapter2_아키텍처&데이터처리\3_ilm.py` 참고
-
