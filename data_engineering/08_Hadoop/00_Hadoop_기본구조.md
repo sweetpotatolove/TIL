@@ -2,10 +2,12 @@
 ## Hadoop 개요
 ### Hadoop의 필요성과 역할 이해
 - Spark는 빠르지만, 저장은 누가?
-    - Spark는 메모리 기반 처리이기 때문에 데이터 처리가 빠름
-    - Spark는 처리에 강하지만 저장에 약함
 
     ![alt text](image.png)
+    - Spark는 메모리 기반 처리이기 때문에 데이터 처리가 빠름
+    - Spark는 처리에 강하지만 저장에 약함
+    - HDFS(분산 파일 시스템) 형태로 적재하고, MapReduce로 처리하는 방식 -> MapReduce를 대신해 Spark를 사용
+        - 즉, 빠른 분석, 처리는 Spark가 담당하고, 저장은 Hadoop이 담당하므로써 약점을 보완하는 형태로 사용
 
 ### Hadoop 등장 배경
 - 기존 기술(DBMS, 단일 서버)의 용량, 속도, 확장성의 한계 도달
@@ -14,10 +16,10 @@
 
     ![alt text](image-1.png)
     - 구글의 GFS, MapReduce, BigTable에서 파생됨
-        - GFS : 
-        - MapReduce : 
-        - BigTable
-    - 하둡은 구글의 ㅇ..를 오픈소스화 해서 누구나 사용할 수 있게 한 것
+        - GFS (Google File System) : 대용량 데이터를 여러 서버에 블록 단위로 사용하는 형태
+        - MapReduce : 분산 환경으로 효율적인 사용이 가능하도록 함
+        - BigTable : 분산 데이터베이스 시스템
+    - 하둡은 구글의 아이디어를 오픈소스화 해서 누구나 사용할 수 있게 한 것
 
 ### Hadoop의 역사
 ![alt text](image-2.png)
@@ -32,10 +34,9 @@
 - Hadoop ecosystem
     - 하둡의 코어 프로젝트는 `HDFS`, `MapReduce`, `YARN` 이지만 이들의 역할을 수행해내는 다양한 서브 프로젝트들로 구성된 환경
 
-    *10p*
-        - 자원관리 Yarn, 처리 Mapreduce 거기에 다양하게 Spark 등이 붙음??
-        - 뭐가 SQL처럼 질의할 수 있게 ..
-        - Spark도 MapReduce를 대체하여 사용..
+        ![alt text](image-17.png)
+        - HDFS, 자원관리 담당 YARN, 처리 담당 Mapreduce 등에 다양하게 Spark 등 여러 요소가 붙을 수 있음
+        - ex. Spark <- MapReduce를 대체하여 사용
         - 이러한 것 전체를 하둡 에코시스템이라고 함
 
 - Hadoop 특징
@@ -50,10 +51,10 @@
     - 대규모 데이터 저장소 역할
         - HDFS가 단일 서버로 감당할 수 없는 저장소 역할을 함
     - 비용 효율적인 데이터 관리 역할
-        - ???
+        - 비용이 비싼 단일 서버가 아닌, 여러 대의 범용 서버를 사용하므로
         - 데이터 관리 비용 줄어듦
     - 효율적인 데이터 배치 처리 플랫폼
-        - ex. MapReduce
+        - ex. MapReduce -> 대규모 데이터를 동시에 나눠서 처리 가능 (배치처리에 유용)
     - 빅데이터 생태계 기반 제공 역할
         - ex. 에코 시스템
 
@@ -128,11 +129,11 @@
 
 ## Hadoop 구성요소
 1. HDFS (분산 파일 시스템)
-    - 데이터를 여러 컴퓨터에 나누어 안정적으로 저장하는 역할
+    - 데이터를 여러 컴퓨터에 나누어 **안정적으로 저장**하는 역할
 2. MapReduce (분산 데이터 처리)
-    - 대규모 데이터를 분산, 병렬처리 하는 역할
+    - 대규모 데이터를 **분산, 병렬처리** 하는 역할
 3. YARN (자원관리 및 작업 스케줄링)
-    - Hadoop 클러스터의 자원을 효율적으로 관리하고, 작업 스케줄링을 담당함
+    - Hadoop 클러스터의 **자원을 효율적으로 관리하고, 작업 스케줄링**을 담당함
 
         ![alt text](image-6.png)
 
@@ -158,7 +159,6 @@ Hadoop이 실행되는 환경에서 파일을 관리하는 가장 핵심적인 �
         - 파일 이름, 복제본 개수 및 위치
     - Datanodes에 실제 데이터 저장
         - 블록 형태로 분산 저장됨
-    - *순서 설명*
 
 - 네임노드(NameNode)의 주요 기능
     - HDFS 전체에 대한 MataData 관리
@@ -218,18 +218,28 @@ MapReduce는 4단계(Split, Map, Shuffle, Reduce)를 거쳐 데이터를 처리�
 
 - Shuffle
     - 중간 데이터에서 동일한 키를 가진 데이터를 한 곳으로 모으고 정렬하는 과정
+        - 이를 네트워크 정렬이라고 함
+        - 이 과정에서 네트워크 전송, 디스크 읽기/쓰기 등이 발생하여 처리 속도를 저하시키는 원인이 됨
     - 같은 키를 가진 데이터를 같은 노드로 모아 효율적인 집계를 준비함
     - Map과 Reduce를 연결해주는 매우 중요한 과정
+    
 
 - Reduce
     - 모인 데이터를 키 별로 집계하여 최종 결과를 도출함
     - 최종적으로 의미있는 정보를 추출하는 단계
 
 - 정리
-![alt text](image-13.png)
 
-*설명*
-
+    ![alt text](image-13.png)
+    - HDFS 형태로 파일이 블록 단위로 나누어져 있음
+    - 블록들이 논리적인 split으로 분류되어 각 mapper에 전달됨
+    - Map Task 수행
+        - Key-Value 형태로 변환
+    - Shuffle Task 수행
+        - 같은 Key를 가진 Value끼리 묶이게 됨
+    - Reduce Task 수행
+        - 데이터를 받아서 최종 집계 연산을 수행함
+    - 결과가 HDFS 출력 디렉토리로 저장됨
 
 ### Hadoop 클러스터 구조
 - 마스터 노드(Master Node)
@@ -293,13 +303,21 @@ MapReduce는 4단계(Split, Map, Shuffle, Reduce)를 거쳐 데이터를 처리�
 
     ![alt text](image-14.png)
     - 클라이언트가 RM에게 어플리케이션 제출
+        - 어플리케이션 예시 : 단일 작업(Job) ex. MapReduce 작업 - 워드 카운팅 등
+        - ResourceManager가 클러스터 내의 자원을 확인 후 작업을 처리할 AM을 띄움
     - NM을 통해 AM 실행
+        - NodeManager를 통해 ApplicationMaster를 실행함 (RM이 직업 실행XX)
+        - AM은 하나의 컨테이너 안에서 동적으로 실행되는 요소 중 하나
     - AM은 RM에게 자신을 등록
+        - AM이 RM에게 자원 요청하면 RM이 AM을 추적할 수 있도록
     - AM은 RM에게 컨테이너 할당할 공간/위치를 받음
+        - Slave 1에 몇개, Slave 2에 몇개 ..
     - AM은 NM에게 컨테이너를 실행 요청 (어플리케이션 정보를 NM에게 제공)
     - 컨테이너는 어플리케이션의 상태 정보를 AM에 알림
     - 클라이언트는 어플리케이션의 실행 정보를 얻기 위해 AM과 직접 통신
+        - AM으로부터 직접 가져옴
     - 어플리케이션이 종료되면 AM은 RM에게 자신의 자원을 해제하고 종료함
+        - 하나의 작업이 끝나면 AM은 사라지고(컨테이너도) NM, RM만 남게 됨
 
 
 ## Hadoop 설치 및 실행환경 구성
@@ -325,10 +343,10 @@ docker exec -it datanode1 bash
 docker exec -it datanode2 bash
 ```
 ![alt text](image-16.png)
-- NameNode : HDFS 메타데이터 관리
-- DataNode : HDFS 실제 데이터 관리
-- ResourceManager : YARN 리소스 관리
-- NodeManater : YARN 작업 실행 관리
+- `NameNode` : HDFS 메타데이터 관리
+- `DataNode` : HDFS 실제 데이터 관리
+- `ResourceManager` : YARN 리소스 관리
+- `NodeManater` : YARN 작업 실행 관리
 
 ※ 4개의 데몬이 모두 실행중이면 성공
 
