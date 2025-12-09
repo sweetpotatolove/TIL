@@ -1,0 +1,57 @@
+FROM apache/spark:3.5.4
+
+USER root
+
+# 1) Python 3.12 빌드에 필요한 패키지 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    liblzma-dev \
+    tk-dev \
+    libgdbm-compat-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2) Python 3.12 소스 다운로드 & 컴파일 설치
+RUN wget https://www.python.org/ftp/python/3.12.7/Python-3.12.7.tgz && \
+    tar -xzf Python-3.12.7.tgz && \
+    cd Python-3.12.7 && \
+    ./configure --enable-optimizations && \
+    make -j 4 && \
+    make altinstall && \
+    cd .. && rm -rf Python-3.12.7 Python-3.12.7.tgz
+
+# python3 → python3.12 심볼릭 링크
+RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python3
+
+# pip 업그레이드
+RUN python3.12 -m ensurepip && python3.12 -m pip install --upgrade pip
+
+# 3) 한국어 폰트 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fonts-nanum \
+    fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+RUN fc-cache -fv
+
+# 4) Spark에게 python 3.12 사용하도록 환경변수 지정
+ENV PYSPARK_PYTHON=/usr/local/bin/python3.12
+ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python3.12
+
+# 5) Spark 기본 UID/GID(185)를 1000으로 변경 → Airflow/Host와 통일
+RUN groupmod -g 1001 spark && \
+    usermod -u 1000 spark
+
+# 6) 로그 및 워크 디렉토리 생성 + 권한 설정
+RUN mkdir -p /opt/spark/{logs,work} && \
+    chown -R 1000:1001 /opt/spark
+
+USER spark

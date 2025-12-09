@@ -1,0 +1,20 @@
+{"index": {"_index": "products", "_id": 1}}
+{"product_id": 1, "brand": "Samsung", "name": "Samsung Galaxy S24 Ultra", "description": "Latest Samsung flagship smartphone with advanced AI features.", "price": 1299.99, "category": "smartphone", "features": [{"feature_name": "RAM", "feature_value": "16GB"}, {"feature_name": "Storage", "feature_value": "512GB"}, {"feature_name": "Camera", "feature_value": "200MP"}]}
+{"index": {"_index": "products", "_id": 2}}
+{"product_id": 2, "brand": "Apple", "name": "Apple iPhone 15 Pro Max", "description": "Apple's latest iPhone with an A17 Pro chip and titanium design.", "price": 1199.0, "category": "smartphone", "features": [{"feature_name": "RAM", "feature_value": "8GB"}, {"feature_name": "Storage", "feature_value": "1TB"}, {"feature_name": "Camera", "feature_value": "48MP"}]}
+{"index": {"_index": "products", "_id": 3}}
+{"product_id": 3, "brand": "Sony", "name": "Sony Xperia 1 V", "description": "Sony's flagship phone with advanced camera technology.", "price": 1399.99, "category": "smartphone", "features": [{"feature_name": "Display", "feature_value": "4K OLED"}, {"feature_name": "Camera", "feature_value": "Triple Lens"}, {"feature_name": "RAM", "feature_value": "12GB"}]}
+{"index": {"_index": "products", "_id": 4}}
+{"product_id": 4, "brand": "LG", "name": "LG Gram 17", "description": "Ultra-lightweight 17-inch laptop for productivity and mobility.", "price": 1799.99, "category": "laptop", "features": [{"feature_name": "RAM", "feature_value": "16GB"}, {"feature_name": "Storage", "feature_value": "1TB SSD"}, {"feature_name": "Weight", "feature_value": "1.35kg"}]}
+{"index": {"_index": "products", "_id": 5}}
+{"product_id": 5, "brand": "Samsung", "name": "Samsung Galaxy Watch 6", "description": "Smartwatch with health monitoring and sleep tracking.", "price": 399.99, "category": "wearable", "features": [{"feature_name": "Display", "feature_value": "Super AMOLED"}, {"feature_name": "Battery", "feature_value": "40 hours"}, {"feature_name": "Health", "feature_value": "Heart rate, ECG"}]}
+{"index": {"_index": "products", "_id": 6}}
+{"product_id": 6, "brand": "Apple", "name": "Apple Watch Series 9", "description": "Smarter, brighter, and more powerful Apple Watch.", "price": 499.0, "category": "wearable", "features": [{"feature_name": "Display", "feature_value": "2000 nits"}, {"feature_name": "Battery", "feature_value": "18 hours"}, {"feature_name": "Health", "feature_value": "Blood Oxygen, ECG"}]}
+{"index": {"_index": "products", "_id": 7}}
+{"product_id": 7, "brand": "Sony", "name": "Sony WH-1000XM5", "description": "Industry-leading noise canceling wireless headphones.", "price": 399.99, "category": "audio", "features": [{"feature_name": "Noise Canceling", "feature_value": "ANC Pro"}, {"feature_name": "Battery", "feature_value": "30 hours"}, {"feature_name": "Audio", "feature_value": "Hi-Res Audio"}]}
+{"index": {"_index": "products", "_id": 8}}
+{"product_id": 8, "brand": "LG", "name": "LG Tone Free T90", "description": "Wireless earbuds with Meridian sound and UVnano case.", "price": 229.99, "category": "audio", "features": [{"feature_name": "Battery", "feature_value": "27 hours"}, {"feature_name": "Sound", "feature_value": "Meridian"}, {"feature_name": "Feature", "feature_value": "UVnano"}]}
+{"index": {"_index": "products", "_id": 9}}
+{"product_id": 9, "name": "Samsung Neo QLED 8K 75-inch", "brand": "Samsung", "description": "Stunning 8K resolution with Neo QLED technology and immersive 75-inch display.", "category": "TV", "price": 5999.99, "features": [{"feature_name": "Display", "feature_value": "Neo QLED"}, {"feature_name": "Resolution", "feature_value": "8K"}, {"feature_name": "Size", "feature_value": "75-inch"}]}
+{"index": {"_index": "products", "_id": 10}}
+{"product_id": 10, "name": "Samsung Odyssey Neo G9", "brand": "Samsung", "description": "49-inch ultra-wide curved gaming monitor with Quantum Mini-LED.", "category": "Monitor", "price": 2199.99, "features": [{"feature_name": "Display", "feature_value": "Quantum Mini-LED"}, {"feature_name": "Size", "feature_value": "49-inch"}, {"feature_name": "Usage", "feature_value": "Gaming"}]}
