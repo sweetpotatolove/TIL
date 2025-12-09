@@ -17,11 +17,11 @@ Apache Airflow는 아래 주소에서 [공식 Docker Compose 파일](https://git
 ## 1. 디렉토리 및 초기 환경 구성
 
 ```bash
-cd /home/ssafy
+cd /home/my
 
 # Airflow 프로젝트 디렉토리 생성
-mkdir ssafy_airflow
-cd ssafy_airflow
+mkdir my_airflow
+cd my_airflow
 
 # airflow docker-compose 다운로드
 curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.10.5/docker-compose.yaml' 
@@ -232,7 +232,7 @@ pip install "apache-airflow[celery]==2.10.5" \
 
 - Airflow의 기본 설정에서는 dags/ 디렉토리 하위의 1단계 하위 폴더까지는 .py 파일을 인식 
 
-<pre><code>ssafy_airflow/
+<pre><code>my_airflow/
 ├── dags/
 │   └── skeleton.py
 ├── logs/
@@ -242,7 +242,7 @@ pip install "apache-airflow[celery]==2.10.5" \
 └── .env
 </code></pre>
 
-<pre><code>ssafy_airflow/
+<pre><code>my_airflow/
 ├── dags/
 │   └── data_engineering1_hw_4_4/
 │       └── skeleton.py
@@ -290,7 +290,7 @@ Airflow에서 `EmailOperator`를 통해 Gmail SMTP로 메일을 보내기 위해
 - 이는 어떤 스크립트 형태를 실행시키던 쓰던 마찬가지
 
 ```bash
-cd /home/ssafy/ssafy_airflow
+cd /home/my/my_airflow
 
 # plugins 하위에 shell 디렉토리 생성 후 select_fruit.sh 이동 필요
 chmod +x ./plugins/shell/select_fruit.sh
@@ -313,7 +313,7 @@ Airflow에서 PostgresHook를 통해 별도 Postgres DB와 연결을 확인하�
 ### 12-1) Postgres 컨테이너 실행
 
 - `docker-compose.yml`에 `postgres-db` 서비스를 추가합니다.  
-- 기본 설정: `user=ssafyuser`, `password=ssafy`, `db=ssafydb`, 포트 `5432`  
+- 기본 설정: `user=myuser`, `password=my`, `db=mydb`, 포트 `5432`  
 - 로컬 PC에서 이미 `5432` 포트를 사용 중이면 `5442:5432` 등으로 바꿔야 합니다.  
 - Airflow 컨테이너에서 접근할 때는 항상 **호스트명 `postgres-db`, 포트 `5432`** 로 접속해야 합니다.
 
@@ -325,9 +325,9 @@ Airflow에서 PostgresHook를 통해 별도 Postgres DB와 연결을 확인하�
    - Conn Id: `my_postgres_conn`  
    - Conn Type: `Postgres`  
    - Host: `postgres-db`  
-   - Database: `ssafydb`  
-   - Login: `ssafyuser`  
-   - Password: `ssafy`  
+   - Database: `mydb`  
+   - Login: `myuser`  
+   - Password: `my`  
    - Port: `5432`
 
 2. 프로젝트 진행하면서 만들며 구성해놓은 로컬 PostgreSQL로 테스트 하고 싶은 경우
@@ -335,8 +335,8 @@ Airflow에서 PostgresHook를 통해 별도 Postgres DB와 연결을 확인하�
    - Conn Type: `Postgres`  
    - Host: `host.docker.internal`  
    - Database: `news`  
-   - Login: `ssafyuser`  
-   - Password: `ssafy`  
+   - Login: `myuser`  
+   - Password: `my`  
    - Port: `5442`
 
 ---
