@@ -42,7 +42,7 @@ chmod 600 ~/.ssh/authorized_keys
 
 1. 홈 디렉토리 이동  
    ```bash
-   cd /home/ssafy
+   cd /home/my
    ```
 
 2. Hadoop 다운로드  
@@ -77,7 +77,7 @@ sudo apt install -y openjdk-11-jdk
 ```
 
 ```bash
-vi /home/ssafy/hadoop/etc/hadoop/hadoop-env.sh
+vi /home/my/hadoop/etc/hadoop/hadoop-env.sh
 ```
 
 ```bash
@@ -96,7 +96,7 @@ vi ~/.bashrc
 ```
 
 ```bash
-export HADOOP_HOME=/home/ssafy/hadoop
+export HADOOP_HOME=/home/my/hadoop
 export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
 ```
 
@@ -159,17 +159,17 @@ Hadoop 실행을 위해 총 **4개 설정 파일**을 수정합니다.
 
   <property>
     <name>yarn.app.mapreduce.am.env</name>
-    <value>HADOOP_MAPRED_HOME=/home/ssafy/hadoop</value>
+    <value>HADOOP_MAPRED_HOME=/home/my/hadoop</value>
   </property>
 
   <property>
     <name>mapreduce.map.env</name>
-    <value>HADOOP_MAPRED_HOME=/home/ssafy/hadoop</value>
+    <value>HADOOP_MAPRED_HOME=/home/my/hadoop</value>
   </property>
 
   <property>
     <name>mapreduce.reduce.env</name>
-    <value>HADOOP_MAPRED_HOME=/home/ssafy/hadoop</value>
+    <value>HADOOP_MAPRED_HOME=/home/my/hadoop</value>
   </property>
 </configuration>
 ```
@@ -190,12 +190,12 @@ Hadoop 실행을 위해 총 **4개 설정 파일**을 수정합니다.
 
   <property>
     <name>dfs.namenode.name.dir</name>
-    <value>file:///home/ssafy/hadoop/data/namenode</value>
+    <value>file:///home/my/hadoop/data/namenode</value>
   </property>
 
   <property>
     <name>dfs.datanode.data.dir</name>
-    <value>file:///home/ssafy/hadoop/data/datanode</value>
+    <value>file:///home/my/hadoop/data/datanode</value>
   </property>
 </configuration>
 ```
