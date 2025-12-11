@@ -2,16 +2,16 @@
 
 ```bash
 # 로컬 작업 디렉토리 생성 (Hadoop 관련 실습 파일을 저장할 공간) 만들었다면 제외
-mkdir -p /home/ssafy/ssafy_hadoop
+mkdir -p /home/my/my_hadoop
 
 # 해당 디렉토리로 이동
-cd /home/ssafy/ssafy_hadoop
+cd /home/my/my_hadoop
 
 # HDFS의 DataNode들이 데이터를 저장할 로컬 경로 생성 (Hadoop 설정 시 사용됨)
-mkdir -p /home/ssafy/hadoop_data
+mkdir -p /home/my/hadoop_data
 
 # 하둡 프로세스가 해당 디렉토리에 자유롭게 접근할 수 있도록 전체 권한 부여
-sudo chmod -R 777 /home/ssafy/hadoop_data
+sudo chmod -R 777 /home/my/hadoop_data
 
 # 예제에 사용할 간단한 텍스트 파일 생성
 echo "Hello Hadoop" > test.txt
@@ -40,7 +40,7 @@ hadoop fs -cat /user/local/hadoop_data/test.txt
 
 # HDFS 상의 파일을 로컬 경로로 다운로드
 # - HDFS → 로컬 방향의 파일 복사
-hadoop fs -get /user/local/hadoop_data/test.txt /home/ssafy/ssafy_hadoop/hadoop_test.txt
+hadoop fs -get /user/local/hadoop_data/test.txt /home/my/my_hadoop/hadoop_test.txt
 
 # HDFS 상의 파일 삭제
 # - 업로드한 파일을 HDFS에서 제거
