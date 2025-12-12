@@ -639,6 +639,7 @@ Kibana에서 finance-transactions 인덱스를 추가하는 방법
 - 시간 흐름에 따른 대기질 수치의 변화
 
   ![alt text](image-58.png)
+  - save and return -> 대시보드 상에서 이미지가 만들어짐
 
 - 전체 날짜에 대한 각 날짜별 들어온 카테고리 개수
 
@@ -648,9 +649,11 @@ Kibana에서 finance-transactions 인덱스를 추가하는 방법
 
   ![alt text](image-60.png)
 
-## Kibana 언어 KQL
-- Kibana에서 제공하는 사용자 친화적인 쿼리 언어
+### Kibana 언어 KQL
+Kibana에서 제공하는 사용자 친화적인 쿼리 언어
 - 검색창에서 실시간 필터링 가능
-- amount > 300이 넘는 거래를 한 경우 사은품을 준다고 가정한다면 조건을 amount > 300으로 대시보드 확인
+- 예시
+  - amount > 300이 넘는 거래를 한 경우 사은품을 준다고 가정한다면 조건을 amount > 300으로 대시보드 확인
 
   ![alt text](image-61.png)
+
