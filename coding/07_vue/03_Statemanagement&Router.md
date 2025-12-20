@@ -263,6 +263,10 @@ Vue 공식 라우터 (The official Router for Vue.js)
 - HTML의 `<a>` 태그를 렌더링
     
     ![alt text](image-218.png)
+    - 즉, `<a>`태그처럼 쓸 수 있음
+    - to 속성을 이용하여 경로명을 직접 명시 가능
+      - 보통 이렇게 사용XX
+      - 바인딩 해서 '객체'로 경로를 넘겨줌
 
 ### RouterView
 - RouterLink URL에 해당하는 컴포넌트를 표시
@@ -304,339 +308,133 @@ Vue 공식 라우터 (The official Router for Vue.js)
     - name 속성 값에 경로에 대한 이름을 지정
     - 경로에 연결하려면 RouterLink에 v-bind를 사용해 'to' props 객체로 전달
 
-    
----
-70p
+      ![alt text](image-226.png)
 
+- Named Routes 장점
+  - 하드 코딩 된 URL을 사용하지 않아도 됨
+  - URL 입력 시 오타 방지
 
-### 
+### Dynamic Route Matching
+URL의 일부를 변수로 사용하여 경로를 동적으로 매칭
 
-```
-// index.js
+- 매개변수를 사용한 동적 경로 매칭
+  - 주어진 패턴 경로를 동일한 컴포넌트에 매핑 해야 하는 경우 활용
+  - 예를 들어 모든 사용자의 ID를 활용하여 프로필 페이지 URL을 설계 한다면?
+    - user/1
+    - user/2
+    - user/3
+    - 일정한 패턴의 URL 작성을 반복해야 함
 
-const router = createRouter({
-  routes: [
-    {
-      paht: '/',
-      name: 'home',
-      component: HomeView
-    },
-    ...
-  ]
-})
-```
-```
-<!-- App.vue -->
+- 매개변수를 사용한 동적 경로 매칭 활용
+  - views 폴더 내 UserView 컴포넌트 작성
 
-<RouterLink :to="{ name: 'home' }">Home</RouterLink>
-<RouterLink :to="{ name: 'about' }">About</RouterLink>
-```
+    ![alt text](image-227.png)
 
-## Named Routes 장점
-- 하드 코딩 된 URL을 사용하지 않아도 됨
-- URL 입력 시 오타 방지
+- 매개변수는 콜론("`:`")으로 표기
+  - UserView 컴포넌트 라우트 등록
 
-# Dynamic Route Matching
+    ![alt text](image-228.png)
 
-## Dynamic Route Matching
-- URL의 일부를 변수로 사용하여 경로를 동적으로 매칭
-
-## 매개변수를 사용한 동적 경로 매칭
-- 주어진 패턴 경로를 동일한 컴포넌트에 매핑 해야 하는 경우 활용
-- 예를 들어 모든 사용자의 ID를 활용하여 프로필 페이지 URL을 설계 한다면?
-  - user/1
-  - user/2
-  - user/3
-  > 일정한 패턴의 URL 작성을 반복해야 함
-
-## 매개변수를 사용한 동적 경로 매칭 활용 (1/5)
-- views 폴더 내 UserView 컴포넌트 작성
-```
-<!-- UserView.vue -->
-
-<template>
-  <div>
-    <h1>UserView</h1>
-  </div>
-</template>
-```
-
-## 매개변수를 사용한 동적 경로 매칭 활용 (2/5)
-- 매개변수는 콜론(":")으로 표기
-> UserView 컴포넌트 라우트 등록
-```
-// index.js
-
-import UserView from '../views/UserView.vue'
-
-const router = createRouter({
-  routes: [
-    {
-      path: '/user/:id',
-      name: 'user',
-      component: UserView
-    },
-  ]
-})
-```
-
-## 매개변수를 사용한 동적 경로 매칭 활용 (3/5)
 - 매개변수는 객체의 params 속성의 객체 타입으로 전달  
-- 단, 객체의 key 이름과 index.js에서 지정한 매개변수 이름이 같아야 함  
-> UserView 컴포넌트로 이동하기 위한 RouterLink 작성  
+  - 단, 객체의 key 이름과 index.js에서 지정한 매개변수 이름이 같아야 함  
+  - UserView 컴포넌트로 이동하기 위한 RouterLink 작성  
 
-```vue
-<!-- App.vue -->
-import { ref } from 'vue'
-
-const userId = ref(1)
-```
-
-```vue
-<!-- App.vue -->
-<RouterLink :to="{ name: 'user', params: { 'id': userId } }">User</RouterLink>
-```
-
----
-
-## 매개변수를 사용한 동적 경로 매칭 활용 (4/5)
+    ![alt text](image-229.png)
+    
 - 경로가 일치하면 라우트의 매개변수는 컴포넌트에서 `$route.params`로 참조 가능  
-> 현재 사용자의 id를 출력하기  
+  - 현재 사용자의 id를 출력하기  
 
-```vue
-<!-- UserView.vue -->
-<template>
-  <div>
-    <h1>UserView</h1>
-    <h2>{{ $route.params.id }}번 User 페이지</h2>
-  </div>
-</template>
-```
+    ![alt text](image-230.png)
 
----
+- `useRoute()` 함수를 사용해 스크립트 내에서 반응형 변수에 할당 후 템플릿에 출력하는 것을 권장  
+  - 템플릿에서 `$route`를 사용하는 것과 동일  
 
-## 매개변수를 사용한 동적 경로 매칭 활용 (5/5)
-- useRoute() 함수를 사용해 스크립트 내에서 반응형 변수에 할당 후 템플릿에 출력하는 것을 권장  
-- 템플릿에서 $route를 사용하는 것과 동일  
+    ![alt text](image-231.png)
 
-```vue
-<!-- UserView.vue -->
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const userId = ref(route.params.id)
-```
-
-```vue
-<!-- UserView.vue -->
-<template>
-  <div>
-    <h1>UserView</h1>
-    <h2>{{ userId }}번 User 페이지</h2>
-  </div>
-</template>
-```
-
-# Programmatic Navigation
 
 ## Programmatic Navigation
-- RouterLink 대신 JavaScript를 사용해 페이지를 이동하는 것
+RouterLink 대신 JavaScript를 사용해 페이지를 이동하는 것
 
-## 프로그래밍 방식 네이게이션
-- 프로그래밍으로 URL 이동하기
-- router의 인스턴스 메서드를 사용해 RouterLink로 <a> 태그를 만드는 것처럼 프로그래밍으로 네비게이션 관련 작업을 수행할 수 있음
+- 프로그래밍 방식 네이게이션
+  - 프로그래밍으로 URL 이동하기
+  - router의 인스턴스 메서드를 사용해 RouterLink로 `<a>` 태그를 만드는 것처럼 프로그래밍으로 네비게이션 관련 작업을 수행할 수 있음
 
-## router의 메서드
+### router의 메서드
 1. 다른 위치로 이동하기
-  - router.push()
+    - `router.push()`
 2. 현재 위치 바꾸기
-  - router.replace()
+    - `router.replace()`
 
-## router.push()
-- 다른 위치로 이동하기 (Navigate to a different location)
-
-## router.push()
+### `router.push()`
+다른 위치로 이동하기 (Navigate to a different location)
 
 - 다른 URL로 이동하는 메서드  
 - 새 항목을 history stack에 push하므로 사용자가 브라우저 뒤로 가기 버튼을 클릭하면 이전 URL로 이동할 수 있음  
-- RouterLink를 클릭했을 때 내부적으로 호출되는 메서드이므로  
-  RouterLink를 클릭하는 것은 router.push()를 호출하는 것과 같음  
+- RouterLink를 클릭했을 때 내부적으로 호출되는 메서드이므로, RouterLink를 클릭하는 것은 `router.push()`를 호출하는 것과 같음  
 
-| 선언적 표현 | 프로그래밍적 표현 |
-|-------------|------------------|
-| `<RouterLink :to="...">` | `router.push(...)` |
+  | 선언적 표현 | 프로그래밍적 표현 |
+  |-------------|------------------|
+  | `<RouterLink :to="...">` | `router.push(...)` |
 
----
+- router.push 활용
+  - UserView 컴포넌트에서 HomeView 컴포넌트로 이동하는 버튼 만들기  
 
-## router.push 활용 (1/2)
-- UserView 컴포넌트에서 HomeView 컴포넌트로 이동하는 버튼 만들기  
+    ![alt text](image-233.png)
 
-```vue
-<!-- UserView.vue -->
-<template>
-  <div>
-    <h1>UserView</h1>
-    <h2>1번 User 페이지</h2>
-    <button @click="goHome">홈으로!</button>
-  </div>
-</template>
-```
+    ![alt text](image-232.png)  
 
----
+- [참고] router.push의 인자 활용
+  - https://router.vuejs.org/guide/essentials/navigation.html  
 
-## router.push 활용 (2/2)
-- UserView 컴포넌트에서 HomeView 컴포넌트로 이동하는 버튼 만들기  
+    ![alt text](image-234.png)
 
-```vue
-<!-- UserView.vue -->
-import { useRoute, useRouter } from 'vue-router'
+## 참고 (Vue Router)
+### Nested Routes
+중첩된 라우팅
 
-const router = useRouter()
-
-const goHome = function() {
-  router.push({ name: 'home' })
-}
-```
-
-```vue
-<!-- UserView.vue -->
-<button @click="goHome">홈으로!</button>
-```
-
----
-
-## [참고] router.push의 인자 활용
-- https://router.vuejs.org/guide/essentials/navigation.html  
-
-```javascript
-// literal string path
-router.push('/users/1')
-
-// object with path
-router.push({ path: '/users/2' })
-
-// named route with params to let the router build the url
-router.push({ name: 'user', params: { id: '3' } })
-
-// with query, resulting in /register?plan=private
-router.push({ path: '/register', query: { plan: 'private' } })
-```
-
-# 참고
-
-# Nested Routes
-
-## Nested Routes
-- 중첩된 라우팅
-
+![alt text](image-235.png)
 - 애플리케이션의 UI는 여러 레벨 깊이로 중첩된 컴포넌트로 구성되기도 함
 - 이 경우 URL을 중첩된 컴포넌트의 구조에 따라 변경되도록 이 관계를 표현할 수 있음
 
-## children 옵션
-- children 옵션은 배열 형태로 필요한 만큼 중첩 관계를 표현할 수 있음
+### children 옵션
+children 옵션은 배열 형태로 필요한 만큼 중첩 관계를 표현할 수 있음
 
-## 중첩된 라우팅 활용 (1/4)
-- 중첩된 Named Routes를 다룰 때는 일반적으로 “하위 경로에만 이름을 지정”  
-- 이렇게 하면 `/user/:id`로 이동했을 때 항상 중첩된 경로가 표시됨  
+- 중첩된 라우팅 활용
+  - 중첩된 Named Routes를 다룰 때는 일반적으로 “하위 경로에만 이름을 지정”  
+  - 이렇게 하면 `/user/:id`로 이동했을 때 항상 중첩된 경로가 표시됨  
 
-```javascript
-// index.js
-import UserHome from '@/components/UserHome.vue'
+    ![alt text](image-236.png)
 
-{
-  path: '/user/:id',
-  component: UserView,
-  children: [
-    { path: '', name: 'user', component: UserHome },
-    { path: 'profile', name: 'user-profile', component: UserProfile },
-    { path: 'posts', name: 'user-posts', component: UserPosts }
-  ]
-}
-```
+  - 두 컴포넌트에 대한 RouterLink 및 RouterView 작성  
 
----
+    ![alt text](image-237.png)
 
-## 중첩된 라우팅 활용 (2/4)
-- 두 컴포넌트에 대한 RouterLink 및 RouterView 작성  
+  - 이제 `/user/:id` 접속 시 중첩된 경로가 표시됨  
 
-```vue
-<!-- UserView.vue -->
-<template>
-  <div>
-    <RouterLink :to="{ name: 'user-profile' }">Profile</RouterLink>
-    <RouterLink :to="{ name: 'user-posts' }">Posts</RouterLink>
+    ![alt text](image-238.png)
 
-    <h1>UserView</h1>
-    <h2>{{ userId }}번 User 페이지</h2>
-    <hr>
-    <RouterView />
-  </div>
-</template>
-```
+  - `Profile`과 `Posts` 링크를 클릭해서 렌더링 결과 확인  
 
-## 중첩된 라우팅 활용 (3/4)
-- 이제 `/user/:id` 접속 시 중첩된 경로가 표시됨  
+    ![alt text](image-239.png)
 
-예시:  
-```
-UserView  
-1번 User 페이지  
-UserHome  
-```
+### ※주의※ : 중첩된 라우팅
+- 컴포넌트 간 부모-자식 관계 관점이 아닌, **URL에서의 중첩된 관계를 표현하는 관점**으로 바라보기
 
----
+### Navigation Guard
+Vue router를 통해 특정 URL에 접근할 때 다른 URL로 redirect를 하거나 취소하여 내비게이션을 보호  
 
-## 중첩된 라우팅 활용 (4/4)
-- `Profile`과 `Posts` 링크를 클릭해서 렌더링 결과 확인  
+-> 라우트 전환 전/후 자동으로 실행되는 Hook  
 
-| 링크 | 렌더링 결과 | 경로 |
-|------|--------------|------|
-| Profile | UserProfile | /user/1/profile |
-| Posts | UserPosts | /user/1/posts |
+- Navigation Guard 종류
+  1. Globally (전역 가드)  
+      - 애플리케이션 전역에서 모든 라우트 전환에 적용되는 가드  
+  2. Per-route (라우터 가드)  
+      - 특정 라우트에만 적용되는 가드  
+  3. In-component (컴포넌트 가드)  
+      - 컴포넌트 내에서만 적용되는 가드  
 
----
+### Lazy Loading Routes
+![alt text](image-240.png)
 
-## ※주의※ 중첩된 라우팅
-- 컴포넌트 간 부모-자식 관계 관점이 아님  
-- **URL에서의 중첩된 관계를 표현하는 관점**으로 바라보기
-
-# Navigation Guard
-
-## Navigation Guard
-- Vue router를 통해 특정 URL에 접근할 때 다른 URL로 redirect를 하거나 취소하여 내비게이션을 보호  
-> 라우트 전환 전/후 자동으로 실행되는 Hook  
-
-참고: https://router.vuejs.org/guide/advanced/navigation-guards.html
-
----
-
-## Navigation Guard 종류
-1. Globally (전역 가드)  
-   - 애플리케이션 전역에서 모든 라우트 전환에 적용되는 가드  
-2. Per-route (라우터 가드)  
-   - 특정 라우트에만 적용되는 가드  
-3. In-component (컴포넌트 가드)  
-   - 컴포넌트 내에서만 적용되는 가드  
-
----
-
-# 참고
-
-## Lazy Loading Routes
-```javascript
-// index.js
-{
-  path: '/about',
-  name: 'about',
-  // route level code-splitting
-  // this generates a separate chunk (About.[hash].js) for this route
-  // which is lazy-loaded when the route is visited.
-  component: () => import('../views/AboutView.vue')
-}
-```
-
-- Vue 애플리케이션 첫 빌드 시 해당 컴포넌트를 로드하지 않고,  
-  “해당 경로를 처음으로 방문할 때 컴포넌트를 로드” 하는 것  
-  > 앱을 빌드할 때 처음부터 모든 컴포넌트를 준비하면  
-    컴포넌트의 크기에 따라 페이지 로드 시간이 길어질 수 있기 때문
+- Vue 애플리케이션 첫 빌드 시 해당 컴포넌트를 로드하지 않고, “해당 경로를 처음으로 방문할 때 컴포넌트를 로드” 하는 것  
+  - 앱을 빌드할 때 처음부터 모든 컴포넌트를 준비하면 컴포넌트의 크기에 따라 페이지 로드 시간이 길어질 수 있기 때문
